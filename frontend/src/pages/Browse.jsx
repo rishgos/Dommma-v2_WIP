@@ -1,54 +1,43 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Bed, Bath, MapPin, Heart, Sparkles, X, SlidersHorizontal } from 'lucide-react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import { GoogleMap, useJsApiLoader, MarkerF, InfoWindowF } from '@react-google-maps/api';
 import axios from 'axios';
 import NovaChat from '../components/chat/NovaChat';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
+const GOOGLE_MAPS_API_KEY = 'AIzaSyCk8vmPDHHk5QrOVDw23wVB1bNAObQHNkI';
 
-// Custom marker icon
-const createCustomIcon = (price) => {
-  return L.divIcon({
-    className: 'custom-marker',
-    html: `<div style="
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 6px 10px;
-      border-radius: 20px;
-      font-weight: bold;
-      font-size: 12px;
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-      white-space: nowrap;
-    ">$${Math.floor(price/1000)}k</div>`,
-    iconSize: [60, 30],
-    iconAnchor: [30, 15],
-  });
+const mapContainerStyle = {
+  width: '100%',
+  height: '100%'
 };
 
-// Map bounds controller
-const MapBoundsHandler = ({ listings, selectedListing }) => {
-  const map = useMap();
-  
-  useEffect(() => {
-    if (selectedListing) {
-      map.flyTo([selectedListing.lat, selectedListing.lng], 15, { duration: 0.5 });
-    } else if (listings.length > 0) {
-      const bounds = L.latLngBounds(listings.map(l => [l.lat, l.lng]));
-      map.fitBounds(bounds, { padding: [50, 50] });
+const mapOptions = {
+  disableDefaultUI: false,
+  zoomControl: true,
+  streetViewControl: false,
+  mapTypeControl: false,
+  fullscreenControl: true,
+  styles: [
+    {
+      featureType: 'poi',
+      elementType: 'labels',
+      stylers: [{ visibility: 'off' }]
     }
-  }, [listings, selectedListing, map]);
-  
-  return null;
+  ]
 };
+
+// Vancouver center
+const defaultCenter = { lat: 49.2827, lng: -123.1207 };
 
 const Browse = () => {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedListing, setSelectedListing] = useState(null);
   const [hoveredListing, setHoveredListing] = useState(null);
+  const [activeMarker, setActiveMarker] = useState(null);
+  const [map, setMap] = useState(null);
   const [filters, setFilters] = useState({
     search: '',
     bedrooms: '',
@@ -59,8 +48,23 @@ const Browse = () => {
   });
   const [showFilters, setShowFilters] = useState(false);
 
-  // Vancouver center coordinates
-  const mapCenter = [49.2827, -123.1207];
+  const { isLoaded, loadError } = useJsApiLoader({
+    googleMapsApiKey: GOOGLE_MAPS_API_KEY
+  });
+
+  const onMapLoad = useCallback((mapInstance) => {
+    setMap(mapInstance);
+  }, []);
+
+  useEffect(() => {
+    if (map && listings.length > 0) {
+      const bounds = new window.google.maps.LatLngBounds();
+      listings.forEach(listing => {
+        bounds.extend({ lat: listing.lat, lng: listing.lng });
+      });
+      map.fitBounds(bounds, { padding: 50 });
+    }
+  }, [map, listings]);
 
   useEffect(() => {
     fetchListings();
@@ -103,6 +107,19 @@ const Browse = () => {
   }, [filters]);
 
   const getMatchScore = () => Math.floor(Math.random() * 20) + 80;
+
+  const handleMarkerClick = (listing) => {
+    setActiveMarker(listing.id);
+    setHoveredListing(listing);
+  };
+
+  const createPriceLabel = (price) => {
+    return `$${Math.floor(price / 1000)}k`;
+  };
+
+  if (loadError) {
+    return <div className="min-h-screen flex items-center justify-center">Error loading maps</div>;
+  }
 
   return (
     <div className="min-h-screen bg-[#f7fafc]">
@@ -261,8 +278,14 @@ const Browse = () => {
                       <div
                         key={listing.id}
                         onClick={() => setSelectedListing(listing)}
-                        onMouseEnter={() => setHoveredListing(listing)}
-                        onMouseLeave={() => setHoveredListing(null)}
+                        onMouseEnter={() => {
+                          setHoveredListing(listing);
+                          setActiveMarker(listing.id);
+                        }}
+                        onMouseLeave={() => {
+                          setHoveredListing(null);
+                          setActiveMarker(null);
+                        }}
                         className={`bg-white rounded-2xl overflow-hidden cursor-pointer card-hover border-2 transition-all ${
                           isHovered ? 'border-[#667eea] shadow-lg' : 'border-gray-100'
                         }`}
@@ -324,54 +347,96 @@ const Browse = () => {
               )}
             </div>
 
-            {/* Real Map */}
+            {/* Google Map */}
             <div className="hidden lg:block sticky top-24 h-[calc(100vh-8rem)]">
               <div 
                 className="w-full h-full rounded-2xl overflow-hidden shadow-xl"
                 data-testid="map-container"
               >
-                <MapContainer
-                  center={mapCenter}
-                  zoom={12}
-                  style={{ height: '100%', width: '100%' }}
-                  zoomControl={true}
-                >
-                  <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  />
-                  <MapBoundsHandler listings={listings} selectedListing={selectedListing} />
-                  {listings.map((listing) => (
-                    <Marker
-                      key={listing.id}
-                      position={[listing.lat, listing.lng]}
-                      icon={createCustomIcon(listing.price)}
-                      eventHandlers={{
-                        click: () => setSelectedListing(listing),
-                        mouseover: () => setHoveredListing(listing),
-                        mouseout: () => setHoveredListing(null),
-                      }}
-                    >
-                      <Popup>
-                        <div className="p-2 min-w-[200px]">
-                          <img 
-                            src={listing.images?.[0] || 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=300'}
-                            alt={listing.title}
-                            className="w-full h-24 object-cover rounded-lg mb-2"
-                          />
-                          <h3 className="font-bold text-gray-800">{listing.title}</h3>
-                          <p className="text-sm text-gray-500">{listing.address}</p>
-                          <p className="text-lg font-bold text-[#667eea] mt-1">
-                            ${listing.price.toLocaleString()}/mo
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {listing.bedrooms === 0 ? 'Studio' : `${listing.bedrooms} bed`} • {listing.bathrooms} bath
-                          </p>
-                        </div>
-                      </Popup>
-                    </Marker>
-                  ))}
-                </MapContainer>
+                {isLoaded ? (
+                  <GoogleMap
+                    mapContainerStyle={mapContainerStyle}
+                    center={defaultCenter}
+                    zoom={12}
+                    options={mapOptions}
+                    onLoad={onMapLoad}
+                  >
+                    {listings.map((listing) => (
+                      <MarkerF
+                        key={listing.id}
+                        position={{ lat: listing.lat, lng: listing.lng }}
+                        onClick={() => handleMarkerClick(listing)}
+                        label={{
+                          text: createPriceLabel(listing.price),
+                          color: 'white',
+                          fontWeight: 'bold',
+                          fontSize: '12px'
+                        }}
+                        icon={{
+                          path: window.google.maps.SymbolPath.CIRCLE,
+                          scale: 0,
+                        }}
+                      >
+                        {activeMarker === listing.id && (
+                          <InfoWindowF
+                            position={{ lat: listing.lat, lng: listing.lng }}
+                            onCloseClick={() => setActiveMarker(null)}
+                          >
+                            <div className="p-2 min-w-[220px] max-w-[280px]">
+                              <img 
+                                src={listing.images?.[0] || 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=300'}
+                                alt={listing.title}
+                                className="w-full h-28 object-cover rounded-lg mb-3"
+                              />
+                              <h3 className="font-bold text-gray-800 text-base">{listing.title}</h3>
+                              <p className="text-sm text-gray-500 mb-2">{listing.address}</p>
+                              <p className="text-xl font-bold text-[#667eea]">
+                                ${listing.price.toLocaleString()}<span className="text-sm font-normal text-gray-500">/mo</span>
+                              </p>
+                              <p className="text-sm text-gray-500 mt-1">
+                                {listing.bedrooms === 0 ? 'Studio' : `${listing.bedrooms} bed`} • {listing.bathrooms} bath • {listing.sqft} sqft
+                              </p>
+                              <button 
+                                onClick={() => setSelectedListing(listing)}
+                                className="mt-3 w-full py-2 rounded-full text-sm font-semibold text-white"
+                                style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
+                              >
+                                View Details
+                              </button>
+                            </div>
+                          </InfoWindowF>
+                        )}
+                      </MarkerF>
+                    ))}
+                    
+                    {/* Custom Price Markers */}
+                    {listings.map((listing) => (
+                      <div key={`marker-${listing.id}`}>
+                        <MarkerF
+                          position={{ lat: listing.lat, lng: listing.lng }}
+                          onClick={() => handleMarkerClick(listing)}
+                          icon={{
+                            url: `data:image/svg+xml,${encodeURIComponent(`
+                              <svg xmlns="http://www.w3.org/2000/svg" width="60" height="30">
+                                <rect x="0" y="0" width="60" height="30" rx="15" fill="${activeMarker === listing.id || hoveredListing?.id === listing.id ? '#764ba2' : '#667eea'}"/>
+                                <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="white" font-family="Arial" font-weight="bold" font-size="12">${createPriceLabel(listing.price)}</text>
+                              </svg>
+                            `)}`,
+                            scaledSize: new window.google.maps.Size(60, 30),
+                            anchor: new window.google.maps.Point(30, 15),
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </GoogleMap>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#667eea] mx-auto mb-4"></div>
+                      <p className="text-gray-500">Loading map...</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
