@@ -25,7 +25,7 @@ const NovaChat = () => {
     if (isOpen && messages.length === 0) {
       setMessages([{
         role: 'assistant',
-        content: "Hi! I'm Nova, your AI real estate assistant. I can help you find the perfect rental property in Vancouver. What are you looking for today? 🏠"
+        content: "Hi! I'm Nova, your AI real estate assistant. I can help you find rentals, connect with landlords, or find contractors. What are you looking for today?"
       }]);
     }
   }, [isOpen, messages.length]);
@@ -54,7 +54,7 @@ const NovaChat = () => {
       console.error('Chat error:', error);
       setMessages(prev => [...prev, { 
         role: 'assistant', 
-        content: "I'm having a moment! Try asking about apartments in Vancouver - I'd love to help you find your perfect home! 🏠" 
+        content: "I'm having a moment! Try asking about properties in Vancouver - I'd love to help!" 
       }]);
     } finally {
       setIsLoading(false);
@@ -73,48 +73,43 @@ const NovaChat = () => {
       {/* Chat Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-8 right-8 z-50 flex items-center gap-3 px-6 py-4 rounded-full text-white font-semibold shadow-2xl transition-transform duration-300 hover:scale-105 nova-bounce"
+        className="fixed bottom-8 right-8 z-50 flex items-center gap-3 px-6 py-4 rounded-full text-white font-medium shadow-2xl transition-transform duration-300 hover:scale-105 nova-bounce"
         style={{ 
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          boxShadow: '0 10px 40px rgba(102, 126, 234, 0.4)'
+          background: '#1A2F3A',
+          boxShadow: '0 10px 40px rgba(26, 47, 58, 0.4)'
         }}
         data-testid="nova-chat-button"
       >
-        <span className="text-2xl">🤖</span>
-        <span>Ask Nova</span>
+        <Bot size={22} />
+        <span className="text-sm tracking-wide">Ask Nova</span>
       </button>
 
       {/* Chat Modal */}
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-end justify-end p-4 md:p-8" data-testid="nova-chat-modal">
-          {/* Backdrop */}
           <div 
             className="absolute inset-0 bg-black/30 backdrop-blur-sm"
             onClick={() => setIsOpen(false)}
           />
 
-          {/* Chat Window */}
           <div 
             className="relative w-full max-w-md h-[600px] bg-white rounded-3xl shadow-2xl flex flex-col overflow-hidden"
             style={{ animation: 'fadeInUp 0.3s ease' }}
           >
             {/* Header */}
-            <div 
-              className="px-6 py-4 flex items-center justify-between text-white"
-              style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
-            >
+            <div className="px-6 py-4 flex items-center justify-between bg-[#1A2F3A] text-white">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
                   <Bot size={22} />
                 </div>
                 <div>
-                  <h3 className="font-bold">Nova AI</h3>
-                  <p className="text-xs text-white/80">Your Real Estate Assistant</p>
+                  <h3 className="font-semibold" style={{ fontFamily: 'Cormorant Garamond, serif' }}>Nova AI</h3>
+                  <p className="text-xs text-white/70">Your Real Estate Assistant</p>
                 </div>
               </div>
               <button 
                 onClick={() => setIsOpen(false)}
-                className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors"
+                className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
                 data-testid="nova-close-button"
               >
                 <X size={18} />
@@ -122,7 +117,7 @@ const NovaChat = () => {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4" data-testid="nova-messages-container">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#F5F5F0]" data-testid="nova-messages-container">
               {messages.map((msg, i) => (
                 <div 
                   key={i}
@@ -131,8 +126,8 @@ const NovaChat = () => {
                   <div 
                     className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                       msg.role === 'user' 
-                        ? 'bg-[#667eea] text-white' 
-                        : 'bg-gray-100 text-[#764ba2]'
+                        ? 'bg-[#1A2F3A] text-white' 
+                        : 'bg-white text-[#1A2F3A]'
                     }`}
                   >
                     {msg.role === 'user' ? <User size={16} /> : <Bot size={16} />}
@@ -140,8 +135,8 @@ const NovaChat = () => {
                   <div 
                     className={`max-w-[80%] px-4 py-3 rounded-2xl ${
                       msg.role === 'user'
-                        ? 'bg-[#667eea] text-white rounded-tr-sm'
-                        : 'bg-gray-100 text-gray-800 rounded-tl-sm'
+                        ? 'bg-[#1A2F3A] text-white rounded-tr-sm'
+                        : 'bg-white text-gray-800 rounded-tl-sm shadow-sm'
                     }`}
                   >
                     <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
@@ -150,11 +145,11 @@ const NovaChat = () => {
               ))}
               {isLoading && (
                 <div className="flex gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-[#764ba2]">
+                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[#1A2F3A]">
                     <Bot size={16} />
                   </div>
-                  <div className="bg-gray-100 px-4 py-3 rounded-2xl rounded-tl-sm">
-                    <Loader2 className="w-5 h-5 animate-spin text-[#667eea]" />
+                  <div className="bg-white px-4 py-3 rounded-2xl rounded-tl-sm shadow-sm">
+                    <Loader2 className="w-5 h-5 animate-spin text-[#1A2F3A]" />
                   </div>
                 </div>
               )}
@@ -162,23 +157,22 @@ const NovaChat = () => {
             </div>
 
             {/* Input */}
-            <div className="p-4 border-t border-gray-100">
+            <div className="p-4 bg-white border-t border-gray-100">
               <div className="flex gap-2">
                 <input
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  placeholder="Ask about rentals in Vancouver..."
-                  className="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:border-[#667eea] focus:ring-2 focus:ring-[#667eea]/20 outline-none transition-all"
+                  placeholder="Ask about properties, rentals, services..."
+                  className="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:border-[#1A2F3A] focus:ring-2 focus:ring-[#1A2F3A]/10 outline-none transition-all text-sm"
                   data-testid="nova-input"
                   disabled={isLoading}
                 />
                 <button
                   onClick={sendMessage}
                   disabled={!input.trim() || isLoading}
-                  className="w-12 h-12 rounded-xl flex items-center justify-center text-white transition-all disabled:opacity-50"
-                  style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
+                  className="w-12 h-12 rounded-xl flex items-center justify-center text-white transition-all disabled:opacity-50 bg-[#1A2F3A] hover:bg-[#2C4A52]"
                   data-testid="nova-send-button"
                 >
                   <Send size={18} />

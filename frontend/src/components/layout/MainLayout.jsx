@@ -1,0 +1,242 @@
+import React, { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { Menu, X, Twitter, Instagram, Linkedin, Mail, Phone, MapPin, ArrowRight } from 'lucide-react';
+import { useAuth } from '../../App';
+import NovaChat from '../chat/NovaChat';
+
+const navLinks = [
+  { path: '/', label: 'Home' },
+  { path: '/about', label: 'About' },
+  { path: '/properties', label: 'Properties' },
+  { path: '/services', label: 'Services' },
+  { path: '/contact', label: 'Contact' },
+];
+
+const footerLinks = {
+  pages: [
+    { path: '/', label: 'Home' },
+    { path: '/about', label: 'About Us' },
+    { path: '/properties', label: 'Properties' },
+    { path: '/services', label: 'Services' },
+    { path: '/contact', label: 'Contact' },
+  ],
+  services: [
+    { path: '/browse', label: 'Find Rentals' },
+    { path: '/services', label: 'Property Management' },
+    { path: '/services', label: 'Strata Services' },
+    { path: '/services', label: 'Find Contractors' },
+  ],
+  utility: [
+    { path: '#', label: 'Terms of Service' },
+    { path: '#', label: 'Privacy Policy' },
+    { path: '#', label: 'Cookie Policy' },
+    { path: '/login', label: 'Login' },
+  ]
+};
+
+const MainLayout = ({ children }) => {
+  const location = useLocation();
+  const { user } = useAuth();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  return (
+    <div className="min-h-screen flex flex-col bg-[#F5F5F0]">
+      {/* Navigation */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0D0D0D] text-white" data-testid="main-navigation">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            {/* Logo */}
+            <Link 
+              to="/" 
+              className="text-2xl tracking-wider"
+              style={{ fontFamily: 'Cormorant Garamond, serif' }}
+              data-testid="nav-logo"
+            >
+              DOMMMA
+            </Link>
+
+            {/* Desktop Nav */}
+            <div className="hidden md:flex items-center gap-8">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  data-testid={`nav-link-${link.label.toLowerCase()}`}
+                  className={`text-sm tracking-wider transition-colors hover:text-gray-300 ${
+                    location.pathname === link.path ? 'text-white' : 'text-gray-400'
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+
+            {/* Auth Button */}
+            <div className="hidden md:flex items-center gap-4">
+              {user ? (
+                <Link 
+                  to="/dashboard"
+                  className="btn-outline text-white border-white text-xs"
+                  data-testid="dashboard-btn"
+                >
+                  Dashboard
+                </Link>
+              ) : (
+                <Link 
+                  to="/login"
+                  className="btn-outline text-white border-white text-xs"
+                  data-testid="login-btn"
+                >
+                  Login
+                </Link>
+              )}
+            </div>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2"
+              data-testid="mobile-menu-btn"
+            >
+              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden bg-[#0D0D0D] border-t border-gray-800">
+            <div className="px-6 py-4 space-y-4">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block text-gray-300 hover:text-white"
+                >
+                  {link.label}
+                </Link>
+              ))}
+              <Link 
+                to={user ? "/dashboard" : "/login"}
+                onClick={() => setMobileMenuOpen(false)}
+                className="block text-white font-medium"
+              >
+                {user ? 'Dashboard' : 'Login'}
+              </Link>
+            </div>
+          </div>
+        )}
+      </nav>
+
+      {/* Main Content */}
+      <main className="flex-1 pt-16">
+        {children}
+      </main>
+
+      {/* Nova Chat */}
+      <NovaChat />
+
+      {/* CTA Section */}
+      <section className="bg-white py-20 text-center" data-testid="footer-cta">
+        <p className="text-sm text-gray-500 uppercase tracking-widest mb-4">Contact</p>
+        <h2 
+          className="display-lg text-[#1A2F3A] mb-8"
+          style={{ fontFamily: 'Cormorant Garamond, serif' }}
+        >
+          Curious about what we<br />can do for you?
+        </h2>
+        <Link 
+          to="/contact"
+          className="btn-dark inline-block"
+          data-testid="footer-cta-btn"
+        >
+          Get In Touch
+        </Link>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-[#0D0D0D] text-white py-16 px-6" data-testid="main-footer">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-4 gap-12 mb-12">
+            {/* Brand Column */}
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-widest mb-4">Contact</p>
+              <a href="mailto:hello@dommma.com" className="block text-gray-300 hover:text-white mb-2">
+                hello@dommma.com
+              </a>
+              <a href="tel:+16041234567" className="block text-gray-300 hover:text-white mb-4">
+                +1 604 123 456 78
+              </a>
+              <div className="flex gap-3">
+                <a href="#" className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center hover:bg-gray-700">
+                  <Twitter size={14} />
+                </a>
+                <a href="#" className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center hover:bg-gray-700">
+                  <Instagram size={14} />
+                </a>
+                <a href="#" className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center hover:bg-gray-700">
+                  <Linkedin size={14} />
+                </a>
+              </div>
+            </div>
+
+            {/* Pages Column */}
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-widest mb-4">Pages</p>
+              <ul className="space-y-2">
+                {footerLinks.pages.map((link, i) => (
+                  <li key={i}>
+                    <Link to={link.path} className="text-gray-400 hover:text-white text-sm">
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Services Column */}
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-widest mb-4">Services</p>
+              <ul className="space-y-2">
+                {footerLinks.services.map((link, i) => (
+                  <li key={i}>
+                    <Link to={link.path} className="text-gray-400 hover:text-white text-sm">
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Utility Column */}
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-widest mb-4">Utility Pages</p>
+              <ul className="space-y-2">
+                {footerLinks.utility.map((link, i) => (
+                  <li key={i}>
+                    <Link to={link.path} className="text-gray-400 hover:text-white text-sm">
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* Copyright */}
+          <div className="pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-gray-500 text-sm">
+              © 2026 DOMMMA. Powered by Nova AI.
+            </p>
+            <p className="text-gray-500 text-sm">
+              Complete Real Estate Marketplace
+            </p>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+};
+
+export default MainLayout;
