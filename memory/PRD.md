@@ -1,84 +1,99 @@
-# DOMMMA Platform - Product Requirements Document
+# DOMMMA V2 - Complete Real Estate Marketplace Platform
 
 ## Project Overview
-DOMMMA is a real estate rental platform with AI-powered property search (Nova AI chatbot), featuring modern landing pages and a functional property management system.
+DOMMMA V2 is a complete real estate marketplace platform for renting, buying, leasing, property management, strata management, contractor services, and tenant-landlord communications.
 
 ## Tech Stack
-- **Frontend**: React.js with Tailwind CSS (Port 3000)
-- **Backend**: FastAPI/Python (Port 8001)
+- **Frontend**: React.js with Tailwind CSS
+- **Backend**: FastAPI/Python
 - **Database**: MongoDB
-- **AI Integration**: Claude Sonnet 4.5 via Emergent LLM Key
-
-## User Personas
-1. **Renters** - Looking for rental properties (FREE tier)
-2. **Landlords** - Managing rental properties ($49-99+/mo)
-3. **Contractors** - Service providers ($49/mo)
-
-## Core Requirements
-### Landing Pages (7 total)
-- Home - Hero, stats, Nova intro, AI features, audience sections
-- About - Company story, values, mission
-- For Renters - 15 AI features list
-- For Landlords - Property management features
-- Contractors - Service network
-- Pricing - Tiered plans with billing toggle
-
-### Browse/Search
-- Property listings with filters (bedrooms, bathrooms, price, pet-friendly)
-- Map placeholder with property pins
-- Listing detail modal
-- Search by city/neighborhood
-
-### Nova AI Chatbot
-- Claude Sonnet 4.5 integration
-- Natural language property search
-- Multi-turn conversations with context
-- Property recommendations with match scores
-
-## What's Been Implemented (Jan 2026)
-- [x] 7 landing pages with premium design
-- [x] Browse page with 20 Vancouver listings
-- [x] Property filters and search
-- [x] Nova AI chatbot (Claude Sonnet 4.5)
-- [x] Responsive navigation
-- [x] Animated UI elements
-- [x] MongoDB data persistence
-- [x] API endpoints for listings, chat, seed data
+- **AI**: Claude Sonnet 4.5 (Nova AI chatbot)
+- **Maps**: Google Maps API
 
 ## Design System
-- Primary: #667eea (Purple)
-- Secondary: #764ba2 (Purple)
-- Accent: #4fd1c5 (Teal)
-- Fonts: Playfair Display (headings), Inter (body)
-- Gradients: Purple to Teal brand gradient
+- **Primary Color**: #1A2F3A (Dark Teal)
+- **Secondary**: #2C4A52
+- **Background**: #F5F5F0 (Cream)
+- **Typography**: Cormorant Garamond (headings), Inter (body)
+- **Style**: Architectural, minimalist, premium
+
+## User Personas & Roles
+### 1. Renter
+- Search properties
+- Apply for rentals
+- Pay rent online
+- Message landlords
+- Sign documents
+- Track applications
+
+### 2. Landlord
+- List properties
+- Screen tenants
+- Collect rent
+- Track maintenance
+- Document management
+- Multi-property dashboard
+
+### 3. Contractor
+- Get job leads
+- Manage projects
+- Build reputation
+- Connect with landlords
+- Invoice clients
+
+## Core Features Implemented (Jan 2026)
+- [x] New architectural design with dark teal theme
+- [x] Role-based authentication (Renter/Landlord/Contractor)
+- [x] Role-specific dashboards with unique menus
+- [x] Property browse with Google Maps
+- [x] Advanced filters (beds, baths, price, pet-friendly)
+- [x] Nova AI chatbot (Claude Sonnet 4.5)
+- [x] 20 Vancouver property listings seeded
+- [x] Property detail modals
+- [x] Landing pages: Home, About, Properties, Services, Contact
+- [x] Responsive navigation and footer
+- [x] User authentication API
+
+## Pages
+1. Home - Hero with architectural background, featured properties, stats, team
+2. About - Company story, values, team
+3. Properties - Featured listings gallery
+4. Services - 6 service cards (Listings, Lease, Payments, Strata, Contractors, Messaging)
+5. Contact - Form with email, phone, office info
+6. Browse - Property search with Google Maps
+7. Login - Role selection with features preview
+8. Dashboard - Role-specific dashboard
 
 ## API Endpoints
 - GET /api/listings - Property listings with filters
 - GET /api/listings/map - Map boundary search
 - POST /api/chat - Nova AI conversations
+- POST /api/auth/login - User authentication
+- POST /api/auth/register - User registration
 - POST /api/seed - Seed sample data
 
-## Backlog (P0/P1/P2)
+## Backlog
 
 ### P0 - Critical
-- [ ] User authentication (Firebase Auth)
-- [ ] Real Google Maps integration
-- [ ] Listing creation flow
+- [ ] Password hashing for auth
+- [ ] Property creation flow for landlords
+- [ ] Rent payment integration (Stripe)
+- [ ] Document upload/signing
 
 ### P1 - Important
-- [ ] User favorites/saved listings
-- [ ] Application submission
-- [ ] Landlord dashboard
-- [ ] Payment integration (Stripe)
+- [ ] Tenant application workflow
+- [ ] Maintenance request system
+- [ ] Contractor job marketplace
+- [ ] Real-time messaging (WebSockets)
 
 ### P2 - Nice to Have
-- [ ] Voice search
-- [ ] Multi-language support
-- [ ] Contractor marketplace
-- [ ] Mobile app
+- [ ] Strata management module
+- [ ] Property analytics dashboard
+- [ ] Voice search with Nova
+- [ ] Mobile app (React Native)
 
 ## Next Tasks
-1. Implement Firebase authentication
-2. Add real Google Maps with markers
-3. Build user profile/dashboard
-4. Add favorite listings feature
+1. Implement Stripe for rent payments
+2. Build document management system
+3. Add WebSocket messaging
+4. Create property listing flow for landlords
