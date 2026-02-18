@@ -1,53 +1,31 @@
-import { useEffect } from "react";
+import "@/index.css";
 import "@/App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import axios from "axios";
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
-
-const Home = () => {
-  const helloWorldApi = async () => {
-    try {
-      const response = await axios.get(`${API}/`);
-      console.log(response.data.message);
-    } catch (e) {
-      console.error(e, `errored out requesting / api`);
-    }
-  };
-
-  useEffect(() => {
-    helloWorldApi();
-  }, []);
-
-  return (
-    <div>
-      <header className="App-header">
-        <a
-          className="App-link"
-          href="https://emergent.sh"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img src="https://avatars.githubusercontent.com/in/1201222?s=120&u=2686cf91179bbafbc7a71bfbc43004cf9ae1acea&v=4" />
-        </a>
-        <p className="mt-5">Building something incredible ~!</p>
-      </header>
-    </div>
-  );
-};
+import LandingLayout from "@/components/layout/LandingLayout";
+import Home from "@/pages/Home";
+import About from "@/pages/About";
+import Renters from "@/pages/Renters";
+import Landlords from "@/pages/Landlords";
+import Contractors from "@/pages/Contractors";
+import Pricing from "@/pages/Pricing";
+import Browse from "@/pages/Browse";
 
 function App() {
   return (
-    <div className="App">
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />}>
-            <Route index element={<Home />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        {/* Landing Pages with Layout */}
+        <Route path="/" element={<LandingLayout><Home /></LandingLayout>} />
+        <Route path="/about" element={<LandingLayout><About /></LandingLayout>} />
+        <Route path="/renters" element={<LandingLayout><Renters /></LandingLayout>} />
+        <Route path="/landlords" element={<LandingLayout><Landlords /></LandingLayout>} />
+        <Route path="/contractors" element={<LandingLayout><Contractors /></LandingLayout>} />
+        <Route path="/pricing" element={<LandingLayout><Pricing /></LandingLayout>} />
+        
+        {/* Browse Page (No Landing Layout) */}
+        <Route path="/browse" element={<Browse />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
