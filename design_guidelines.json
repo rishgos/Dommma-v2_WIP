@@ -1,0 +1,124 @@
+{
+  "project_name": "DOMMMA",
+  "design_philosophy": {
+    "persona": "E1",
+    "core_principles": [
+      "Fusion over Imitation: Mix luxury real estate aesthetics with high-tech AI visuals.",
+      "Emotion First: Trust, Clarity, and Future-Forward.",
+      "Content is King: Tell a story of effortless property management.",
+      "Generous Spacing: Use 120px padding for sections to create a premium feel.",
+      "Tactile Depth: Use shadows and hover lifts to make the UI feel physical."
+    ],
+    "anti_patterns": [
+      "No generic 'Bootstrap' layouts.",
+      "No standard gradients (use the specified brand gradient).",
+      "No boring grids (use Bento/Asymmetric layouts)."
+    ]
+  },
+  "typography": {
+    "font_family": {
+      "heading": "Playfair Display, serif",
+      "body": "Inter, sans-serif"
+    },
+    "import_instruction": "Add this to index.html or import in CSS: <link href=\"https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700;800;900&display=swap\" rel=\"stylesheet\">",
+    "usage_rules": {
+      "headings": "Use Playfair Display for all H1-H3. Font weights 700-900 for impact.",
+      "body": "Use Inter for all body text, UI labels, and data.",
+      "special": "Use Gradient Text for key keywords in headings."
+    }
+  },
+  "colors": {
+    "palette": {
+      "primary": "#667eea",
+      "secondary": "#764ba2",
+      "accent": "#4fd1c5",
+      "background_light": "#f7fafc",
+      "background_dark": "#1a202c",
+      "surface_card": "#ffffff",
+      "text_primary": "#1a202c",
+      "text_secondary": "#4a5568",
+      "text_inverted": "#ffffff"
+    },
+    "gradients": {
+      "brand_main": "linear-gradient(135deg, #667eea 0%, #764ba2 50%, #4fd1c5 100%)",
+      "button_gradient": "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+      "hover_gradient": "linear-gradient(135deg, #764ba2 0%, #667eea 100%)"
+    },
+    "tailwind_vars": {
+      "--background": "210 20% 98%",
+      "--foreground": "222 47% 11%",
+      "--primary": "245 75% 65%",
+      "--primary-foreground": "0 0% 100%",
+      "--secondary": "266 35% 45%",
+      "--accent": "174 58% 56%"
+    }
+  },
+  "layout": {
+    "spacing": {
+      "section_padding": "py-32",
+      "container_padding": "px-6 md:px-12",
+      "element_gap": "gap-8"
+    },
+    "border_radius": {
+      "card": "rounded-2xl",
+      "button": "rounded-full",
+      "input": "rounded-xl"
+    },
+    "grid_system": "Use 'Bento Grid' variations. Don't just stack divs. Use col-span-2 for feature highlights."
+  },
+  "components": {
+    "buttons": {
+      "style": "rounded-full px-8 py-4 font-bold transition-all duration-300",
+      "variants": {
+        "primary": "bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white hover:shadow-lg hover:scale-105",
+        "outline": "border-2 border-[#667eea] text-[#667eea] hover:bg-[#667eea] hover:text-white",
+        "ghost": "text-[#764ba2] hover:bg-purple-50"
+      }
+    },
+    "cards": {
+      "style": "bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border border-gray-100",
+      "content_padding": "p-8"
+    },
+    "inputs": {
+      "style": "rounded-xl border-gray-200 focus:border-[#667eea] focus:ring-[#667eea] h-12"
+    },
+    "nova_chatbot": {
+      "position": "fixed bottom-8 right-8 z-50",
+      "animation": "animate-bounce-slow",
+      "style": "rounded-full w-16 h-16 bg-gradient-to-r from-[#667eea] to-[#4fd1c5] shadow-2xl flex items-center justify-center text-white cursor-pointer hover:scale-110 transition-transform"
+    }
+  },
+  "assets": {
+    "images": {
+      "hero_bg": "https://images.unsplash.com/photo-1638454795595-0a0abf68614d?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA4Mzl8MHwxfHNlYXJjaHwyfHxtb2Rlcm4lMjBsdXh1cnklMjBhcGFydG1lbnQlMjBpbnRlcmlvcnxlbnwwfHx8fDE3NzE0NTMxNzB8MA&ixlib=rb-4.1.0&q=85",
+      "about_interior": "https://images.unsplash.com/photo-1638454668466-e8dbd5462f20?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA4Mzl8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBsdXh1cnklMjBhcGFydG1lbnQlMjBpbnRlcmlvcnxlbnwwfHx8fDE3NzE0NTMxNzB8MA&ixlib=rb-4.1.0&q=85",
+      "renters_happy": "https://images.unsplash.com/photo-1758523671893-0ba21cf4260f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NjZ8MHwxfHNlYXJjaHwyfHxoYXBweSUyMGZhbWlseSUyMG1vdmluZyUyMGludG8lMjBuZXclMjBob21lfGVufDB8fHx8MTc3MTQ1MzE3Mnww&ixlib=rb-4.1.0&q=85",
+      "contractor_worker": "https://images.pexels.com/photos/8486920/pexels-photo-8486920.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "landlord_keys": "https://images.pexels.com/photos/29871187/pexels-photo-29871187.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "map_placeholder": "https://images.unsplash.com/photo-1730724655710-5b9bd9c68349?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxOTB8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBjaXR5JTIwbWFwJTIwdmlldyUyMGFic3RyYWN0fGVufDB8fHx8MTc3MTQ1MzE5MXww&ixlib=rb-4.1.0&q=85"
+    },
+    "icons_library": "lucide-react"
+  },
+  "instructions_to_main_agent": [
+    "1. THEME SETUP: Immediately update 'index.css' to include the specific fonts (Playfair Display) and the color variables defined in this JSON.",
+    "2. GRADIENTS: Use the 'brand_main' gradient for the primary CTA buttons and important text highlights (bg-clip-text).",
+    "3. CARD HOVER: Implement the 'hover:-translate-y-2' class on all property and feature cards. It's a key requirement.",
+    "4. NOVA CHATBOT: Create a global 'NovaChat' component that sits in the layout. It must have the bounce animation.",
+    "5. PADDING: Do not scrimp on padding. Use 'py-32' (128px) for major section spacing as requested (approx 120px).",
+    "6. SHADCN OVERRIDES: Customize Shadcn components to use 'rounded-xl' or 'rounded-2xl'. Default 'rounded-md' is too sharp for this brand.",
+    "7. IMAGES: Use the provided Unsplash/Pexels URLs. Do not leave empty placeholders.",
+    "8. MAP: For the Browse page, if a real map isn't working, use the 'map_placeholder' image with a 'Coming Soon' or 'Interactive Map' overlay to maintain design fidelity."
+  ],
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients",
+    "Don't make generic centered layouts, simplistic gradients, and uniform styling.",
+    "Create depth through layered design elements with z-index hierarchy",
+    "Use glass-morphism effects with backdrop filters (12-24px blur)",
+    "You MUST NOT apply universal transition. Eg: 'transition: all'. This results in breaking transforms.",
+    "You MUST NOT center align the app container, ie do not add '.App { text-align: center; }' in the css file.",
+    "Every interaction needs micro-animations - hover states, transitions, parallax effects.",
+    "Use 2-3x more spacing than feels comfortable. Cramped designs look cheap.",
+    "Use 'sonner' for toasts.",
+    "All interactive and key informational elements MUST include a 'data-testid' attribute."
+  ]
+}
