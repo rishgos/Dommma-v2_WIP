@@ -88,7 +88,7 @@ const Home = () => {
               className="display-xl text-white mb-6 uppercase"
               data-testid="hero-title"
             >
-              Innovative<br />Design
+              Home Made<br />Simple
             </h1>
             <p className="text-lg text-white/70 mb-8 max-w-md leading-relaxed">
               Complete real estate marketplace for renting, buying, property management, and finding trusted contractors.
