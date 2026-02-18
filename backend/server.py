@@ -197,40 +197,43 @@ async def chat_with_nova(request: ChatRequest):
     # Get available listings for context
     listings = await db.listings.find({"status": "active"}, {"_id": 0}).to_list(50)
     listings_context = "\n".join([
-        f"- {l['title']}: {l['bedrooms']}bd/{l['bathrooms']}ba, ${l['price']}/mo, {l['address']}, {l['city']} (ID: {l['id']}, Pet-friendly: {l['pet_friendly']}, Available: {l['available_date']})"
+        f"- {l['title']}: {l['bedrooms']}bd/{l['bathrooms']}ba, ${l['price']}/mo, {l['address']}, {l['city']} (Pet-friendly: {l['pet_friendly']})"
         for l in listings
     ])
+    
+    # Build conversation context from history
+    history_context = ""
+    prev_messages = session.get("messages", [])[-6:]  # Last 6 messages for context
+    if prev_messages:
+        history_context = "\n\nRecent conversation:\n" + "\n".join([
+            f"{'User' if m['role'] == 'user' else 'Nova'}: {m['content'][:200]}"
+            for m in prev_messages
+        ])
     
     system_message = f"""You are Nova, DOMMMA's friendly AI real estate assistant. You help users find rental properties in Vancouver.
 
 Available Properties:
 {listings_context}
+{history_context}
 
 Guidelines:
 - Be conversational, helpful, and enthusiastic
-- When users ask about properties, recommend relevant listings from the available properties
-- Include match scores (70-99%) based on how well properties match their criteria
+- When users ask about properties, recommend relevant listings with match scores (70-99%)
 - Format property recommendations nicely with key details
 - If no exact matches, suggest closest alternatives
 - Help with questions about renting, neighborhoods, moving tips
-- Keep responses concise but informative"""
+- Keep responses concise (2-3 paragraphs max)"""
 
     try:
-        # Initialize chat with Claude Sonnet 4.5
+        # Initialize fresh chat with Claude Sonnet 4.5 for each request
         api_key = os.environ.get('EMERGENT_LLM_KEY')
         chat = LlmChat(
             api_key=api_key,
-            session_id=session_id,
+            session_id=f"{session_id}-{uuid.uuid4().hex[:8]}",  # Unique per request
             system_message=system_message
         ).with_model("anthropic", "claude-sonnet-4-5-20250929")
         
-        # Load previous messages for context
-        for msg in session.get("messages", [])[-10:]:  # Last 10 messages
-            if msg["role"] == "user":
-                user_msg = UserMessage(text=msg["content"])
-                await chat.send_message(user_msg)
-        
-        # Send current message
+        # Send current message directly (context is in system message)
         user_message = UserMessage(text=request.message)
         response = await chat.send_message(user_message)
         
@@ -250,7 +253,7 @@ Guidelines:
         # Find mentioned listings in response
         mentioned_listings = []
         for listing in listings:
-            if listing['id'] in response or listing['title'].lower() in response.lower():
+            if listing['title'].lower() in response.lower():
                 mentioned_listings.append(listing)
         
         return ChatResponse(
