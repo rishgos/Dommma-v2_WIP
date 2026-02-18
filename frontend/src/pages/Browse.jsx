@@ -1,15 +1,54 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Bed, Bath, DollarSign, MapPin, Heart, Sparkles, X, SlidersHorizontal, Bot } from 'lucide-react';
+import { Search, Bed, Bath, MapPin, Heart, Sparkles, X, SlidersHorizontal } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import axios from 'axios';
 import NovaChat from '../components/chat/NovaChat';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
+// Custom marker icon
+const createCustomIcon = (price) => {
+  return L.divIcon({
+    className: 'custom-marker',
+    html: `<div style="
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 6px 10px;
+      border-radius: 20px;
+      font-weight: bold;
+      font-size: 12px;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      white-space: nowrap;
+    ">$${Math.floor(price/1000)}k</div>`,
+    iconSize: [60, 30],
+    iconAnchor: [30, 15],
+  });
+};
+
+// Map bounds controller
+const MapBoundsHandler = ({ listings, selectedListing }) => {
+  const map = useMap();
+  
+  useEffect(() => {
+    if (selectedListing) {
+      map.flyTo([selectedListing.lat, selectedListing.lng], 15, { duration: 0.5 });
+    } else if (listings.length > 0) {
+      const bounds = L.latLngBounds(listings.map(l => [l.lat, l.lng]));
+      map.fitBounds(bounds, { padding: [50, 50] });
+    }
+  }, [listings, selectedListing, map]);
+  
+  return null;
+};
+
 const Browse = () => {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedListing, setSelectedListing] = useState(null);
+  const [hoveredListing, setHoveredListing] = useState(null);
   const [filters, setFilters] = useState({
     search: '',
     bedrooms: '',
@@ -19,6 +58,9 @@ const Browse = () => {
     petFriendly: false
   });
   const [showFilters, setShowFilters] = useState(false);
+
+  // Vancouver center coordinates
+  const mapCenter = [49.2827, -123.1207];
 
   useEffect(() => {
     fetchListings();
@@ -66,7 +108,7 @@ const Browse = () => {
     <div className="min-h-screen bg-[#f7fafc]">
       {/* Header */}
       <header 
-        className="fixed top-0 left-0 right-0 z-40 py-4 px-6"
+        className="fixed top-0 left-0 right-0 z-[1000] py-4 px-6"
         style={{ background: 'rgba(102, 126, 234, 0.95)', backdropFilter: 'blur(12px)' }}
         data-testid="browse-header"
       >
@@ -109,7 +151,7 @@ const Browse = () => {
       {/* Filters Panel */}
       {showFilters && (
         <div 
-          className="fixed top-20 left-0 right-0 z-30 p-6 bg-white shadow-xl border-b"
+          className="fixed top-20 left-0 right-0 z-[999] p-6 bg-white shadow-xl border-b"
           data-testid="filters-panel"
         >
           <div className="max-w-7xl mx-auto">
@@ -211,14 +253,19 @@ const Browse = () => {
                   <p className="text-gray-500">Try adjusting your filters or search in a different area.</p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-4 max-h-[calc(100vh-12rem)] overflow-y-auto pr-2">
                   {listings.map((listing) => {
                     const matchScore = getMatchScore();
+                    const isHovered = hoveredListing?.id === listing.id;
                     return (
                       <div
                         key={listing.id}
                         onClick={() => setSelectedListing(listing)}
-                        className="bg-white rounded-2xl overflow-hidden cursor-pointer card-hover border border-gray-100"
+                        onMouseEnter={() => setHoveredListing(listing)}
+                        onMouseLeave={() => setHoveredListing(null)}
+                        className={`bg-white rounded-2xl overflow-hidden cursor-pointer card-hover border-2 transition-all ${
+                          isHovered ? 'border-[#667eea] shadow-lg' : 'border-gray-100'
+                        }`}
                         data-testid={`listing-card-${listing.id}`}
                       >
                         <div className="flex">
@@ -277,43 +324,54 @@ const Browse = () => {
               )}
             </div>
 
-            {/* Map Placeholder */}
+            {/* Real Map */}
             <div className="hidden lg:block sticky top-24 h-[calc(100vh-8rem)]">
               <div 
-                className="w-full h-full rounded-2xl overflow-hidden relative"
-                style={{ 
-                  backgroundImage: 'url(https://images.unsplash.com/photo-1730724655710-5b9bd9c68349?w=1200)',
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center'
-                }}
+                className="w-full h-full rounded-2xl overflow-hidden shadow-xl"
                 data-testid="map-container"
               >
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end justify-center pb-12">
-                  <div className="text-center text-white">
-                    <MapPin className="mx-auto mb-3" size={40} />
-                    <h3 className="text-2xl font-bold mb-2" style={{ fontFamily: 'Playfair Display, serif' }}>
-                      Interactive Map
-                    </h3>
-                    <p className="text-white/80">Coming Soon - Explore Vancouver neighborhoods</p>
-                  </div>
-                </div>
-                
-                {/* Map Pins Overlay */}
-                {listings.slice(0, 6).map((listing, i) => (
-                  <div 
-                    key={listing.id}
-                    className="absolute w-10 h-10 rounded-full bg-[#667eea] text-white flex items-center justify-center text-xs font-bold cursor-pointer hover:scale-110 transition-transform shadow-lg"
-                    style={{ 
-                      top: `${20 + (i * 12)}%`, 
-                      left: `${15 + (i * 13)}%`,
-                      animation: `fadeInUp 0.5s ease ${i * 0.1}s backwards`
-                    }}
-                    onClick={() => setSelectedListing(listing)}
-                    data-testid={`map-pin-${listing.id}`}
-                  >
-                    ${Math.floor(listing.price/1000)}k
-                  </div>
-                ))}
+                <MapContainer
+                  center={mapCenter}
+                  zoom={12}
+                  style={{ height: '100%', width: '100%' }}
+                  zoomControl={true}
+                >
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  <MapBoundsHandler listings={listings} selectedListing={selectedListing} />
+                  {listings.map((listing) => (
+                    <Marker
+                      key={listing.id}
+                      position={[listing.lat, listing.lng]}
+                      icon={createCustomIcon(listing.price)}
+                      eventHandlers={{
+                        click: () => setSelectedListing(listing),
+                        mouseover: () => setHoveredListing(listing),
+                        mouseout: () => setHoveredListing(null),
+                      }}
+                    >
+                      <Popup>
+                        <div className="p-2 min-w-[200px]">
+                          <img 
+                            src={listing.images?.[0] || 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=300'}
+                            alt={listing.title}
+                            className="w-full h-24 object-cover rounded-lg mb-2"
+                          />
+                          <h3 className="font-bold text-gray-800">{listing.title}</h3>
+                          <p className="text-sm text-gray-500">{listing.address}</p>
+                          <p className="text-lg font-bold text-[#667eea] mt-1">
+                            ${listing.price.toLocaleString()}/mo
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {listing.bedrooms === 0 ? 'Studio' : `${listing.bedrooms} bed`} • {listing.bathrooms} bath
+                          </p>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  ))}
+                </MapContainer>
               </div>
             </div>
           </div>
@@ -323,7 +381,7 @@ const Browse = () => {
       {/* Listing Detail Modal */}
       {selectedListing && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-[1001] flex items-center justify-center p-4"
           data-testid="listing-modal"
         >
           <div 
@@ -379,7 +437,7 @@ const Browse = () => {
                   <p className="text-xs text-gray-500">Bathrooms</p>
                 </div>
                 <div className="text-center p-4 bg-gray-50 rounded-xl">
-                  <span className="block text-[#667eea] text-xl mb-1">□</span>
+                  <span className="block text-[#667eea] text-xl mb-1">▢</span>
                   <p className="font-bold">{selectedListing.sqft}</p>
                   <p className="text-xs text-gray-500">Sq Ft</p>
                 </div>
