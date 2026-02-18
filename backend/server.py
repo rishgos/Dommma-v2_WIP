@@ -95,6 +95,25 @@ class ChatRequest(BaseModel):
     session_id: Optional[str] = None
     message: str
 
+class UserCreate(BaseModel):
+    email: str
+    password: str
+    name: Optional[str] = None
+    user_type: str  # renter, landlord, contractor
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
+    user_type: Optional[str] = None
+
+class User(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    email: str
+    name: str
+    user_type: str
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
 class ChatResponse(BaseModel):
     session_id: str
     response: str
