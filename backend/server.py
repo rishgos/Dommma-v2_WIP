@@ -296,6 +296,42 @@ async def get_chat_history(session_id: str):
         raise HTTPException(status_code=404, detail="Session not found")
     return session
 
+# Auth Routes
+@api_router.post("/auth/register")
+async def register_user(user_data: UserCreate):
+    # Check if user exists
+    existing = await db.users.find_one({"email": user_data.email}, {"_id": 0})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    user = User(
+        email=user_data.email,
+        name=user_data.name or user_data.email.split('@')[0],
+        user_type=user_data.user_type
+    )
+    user_doc = user.model_dump()
+    user_doc['password'] = user_data.password  # In production, hash this!
+    await db.users.insert_one(user_doc)
+    
+    return {"id": user.id, "email": user.email, "name": user.name, "user_type": user.user_type}
+
+@api_router.post("/auth/login")
+async def login_user(login_data: UserLogin):
+    user = await db.users.find_one({"email": login_data.email}, {"_id": 0})
+    if not user:
+        # Create user for demo mode
+        user = User(
+            email=login_data.email,
+            name=login_data.email.split('@')[0],
+            user_type=login_data.user_type or 'renter'
+        )
+        user_doc = user.model_dump()
+        user_doc['password'] = login_data.password
+        await db.users.insert_one(user_doc)
+        return {"id": user.id, "email": user.email, "name": user.name, "user_type": user.user_type}
+    
+    return {"id": user.get('id'), "email": user.get('email'), "name": user.get('name'), "user_type": user.get('user_type')}
+
 # Seed Data Route
 @api_router.post("/seed")
 async def seed_data():
