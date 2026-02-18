@@ -6,7 +6,7 @@ import NovaChat from '../components/chat/NovaChat';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
-const GOOGLE_MAPS_API_KEY = 'AIzaSyCk8vmPDHHk5QrOVDw23wVB1bNAObQHNkI';
+const GOOGLE_MAPS_API_KEY = 'AIzaSyBs_zxHIzIvin-zrYtr1Py1AuxxcFICggM';
 
 const mapContainerStyle = {
   width: '100%',
