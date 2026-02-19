@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar as CalendarIcon, Clock, MapPin, Plus, ChevronLeft, ChevronRight, Check, X, Trash2, ExternalLink, Users } from 'lucide-react';
 import { useAuth } from '../App';
 import axios from 'axios';
@@ -9,6 +9,7 @@ const API = `${BACKEND_URL}/api`;
 
 const CalendarPage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const listingId = searchParams.get('listing');
   
