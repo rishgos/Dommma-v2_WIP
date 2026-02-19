@@ -446,7 +446,7 @@ async def register_user(user_data: UserCreate):
         user_type=user_data.user_type
     )
     user_doc = user.model_dump()
-    user_doc['password'] = user_data.password
+    user_doc['password_hash'] = hash_password(user_data.password)
     user_doc['preferences'] = {}  # For Nova's memory
     await db.users.insert_one(user_doc)
     
@@ -456,16 +456,29 @@ async def register_user(user_data: UserCreate):
 async def login_user(login_data: UserLogin):
     user = await db.users.find_one({"email": login_data.email}, {"_id": 0})
     if not user:
+        # Create new user with hashed password
         user = User(
             email=login_data.email,
             name=login_data.email.split('@')[0],
             user_type=login_data.user_type or 'renter'
         )
         user_doc = user.model_dump()
-        user_doc['password'] = login_data.password
+        user_doc['password_hash'] = hash_password(login_data.password)
         user_doc['preferences'] = {}
         await db.users.insert_one(user_doc)
         return {"id": user.id, "email": user.email, "name": user.name, "user_type": user.user_type}
+    
+    # Verify password (supports both hashed and legacy plaintext)
+    stored_password = user.get('password_hash') or user.get('password', '')
+    if not verify_password(login_data.password, stored_password):
+        raise HTTPException(status_code=401, detail="Invalid password")
+    
+    # Migrate old plaintext password to hashed if needed
+    if 'password' in user and 'password_hash' not in user:
+        await db.users.update_one(
+            {"email": login_data.email},
+            {"$set": {"password_hash": hash_password(login_data.password)}, "$unset": {"password": ""}}
+        )
     
     return {"id": user.get('id'), "email": user.get('email'), "name": user.get('name'), "user_type": user.get('user_type')}
 
