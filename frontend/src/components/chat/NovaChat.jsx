@@ -2,9 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   X, Send, Loader2, Bot, User, Sparkles, Calculator, Home, 
   MapPin, DollarSign, FileText, Briefcase, Heart, Lightbulb,
-  Settings, ChevronDown, ChevronUp, Building2
+  Settings, ChevronDown, ChevronUp, Building2, Mic, MicOff, 
+  Image, Bell, Camera, Volume2, VolumeX
 } from 'lucide-react';
 import axios from 'axios';
+import { useAuth } from '../../App';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
