@@ -252,6 +252,20 @@ const MyProperties = () => {
                 <input type="text" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#1A2F3A] outline-none" placeholder="Modern Downtown Condo" required data-testid="property-title-input" />
               </div>
 
+              <div>
+                <label className="block text-sm text-gray-600 mb-2">Listing Type</label>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setForm({ ...form, listing_type: 'rent' })}
+                    className={`flex-1 py-3 rounded-xl text-sm ${form.listing_type === 'rent' ? 'bg-[#1A2F3A] text-white' : 'bg-gray-100 text-gray-600'}`}>
+                    For Rent
+                  </button>
+                  <button type="button" onClick={() => setForm({ ...form, listing_type: 'sale' })}
+                    className={`flex-1 py-3 rounded-xl text-sm ${form.listing_type === 'sale' ? 'bg-[#1A2F3A] text-white' : 'bg-gray-100 text-gray-600'}`}>
+                    For Sale
+                  </button>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm text-gray-600 mb-2">Property Type</label>
