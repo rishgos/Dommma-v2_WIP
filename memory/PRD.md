@@ -81,6 +81,16 @@ Build a complete real estate marketplace called "DOMMMA" for Renters, Landlords,
 - [x] Moving quote calculator with 3-step wizard
 - [x] Contractor Portfolio with before/after images
 
+### Viewing Scheduler (V8) - NEW - VERIFIED WORKING
+- [x] **Schedule Viewing Button** - Available on all listing modals (rent & sale)
+- [x] **ViewingScheduler Modal** - 4-step wizard:
+  - Date selection (next 14 days, excludes Sundays)
+  - Time selection (9am-6pm, 30-min intervals)
+  - Confirmation with optional notes
+  - Success screen with calendar link
+- [x] **Google Calendar Integration** - Optional sync when connected
+- [x] **Calendar Page Updates** - OAuth callback handling, success/error banners
+
 ### Nova AI Enhancements (V7) - VERIFIED WORKING
 - [x] **Voice Input (STT)** - OpenAI Whisper transcription
   - Mic button in chat interface
