@@ -14,6 +14,8 @@ import base64
 from emergentintegrations.llm.chat import LlmChat, UserMessage
 from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
 from passlib.context import CryptContext
+import resend
+import asyncio
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
