@@ -69,6 +69,7 @@ function App() {
   return (
     <AuthContext.Provider value={{ user, login, logout }}>
       <BrowserRouter>
+        <AnalyticsTracker />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
