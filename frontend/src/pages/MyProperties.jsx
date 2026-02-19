@@ -84,7 +84,10 @@ const MyProperties = () => {
       sqft: listing.sqft, property_type: listing.property_type,
       description: listing.description, amenities: listing.amenities || [],
       images: listing.images || [], available_date: listing.available_date || '',
-      pet_friendly: listing.pet_friendly, parking: listing.parking
+      pet_friendly: listing.pet_friendly, parking: listing.parking,
+      listing_type: listing.listing_type || 'rent',
+      year_built: listing.year_built || '', lot_size: listing.lot_size || '',
+      garage: listing.garage || ''
     });
     setShowModal(true);
   };
@@ -96,7 +99,8 @@ const MyProperties = () => {
       postal_code: '', lat: 49.2827, lng: -123.1207, price: '',
       bedrooms: '', bathrooms: '', sqft: '', property_type: 'Apartment',
       description: '', amenities: [], images: [], available_date: '',
-      pet_friendly: false, parking: false
+      pet_friendly: false, parking: false, listing_type: 'rent',
+      year_built: '', lot_size: '', garage: ''
     });
     setShowModal(true);
   };
