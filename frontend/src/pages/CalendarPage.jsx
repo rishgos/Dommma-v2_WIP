@@ -34,11 +34,13 @@ const CalendarPage = () => {
   });
 
   useEffect(() => {
-    if (user) {
-      fetchEvents();
-      checkGoogleStatus();
+    if (!user) {
+      navigate('/login');
+      return;
     }
-  }, [user]);
+    fetchEvents();
+    checkGoogleStatus();
+  }, [user, navigate]);
 
   useEffect(() => {
     if (listingId) {
