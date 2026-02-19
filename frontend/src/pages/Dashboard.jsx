@@ -289,6 +289,8 @@ const Dashboard = () => {
     renter: [
       { icon: Home, label: 'Dashboard', path: '/dashboard', exact: true },
       { icon: Search, label: 'Browse Properties', path: '/browse' },
+      { icon: Heart, label: 'Saved Properties', path: '/favorites' },
+      { icon: Users2, label: 'Roommate Finder', path: '/roommates' },
       { icon: FileText, label: 'Applications', path: '/dashboard/applications' },
       { icon: DollarSign, label: 'My Offers', path: '/offers' },
       { icon: Wrench, label: 'Find Contractors', path: '/contractors' },
