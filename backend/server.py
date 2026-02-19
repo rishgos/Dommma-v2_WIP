@@ -1830,7 +1830,9 @@ async def update_listing(listing_id: str, landlord_id: str, updates: Dict[str, A
     
     allowed_fields = ["title", "address", "city", "province", "postal_code", "lat", "lng",
                       "description", "price", "bedrooms", "bathrooms", "sqft", "property_type",
-                      "status", "available_date", "amenities", "images", "pet_friendly", "parking"]
+                      "status", "available_date", "amenities", "images", "pet_friendly", "parking",
+                      "listing_type", "sale_price", "year_built", "lot_size", "garage",
+                      "mls_number", "open_house_dates"]
     update_dict = {k: v for k, v in updates.items() if k in allowed_fields}
     
     await db.listings.update_one(
