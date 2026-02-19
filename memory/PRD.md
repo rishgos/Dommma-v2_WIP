@@ -141,6 +141,30 @@ DOMMMA V2 is a complete real estate marketplace platform for renting, buying, le
   - View landlord's properties
   - Application management per property
 
+### Phase 4 - UI/UX & Security Updates (Completed Feb 2026)
+- [x] **Nova AI Search Bar on Homepage**
+  - Prominent pill-shaped search bar after hero section
+  - Bot icon and search icon
+  - Suggestions dropdown with example prompts
+  - Navigates to browse page with Nova query parameter
+  - "Powered by Nova AI" helper text
+
+- [x] **Property Grid Redesign**
+  - Changed from 1-column to 4-column grid
+  - Responsive: 4 cols (xl), 3 cols (lg), 2 cols (sm), 1 col (mobile)
+  - 12 featured property cards on homepage
+  - Property type badges, price badges, location, bed/bath/sqft info
+
+- [x] **Password Hashing Security**
+  - Bcrypt password hashing via passlib
+  - Secure password verification
+  - Legacy plaintext password migration support
+  - 401 Unauthorized on wrong password
+
+- [x] **UI Cleanup**
+  - Removed "Made with Emergent" badge via CSS
+  - Hidden Nova chat button on homepage (search bar takes over)
+
 ## Pages
 1. **Home** - Hero with architectural background, featured properties, stats, team
 2. **About** - Company story, values, team
