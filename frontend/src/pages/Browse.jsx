@@ -278,8 +278,19 @@ const Browse = () => {
               </div>
               <div className="mb-6"><h3 className="font-semibold mb-2">Description</h3><p className="text-gray-600 leading-relaxed">{selectedListing.description}</p></div>
               {selectedListing.amenities?.length > 0 && (<div className="mb-6"><h3 className="font-semibold mb-2">Amenities</h3><div className="flex flex-wrap gap-2">{selectedListing.amenities.map((a, i) => <span key={i} className="px-3 py-1 rounded-full bg-[#F5F5F0] text-gray-700 text-sm">{a}</span>)}</div></div>)}
-              <div className="flex gap-4">
-                <button className="flex-1 py-4 rounded-full font-medium text-white bg-[#1A2F3A] hover:bg-[#2C4A52] transition-colors" data-testid="schedule-viewing-btn">Schedule Viewing</button>
+              <div className="flex gap-3">
+                <button onClick={() => {
+                  if (!user) { navigate('/login'); return; }
+                  navigate(`/dashboard/applications?listing_id=${selectedListing.id}&listing_title=${encodeURIComponent(selectedListing.title)}`);
+                }} className="flex-1 py-4 rounded-full font-medium text-white bg-[#1A2F3A] hover:bg-[#2C4A52] transition-colors flex items-center justify-center gap-2" data-testid="apply-now-btn">
+                  <FileText size={18} /> Apply Now
+                </button>
+                <button onClick={() => {
+                  if (!user) { navigate('/login'); return; }
+                  navigate(`/dashboard/messages?to=${selectedListing.landlord_id || ''}&listing=${selectedListing.id}`);
+                }} className="px-6 py-4 rounded-full border-2 border-[#1A2F3A] text-[#1A2F3A] hover:bg-[#1A2F3A] hover:text-white transition-colors flex items-center gap-2" data-testid="message-landlord-btn">
+                  <MessageSquare size={18} /> Message
+                </button>
                 <button className="px-6 py-4 rounded-full border-2 border-[#1A2F3A] text-[#1A2F3A] hover:bg-[#1A2F3A] hover:text-white transition-colors" data-testid="save-listing-btn"><Heart size={20} /></button>
               </div>
             </div>
