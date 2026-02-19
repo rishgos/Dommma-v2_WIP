@@ -262,6 +262,32 @@ const CalendarPage = () => {
       </header>
 
       <main className="max-w-5xl mx-auto px-6 py-8">
+        {/* OAuth Status Banner */}
+        {oauthStatus === 'success' && (
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3">
+            <Check className="text-green-500" size={20} />
+            <div className="flex-1">
+              <p className="font-medium text-green-800">Google Calendar Connected!</p>
+              <p className="text-sm text-green-600">Your viewings will now sync to your Google Calendar.</p>
+            </div>
+            <button onClick={() => setOauthStatus('')} className="text-green-500 hover:text-green-700">
+              <X size={18} />
+            </button>
+          </div>
+        )}
+        {oauthStatus === 'error' && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
+            <X className="text-red-500" size={20} />
+            <div className="flex-1">
+              <p className="font-medium text-red-800">Connection Failed</p>
+              <p className="text-sm text-red-600">There was an issue connecting your Google Calendar. Please try again.</p>
+            </div>
+            <button onClick={() => setOauthStatus('')} className="text-red-500 hover:text-red-700">
+              <X size={18} />
+            </button>
+          </div>
+        )}
+
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Calendar */}
           <div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm">
