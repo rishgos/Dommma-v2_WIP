@@ -528,11 +528,37 @@ class ReviewCreate(BaseModel):
     rating: int
     review: str
 
+# Property Offer Model (Buy/Sell)
+class PropertyOffer(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    listing_id: str
+    buyer_id: str
+    seller_id: str
+    offer_amount: int
+    conditions: List[str] = []
+    financing_type: str = "mortgage"  # mortgage, cash, pre-approved
+    closing_date: Optional[str] = None
+    message: Optional[str] = None
+    status: str = "pending"  # pending, accepted, rejected, countered, withdrawn
+    counter_amount: Optional[int] = None
+    counter_message: Optional[str] = None
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    updated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class OfferCreate(BaseModel):
+    listing_id: str
+    offer_amount: int
+    conditions: List[str] = []
+    financing_type: str = "mortgage"
+    closing_date: Optional[str] = None
+    message: Optional[str] = None
+
 # ========== ROUTES ==========
 
 @api_router.get("/")
 async def root():
-    return {"message": "DOMMMA V2 API - Complete Real Estate Marketplace"}
+    return {"message": "DOMMMA V3 API - Complete Real Estate Marketplace"}
 
 # Status Check Routes
 @api_router.post("/status", response_model=StatusCheck)
