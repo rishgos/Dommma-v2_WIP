@@ -286,7 +286,7 @@ const Dashboard = () => {
 
   const navItems = {
     renter: [
-      { icon: Home, label: 'Dashboard', path: '/dashboard' },
+      { icon: Home, label: 'Dashboard', path: '/dashboard', exact: true },
       { icon: Search, label: 'Browse Properties', path: '/browse' },
       { icon: Heart, label: 'Favorites', path: '/dashboard/favorites' },
       { icon: FileText, label: 'Applications', path: '/dashboard/applications' },
@@ -295,21 +295,21 @@ const Dashboard = () => {
       { icon: FileText, label: 'Documents', path: '/dashboard/documents' },
     ],
     landlord: [
-      { icon: Home, label: 'Dashboard', path: '/dashboard' },
+      { icon: Home, label: 'Dashboard', path: '/dashboard', exact: true },
       { icon: Building2, label: 'Properties', path: '/dashboard/properties' },
       { icon: Users, label: 'Tenants', path: '/dashboard/tenants' },
-      { icon: DollarSign, label: 'Finances', path: '/dashboard/finances' },
+      { icon: DollarSign, label: 'Payments', path: '/dashboard/payments' },
       { icon: Wrench, label: 'Maintenance', path: '/dashboard/maintenance' },
       { icon: MessageSquare, label: 'Messages', path: '/dashboard/messages' },
       { icon: FileText, label: 'Documents', path: '/dashboard/documents' },
     ],
     contractor: [
-      { icon: Home, label: 'Dashboard', path: '/dashboard' },
+      { icon: Home, label: 'Dashboard', path: '/dashboard', exact: true },
       { icon: Wrench, label: 'Jobs', path: '/dashboard/jobs' },
       { icon: Calendar, label: 'Schedule', path: '/dashboard/schedule' },
-      { icon: DollarSign, label: 'Earnings', path: '/dashboard/earnings' },
+      { icon: DollarSign, label: 'Payments', path: '/dashboard/payments' },
       { icon: MessageSquare, label: 'Messages', path: '/dashboard/messages' },
-      { icon: TrendingUp, label: 'Reviews', path: '/dashboard/reviews' },
+      { icon: FileText, label: 'Documents', path: '/dashboard/documents' },
     ],
   };
 
