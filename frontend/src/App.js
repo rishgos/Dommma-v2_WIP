@@ -97,6 +97,9 @@ function App() {
           <Route path="/dashboard/my-properties" element={<MyProperties />} />
           <Route path="/dashboard/contractor-profile" element={<ContractorProfile />} />
           <Route path="/contractors" element={<ContractorMarketplace />} />
+          <Route path="/report-issue" element={<SmartIssueReporter />} />
+          <Route path="/document-analyzer" element={<DocumentAnalyzer />} />
+          <Route path="/commute-optimizer" element={<CommuteOptimizer />} />
           <Route path="/dashboard/*" element={<Dashboard />} />
         </Routes>
       </BrowserRouter>
