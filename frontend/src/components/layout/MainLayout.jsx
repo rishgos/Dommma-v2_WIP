@@ -134,8 +134,8 @@ const MainLayout = ({ children, hideNovaButton = false }) => {
         {children}
       </main>
 
-      {/* Nova Chat */}
-      <NovaChat />
+      {/* Nova Chat - conditionally rendered */}
+      {!hideNovaButton && <NovaChat />}
 
       {/* CTA Section */}
       <section className="bg-white py-20 text-center" data-testid="footer-cta">
