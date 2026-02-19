@@ -107,11 +107,148 @@ const NovaChat = () => {
     if (isOpen && messages.length === 0) {
       setMessages([{
         role: 'assistant',
-        content: "Hi! I'm Nova, your AI real estate assistant. I can help you with:\n\n🏠 **Property Search** - Find your perfect home\n💰 **Financial Advice** - Budget calculators & negotiation tips\n📄 **Application Help** - Rental resumes & cover letters\n🏘️ **Neighborhood Intel** - Safety, amenities & vibes\n\nWhat can I help you with today?",
+        content: "Hi! I'm Nova, your AI real estate assistant. I can help you with:\n\n🏠 **Property Search** - Find your perfect home\n💰 **Financial Advice** - Budget calculators & negotiation tips\n📄 **Application Help** - Rental resumes & cover letters\n🏘️ **Neighborhood Intel** - Safety, amenities & vibes\n🎤 **Voice Input** - Just click the mic and talk to me!\n📷 **Image Analysis** - Upload property photos for instant insights\n\nWhat can I help you with today?",
         suggestions: ['Find apartments near SkyTrain', 'Calculate my budget', 'Help with application']
       }]);
+      
+      // Fetch proactive suggestions if user is logged in
+      if (user?.id) {
+        fetchProactiveSuggestions();
+      }
     }
-  }, [isOpen, messages.length]);
+  }, [isOpen, messages.length, user]);
+
+  const fetchProactiveSuggestions = async () => {
+    if (!user?.id) return;
+    try {
+      const response = await axios.get(`${API}/nova/suggestions/${user.id}`);
+      setProactiveSuggestions(response.data.suggestions || []);
+    } catch (error) {
+      console.error('Error fetching suggestions:', error);
+    }
+  };
+
+  // Voice recording functions
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      audioChunksRef.current = [];
+
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        audioChunksRef.current.push(event.data);
+      };
+
+      mediaRecorderRef.current.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        stream.getTracks().forEach(track => track.stop());
+        await transcribeAudio(audioBlob);
+      };
+
+      mediaRecorderRef.current.start();
+      setIsRecording(true);
+    } catch (error) {
+      console.error('Error starting recording:', error);
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: "I couldn't access your microphone. Please check your browser permissions and try again."
+      }]);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const transcribeAudio = async (audioBlob) => {
+    setIsTranscribing(true);
+    try {
+      const reader = new FileReader();
+      reader.readAsDataURL(audioBlob);
+      reader.onloadend = async () => {
+        const base64Audio = reader.result;
+        const response = await axios.post(`${API}/nova/transcribe`, {
+          audio_data: base64Audio,
+          language: 'en'
+        });
+        
+        if (response.data.text) {
+          setInput(response.data.text);
+          // Auto-send after transcription
+          sendMessage(response.data.text);
+        }
+        setIsTranscribing(false);
+      };
+    } catch (error) {
+      console.error('Transcription error:', error);
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: "I had trouble understanding that. Could you try again or type your message?"
+      }]);
+      setIsTranscribing(false);
+    }
+  };
+
+  // Image analysis functions
+  const handleImageUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file');
+      return;
+    }
+
+    setAnalyzingImage(true);
+    setShowImageUpload(false);
+
+    try {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onloadend = async () => {
+        const base64Image = reader.result;
+        
+        setMessages(prev => [...prev, {
+          role: 'user',
+          content: '📷 [Uploaded property image for analysis]',
+          imagePreview: base64Image
+        }]);
+
+        const response = await axios.post(`${API}/nova/analyze-image`, {
+          image_data: base64Image,
+          analysis_type: 'general'
+        });
+
+        const analysis = response.data.results;
+        let analysisText = "**Property Image Analysis**\n\n";
+        
+        if (analysis.room_type) analysisText += `🏠 **Room Type:** ${analysis.room_type}\n`;
+        if (analysis.estimated_room_size) analysisText += `📐 **Size:** ${analysis.estimated_room_size}\n`;
+        if (analysis.natural_light) analysisText += `☀️ **Natural Light:** ${analysis.natural_light}\n`;
+        if (analysis.condition) analysisText += `🔧 **Condition:** ${analysis.condition}\n`;
+        if (analysis.overall_impression) analysisText += `⭐ **Overall Score:** ${analysis.overall_impression}/10\n`;
+        if (analysis.notable_features) analysisText += `\n✨ **Notable Features:**\n${Array.isArray(analysis.notable_features) ? analysis.notable_features.map(f => `• ${f}`).join('\n') : analysis.notable_features}\n`;
+        if (analysis.potential_concerns) analysisText += `\n⚠️ **Potential Concerns:**\n${Array.isArray(analysis.potential_concerns) ? analysis.potential_concerns.map(c => `• ${c}`).join('\n') : analysis.potential_concerns}\n`;
+
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: analysisText || "I've analyzed the image. It appears to be a property photo, but I couldn't extract detailed information. Would you like me to try a different analysis type?"
+        }]);
+        
+        setAnalyzingImage(false);
+      };
+    } catch (error) {
+      console.error('Image analysis error:', error);
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: "I had trouble analyzing that image. Please try again with a clearer photo of the property."
+      }]);
+      setAnalyzingImage(false);
+    }
+  };
 
   const sendMessage = async (messageText = input) => {
     if (!messageText.trim() || isLoading) return;
