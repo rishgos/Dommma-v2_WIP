@@ -23,6 +23,8 @@ const mapOptions = {
 const defaultCenter = { lat: 49.2827, lng: -123.1207 };
 
 const Browse = () => {
+  const [searchParams] = useSearchParams();
+  const novaQuery = searchParams.get('nova');
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedListing, setSelectedListing] = useState(null);
@@ -30,6 +32,7 @@ const Browse = () => {
   const [activeMarker, setActiveMarker] = useState(null);
   const [map, setMap] = useState(null);
   const [viewMode, setViewMode] = useState('split');
+  const [showNovaChat, setShowNovaChat] = useState(!!novaQuery);
   const [filters, setFilters] = useState({
     search: '',
     bedrooms: '',
