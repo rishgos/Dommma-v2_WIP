@@ -902,6 +902,471 @@ async def get_user_preferences(user_id: str):
         raise HTTPException(status_code=404, detail="User not found")
     return user.get("preferences", {})
 
+# ========== FCM PUSH NOTIFICATIONS ==========
+
+@api_router.post("/notifications/register-token")
+async def register_fcm_token(token_data: FCMTokenCreate):
+    """Register or update FCM token for a user"""
+    existing = await db.fcm_tokens.find_one({"user_id": token_data.user_id})
+    
+    if existing:
+        await db.fcm_tokens.update_one(
+            {"user_id": token_data.user_id},
+            {"$set": {"token": token_data.token, "updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+    else:
+        fcm_token = FCMToken(user_id=token_data.user_id, token=token_data.token)
+        await db.fcm_tokens.insert_one(fcm_token.model_dump())
+    
+    return {"status": "registered"}
+
+@api_router.post("/notifications/send")
+async def send_notification(notification: NotificationCreate):
+    """Send push notification to a user (for internal use)"""
+    # Store notification in database
+    notif_doc = {
+        "id": str(uuid.uuid4()),
+        "user_id": notification.user_id,
+        "title": notification.title,
+        "body": notification.body,
+        "type": notification.notification_type,
+        "data": notification.data,
+        "read": False,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.notifications.insert_one(notif_doc)
+    
+    # Get user's FCM token
+    token_doc = await db.fcm_tokens.find_one({"user_id": notification.user_id})
+    
+    # Note: For FCM sending, you would need firebase-admin SDK
+    # For now, we'll send via WebSocket if user is connected
+    await manager.send_personal_message(
+        json.dumps({
+            "type": "notification",
+            "notification": {
+                "title": notification.title,
+                "body": notification.body,
+                "type": notification.notification_type,
+                "data": notification.data
+            }
+        }),
+        notification.user_id
+    )
+    
+    return {"status": "sent", "fcm_token_available": token_doc is not None}
+
+@api_router.get("/notifications/{user_id}")
+async def get_notifications(user_id: str, unread_only: bool = False):
+    """Get notifications for a user"""
+    query = {"user_id": user_id}
+    if unread_only:
+        query["read"] = False
+    
+    notifications = await db.notifications.find(query, {"_id": 0}).sort("created_at", -1).to_list(50)
+    return notifications
+
+@api_router.post("/notifications/mark-read/{notification_id}")
+async def mark_notification_read(notification_id: str):
+    """Mark notification as read"""
+    await db.notifications.update_one({"id": notification_id}, {"$set": {"read": True}})
+    return {"status": "read"}
+
+# ========== RENTAL APPLICATIONS ==========
+
+@api_router.post("/applications", response_model=dict)
+async def create_application(user_id: str, application: ApplicationCreate):
+    """Submit a rental application"""
+    # Get the listing to find the landlord
+    listing = await db.listings.find_one({"id": application.listing_id}, {"_id": 0})
+    if not listing:
+        raise HTTPException(status_code=404, detail="Listing not found")
+    
+    app_obj = RentalApplication(
+        user_id=user_id,
+        listing_id=application.listing_id,
+        landlord_id=listing.get("landlord_id"),
+        full_name=application.full_name,
+        email=application.email,
+        phone=application.phone,
+        current_address=application.current_address,
+        move_in_date=application.move_in_date,
+        employer=application.employer,
+        job_title=application.job_title,
+        monthly_income=application.monthly_income,
+        employment_length=application.employment_length,
+        references=application.references,
+        num_occupants=application.num_occupants,
+        has_pets=application.has_pets,
+        pet_details=application.pet_details,
+        additional_notes=application.additional_notes
+    )
+    
+    await db.applications.insert_one(app_obj.model_dump())
+    
+    # Send notification to landlord if exists
+    if listing.get("landlord_id"):
+        await db.notifications.insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": listing["landlord_id"],
+            "title": "New Rental Application",
+            "body": f"{application.full_name} applied for {listing['title']}",
+            "type": "application",
+            "data": {"application_id": app_obj.id, "listing_id": application.listing_id},
+            "read": False,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+    
+    return {"id": app_obj.id, "status": "submitted"}
+
+@api_router.get("/applications/user/{user_id}")
+async def get_user_applications(user_id: str):
+    """Get all applications submitted by a user"""
+    applications = await db.applications.find({"user_id": user_id}, {"_id": 0}).sort("created_at", -1).to_list(50)
+    
+    # Enrich with listing details
+    for app in applications:
+        listing = await db.listings.find_one({"id": app["listing_id"]}, {"_id": 0, "title": 1, "address": 1, "price": 1, "images": 1})
+        app["listing"] = listing
+    
+    return applications
+
+@api_router.get("/applications/landlord/{landlord_id}")
+async def get_landlord_applications(landlord_id: str, status: Optional[str] = None):
+    """Get all applications for a landlord's properties"""
+    query = {"landlord_id": landlord_id}
+    if status:
+        query["status"] = status
+    
+    applications = await db.applications.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
+    
+    # Enrich with listing details
+    for app in applications:
+        listing = await db.listings.find_one({"id": app["listing_id"]}, {"_id": 0, "title": 1, "address": 1})
+        app["listing"] = listing
+    
+    return applications
+
+@api_router.put("/applications/{application_id}/status")
+async def update_application_status(application_id: str, status: str, landlord_id: str):
+    """Update application status (landlord only)"""
+    if status not in ["pending", "under_review", "approved", "rejected"]:
+        raise HTTPException(status_code=400, detail="Invalid status")
+    
+    app = await db.applications.find_one({"id": application_id}, {"_id": 0})
+    if not app:
+        raise HTTPException(status_code=404, detail="Application not found")
+    
+    await db.applications.update_one(
+        {"id": application_id},
+        {"$set": {"status": status, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    # Notify the applicant
+    status_messages = {
+        "under_review": "Your application is being reviewed",
+        "approved": "Congratulations! Your application has been approved! 🎉",
+        "rejected": "Your application status has been updated"
+    }
+    
+    if status in status_messages:
+        await db.notifications.insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": app["user_id"],
+            "title": f"Application {status.replace('_', ' ').title()}",
+            "body": status_messages[status],
+            "type": "application",
+            "data": {"application_id": application_id, "status": status},
+            "read": False,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+    
+    return {"status": "updated"}
+
+# ========== MAINTENANCE REQUESTS ==========
+
+@api_router.post("/maintenance", response_model=dict)
+async def create_maintenance_request(user_id: str, request: MaintenanceRequestCreate):
+    """Submit a maintenance request"""
+    maint_req = MaintenanceRequest(
+        user_id=user_id,
+        property_id=request.property_id,
+        title=request.title,
+        description=request.description,
+        category=request.category,
+        priority=request.priority,
+        images=request.images
+    )
+    
+    # Try to find the landlord from property
+    if request.property_id:
+        listing = await db.listings.find_one({"id": request.property_id}, {"_id": 0})
+        if listing and listing.get("landlord_id"):
+            maint_req.landlord_id = listing["landlord_id"]
+            
+            # Notify landlord
+            await db.notifications.insert_one({
+                "id": str(uuid.uuid4()),
+                "user_id": listing["landlord_id"],
+                "title": f"New Maintenance Request - {request.priority.upper()}",
+                "body": request.title,
+                "type": "maintenance",
+                "data": {"request_id": maint_req.id, "priority": request.priority},
+                "read": False,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            })
+    
+    await db.maintenance_requests.insert_one(maint_req.model_dump())
+    
+    return {"id": maint_req.id, "status": "submitted"}
+
+@api_router.get("/maintenance/user/{user_id}")
+async def get_user_maintenance_requests(user_id: str, status: Optional[str] = None):
+    """Get maintenance requests submitted by a user"""
+    query = {"user_id": user_id}
+    if status:
+        query["status"] = status
+    
+    requests = await db.maintenance_requests.find(query, {"_id": 0}).sort("created_at", -1).to_list(50)
+    return requests
+
+@api_router.get("/maintenance/landlord/{landlord_id}")
+async def get_landlord_maintenance_requests(landlord_id: str, status: Optional[str] = None):
+    """Get all maintenance requests for a landlord's properties"""
+    query = {"landlord_id": landlord_id}
+    if status:
+        query["status"] = status
+    
+    requests = await db.maintenance_requests.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return requests
+
+@api_router.put("/maintenance/{request_id}")
+async def update_maintenance_request(request_id: str, updates: Dict[str, Any]):
+    """Update maintenance request status, assign contractor, etc."""
+    allowed_fields = ["status", "assigned_contractor_id", "scheduled_date", "completed_date", "cost", "notes"]
+    update_dict = {k: v for k, v in updates.items() if k in allowed_fields}
+    update_dict["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.maintenance_requests.update_one(
+        {"id": request_id},
+        {"$set": update_dict}
+    )
+    
+    # Get request for notification
+    req = await db.maintenance_requests.find_one({"id": request_id}, {"_id": 0})
+    
+    # Notify tenant of status change
+    if req and "status" in updates:
+        await db.notifications.insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": req["user_id"],
+            "title": "Maintenance Update",
+            "body": f"Your request '{req['title']}' is now {updates['status']}",
+            "type": "maintenance",
+            "data": {"request_id": request_id, "status": updates["status"]},
+            "read": False,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+    
+    return {"status": "updated"}
+
+# ========== CONTRACTOR JOBS ==========
+
+@api_router.post("/jobs", response_model=dict)
+async def create_contractor_job(landlord_id: str, job: ContractorJobCreate):
+    """Create a job posting for contractors"""
+    job_obj = ContractorJob(
+        landlord_id=landlord_id,
+        maintenance_request_id=job.maintenance_request_id,
+        title=job.title,
+        description=job.description,
+        category=job.category,
+        location=job.location,
+        budget_min=job.budget_min,
+        budget_max=job.budget_max,
+        deadline=job.deadline
+    )
+    
+    await db.contractor_jobs.insert_one(job_obj.model_dump())
+    
+    return {"id": job_obj.id, "status": "created"}
+
+@api_router.get("/jobs")
+async def get_contractor_jobs(
+    category: Optional[str] = None,
+    status: Optional[str] = None,
+    location: Optional[str] = None
+):
+    """Get available contractor jobs"""
+    query = {}
+    if category:
+        query["category"] = category
+    if status:
+        query["status"] = status
+    else:
+        query["status"] = "open"  # Default to open jobs
+    if location:
+        query["location"] = {"$regex": location, "$options": "i"}
+    
+    jobs = await db.contractor_jobs.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return jobs
+
+@api_router.get("/jobs/landlord/{landlord_id}")
+async def get_landlord_jobs(landlord_id: str):
+    """Get jobs posted by a landlord"""
+    jobs = await db.contractor_jobs.find({"landlord_id": landlord_id}, {"_id": 0}).sort("created_at", -1).to_list(50)
+    return jobs
+
+@api_router.get("/jobs/contractor/{contractor_id}")
+async def get_contractor_assigned_jobs(contractor_id: str):
+    """Get jobs assigned to a contractor"""
+    jobs = await db.contractor_jobs.find({"contractor_id": contractor_id}, {"_id": 0}).sort("created_at", -1).to_list(50)
+    return jobs
+
+@api_router.post("/jobs/{job_id}/bid")
+async def submit_bid(job_id: str, bid: ContractorBid):
+    """Submit a bid for a job"""
+    job = await db.contractor_jobs.find_one({"id": job_id}, {"_id": 0})
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    if job["status"] != "open":
+        raise HTTPException(status_code=400, detail="Job is not accepting bids")
+    
+    bid_doc = {
+        "id": str(uuid.uuid4()),
+        "contractor_id": bid.contractor_id,
+        "amount": bid.amount,
+        "estimated_days": bid.estimated_days,
+        "message": bid.message,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.contractor_jobs.update_one(
+        {"id": job_id},
+        {"$push": {"bids": bid_doc}}
+    )
+    
+    # Notify landlord of new bid
+    await db.notifications.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_id": job["landlord_id"],
+        "title": "New Bid Received",
+        "body": f"${bid.amount} bid on '{job['title']}'",
+        "type": "bid",
+        "data": {"job_id": job_id, "bid_id": bid_doc["id"], "amount": bid.amount},
+        "read": False,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    return {"bid_id": bid_doc["id"], "status": "submitted"}
+
+@api_router.post("/jobs/{job_id}/select-bid")
+async def select_bid(job_id: str, bid_id: str, landlord_id: str):
+    """Select a winning bid for a job"""
+    job = await db.contractor_jobs.find_one({"id": job_id}, {"_id": 0})
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    if job["landlord_id"] != landlord_id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Find the selected bid
+    selected_bid = None
+    for bid in job.get("bids", []):
+        if bid["id"] == bid_id:
+            selected_bid = bid
+            break
+    
+    if not selected_bid:
+        raise HTTPException(status_code=404, detail="Bid not found")
+    
+    await db.contractor_jobs.update_one(
+        {"id": job_id},
+        {"$set": {
+            "status": "assigned",
+            "contractor_id": selected_bid["contractor_id"],
+            "selected_bid_id": bid_id,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    # Notify the winning contractor
+    await db.notifications.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_id": selected_bid["contractor_id"],
+        "title": "Congratulations! Your bid was accepted! 🎉",
+        "body": f"You won the job: {job['title']}",
+        "type": "job",
+        "data": {"job_id": job_id},
+        "read": False,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    return {"status": "assigned", "contractor_id": selected_bid["contractor_id"]}
+
+# ========== PROPERTY MANAGEMENT (LANDLORD) ==========
+
+@api_router.post("/listings/create")
+async def create_listing(landlord_id: str, listing: ListingCreate):
+    """Create a new property listing (landlord only)"""
+    listing_obj = Listing(
+        **listing.model_dump(),
+        landlord_id=landlord_id
+    )
+    
+    await db.listings.insert_one(listing_obj.model_dump())
+    
+    return {"id": listing_obj.id, "status": "created"}
+
+@api_router.get("/listings/landlord/{landlord_id}")
+async def get_landlord_listings(landlord_id: str, status: Optional[str] = None):
+    """Get all listings owned by a landlord"""
+    query = {"landlord_id": landlord_id}
+    if status:
+        query["status"] = status
+    
+    listings = await db.listings.find(query, {"_id": 0}).to_list(100)
+    return listings
+
+@api_router.put("/listings/{listing_id}")
+async def update_listing(listing_id: str, landlord_id: str, updates: Dict[str, Any]):
+    """Update a listing (landlord only)"""
+    listing = await db.listings.find_one({"id": listing_id}, {"_id": 0})
+    if not listing:
+        raise HTTPException(status_code=404, detail="Listing not found")
+    
+    if listing.get("landlord_id") != landlord_id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    allowed_fields = ["title", "description", "price", "status", "available_date", "amenities", "images", "pet_friendly", "parking"]
+    update_dict = {k: v for k, v in updates.items() if k in allowed_fields}
+    
+    await db.listings.update_one(
+        {"id": listing_id},
+        {"$set": update_dict}
+    )
+    
+    return {"status": "updated"}
+
+@api_router.delete("/listings/{listing_id}")
+async def delete_listing(listing_id: str, landlord_id: str):
+    """Delete a listing (landlord only)"""
+    listing = await db.listings.find_one({"id": listing_id}, {"_id": 0})
+    if not listing:
+        raise HTTPException(status_code=404, detail="Listing not found")
+    
+    if listing.get("landlord_id") != landlord_id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Soft delete
+    await db.listings.update_one(
+        {"id": listing_id},
+        {"$set": {"status": "deleted"}}
+    )
+    
+    return {"status": "deleted"}
+
 # Seed Data Route
 @api_router.post("/seed")
 async def seed_data():
