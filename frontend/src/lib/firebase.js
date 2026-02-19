@@ -201,9 +201,8 @@ export const trackFeatureEngagement = (featureName) => {
 
 // ============== PUSH NOTIFICATION FUNCTIONS ==============
 
-// VAPID key for web push (you'll need to generate this from Firebase Console)
-// Firebase Console > Project Settings > Cloud Messaging > Web configuration > Generate key pair
-const VAPID_KEY = 'YOUR_VAPID_KEY'; // Will be replaced when user provides it
+// VAPID key for web push - Generated from Firebase Console
+const VAPID_KEY = 'BFjJyNb3HUnxXdBRy6aSPqNkTQqfXF0XnXvd24c7wrraqabiRV43wTxwlt4AcVsTqlg4WyOqWTHcQgESIdZ0tj8';
 
 // Request notification permission and get FCM token
 export const requestNotificationPermission = async () => {
