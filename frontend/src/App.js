@@ -1,7 +1,7 @@
 import "@/index.css";
 import "@/App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useState, createContext, useContext } from "react";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { useState, useEffect, createContext, useContext } from "react";
 
 // Pages
 import Home from "@/pages/Home";
@@ -16,17 +16,49 @@ import Payments from "@/pages/Payments";
 import Documents from "@/pages/Documents";
 import Messages from "@/pages/Messages";
 
+// Firebase Analytics
+import { initializeFirebase, trackPageView, trackLogin } from "@/lib/firebase";
+
 // Auth Context
 export const AuthContext = createContext(null);
 
 export const useAuth = () => useContext(AuthContext);
 
+// Analytics wrapper component
+function AnalyticsTracker() {
+  const location = useLocation();
+  
+  useEffect(() => {
+    // Track page view on route change
+    trackPageView(location.pathname, document.title);
+  }, [location]);
+  
+  return null;
+}
+
 function App() {
   const [user, setUser] = useState(null);
+
+  // Initialize Firebase on app load
+  useEffect(() => {
+    initializeFirebase();
+    
+    // Restore user from localStorage
+    const savedUser = localStorage.getItem('dommma_user');
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch (e) {
+        localStorage.removeItem('dommma_user');
+      }
+    }
+  }, []);
 
   const login = (userData) => {
     setUser(userData);
     localStorage.setItem('dommma_user', JSON.stringify(userData));
+    // Track login event
+    trackLogin('email', userData.user_type);
   };
 
   const logout = () => {
