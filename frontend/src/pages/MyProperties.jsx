@@ -23,10 +23,11 @@ const MyProperties = () => {
     postal_code: '', lat: 49.2827, lng: -123.1207, price: '',
     bedrooms: '', bathrooms: '', sqft: '', property_type: 'Apartment',
     description: '', amenities: [], images: [], available_date: '',
-    pet_friendly: false, parking: false
+    pet_friendly: false, parking: false, listing_type: 'rent',
+    year_built: '', lot_size: '', garage: ''
   });
 
-  const propertyTypes = ['Apartment', 'Condo', 'House', 'Townhouse', 'Loft', 'Studio', 'Duplex'];
+  const propertyTypes = ['Apartment', 'Condo', 'House', 'Townhouse', 'Loft', 'Studio', 'Duplex', 'Penthouse'];
   const amenityOptions = ['Gym', 'Pool', 'Rooftop Deck', 'In-suite Laundry', 'Bike Storage', 'Concierge',
     'Balcony', 'Fireplace', 'Dishwasher', 'Garage', 'Backyard', 'Home Office', 'Storage'];
 
