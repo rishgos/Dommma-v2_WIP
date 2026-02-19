@@ -111,7 +111,10 @@ const MyProperties = () => {
       ...form,
       price: parseInt(form.price), bedrooms: parseInt(form.bedrooms),
       bathrooms: parseFloat(form.bathrooms), sqft: parseInt(form.sqft),
-      lat: parseFloat(form.lat), lng: parseFloat(form.lng)
+      lat: parseFloat(form.lat), lng: parseFloat(form.lng),
+      year_built: form.year_built ? parseInt(form.year_built) : null,
+      lot_size: form.lot_size ? parseInt(form.lot_size) : null,
+      garage: form.garage ? parseInt(form.garage) : null
     };
 
     try {
