@@ -169,11 +169,16 @@ const Home = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [topContractors, setTopContractors] = useState([]);
+  const [saleListings, setSaleListings] = useState([]);
 
   useEffect(() => {
     axios.get(`${API}/contractors/search`).then(res => {
       const sorted = (res.data || []).sort((a, b) => (b.rating || 0) - (a.rating || 0)).slice(0, 3);
       setTopContractors(sorted);
+    }).catch(() => {});
+    
+    axios.get(`${API}/listings?listing_type=sale`).then(res => {
+      setSaleListings((res.data || []).slice(0, 4));
     }).catch(() => {});
   }, []);
 
