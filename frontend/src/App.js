@@ -55,9 +55,20 @@ function AnalyticsTracker() {
 function App() {
   const [user, setUser] = useState(null);
 
-  // Initialize Firebase on app load
+  // Initialize Firebase and PWA on app load
   useEffect(() => {
     initializeFirebase();
+    
+    // Register service worker for PWA
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(registration => {
+          console.log('SW registered:', registration.scope);
+        })
+        .catch(error => {
+          console.log('SW registration failed:', error);
+        });
+    }
     
     // Restore user from localStorage
     const savedUser = localStorage.getItem('dommma_user');
