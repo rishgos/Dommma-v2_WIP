@@ -14,6 +14,23 @@ class ImageAnalysisService:
         self.db = db
         self.api_key = os.environ.get('EMERGENT_LLM_KEY', '')
     
+    def _extract_base64_and_type(self, image_data: str) -> tuple:
+        """Extract base64 content and mime type from image data"""
+        if image_data.startswith('data:'):
+            # Parse data URL: data:image/jpeg;base64,<data>
+            parts = image_data.split(',', 1)
+            if len(parts) == 2:
+                header = parts[0]  # data:image/jpeg;base64
+                base64_data = parts[1]
+                # Extract mime type
+                if ':' in header and ';' in header:
+                    mime_type = header.split(':')[1].split(';')[0]
+                else:
+                    mime_type = 'image/jpeg'
+                return base64_data, mime_type
+        # If not a data URL, assume it's raw base64 jpeg
+        return image_data, 'image/jpeg'
+    
     async def analyze_property_image(
         self,
         image_data: str,
@@ -21,7 +38,7 @@ class ImageAnalysisService:
     ) -> Dict[str, Any]:
         """Analyze a property image using AI vision"""
         try:
-            from emergentintegrations.llm.chat import LlmChat, UserMessage
+            from emergentintegrations.llm.chat import LlmChat, UserMessage, FileContent
             
             prompts = {
                 "general": """Analyze this property image and provide:
@@ -70,10 +87,14 @@ Respond in JSON format."""
                 system_message="You are a professional real estate appraiser and interior designer. Analyze property images accurately and provide actionable insights."
             ).with_model("anthropic", "claude-sonnet-4-5-20250929")
             
-            # Create message with image
+            # Extract base64 content and mime type
+            base64_content, mime_type = self._extract_base64_and_type(image_data)
+            
+            # Create message with image using file_contents
+            file_content = FileContent(content_type=mime_type, file_content_base64=base64_content)
             message = UserMessage(
                 text=prompt,
-                image_url=image_data if image_data.startswith('data:') else f"data:image/jpeg;base64,{image_data}"
+                file_contents=[file_content]
             )
             
             response = await chat.send_message(message)
