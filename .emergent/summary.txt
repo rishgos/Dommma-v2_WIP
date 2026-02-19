@@ -3,104 +3,91 @@
 ### original_problem_statement
 The user wants to build a complete real estate marketplace platform called DOMMMA from scratch. The platform should cater to Renters, Landlords, and Contractors with role-specific features and dashboards.
 
-**Initial Vision (from original PRD):**
-- A real estate rental platform with an AI-powered property search (Nova AI chatbot).
-- Modern landing pages and a functional property management system.
-- Original Tech Stack: Next.js frontend, Node.js/Express backend, MySQL database.
-- Features: Property browsing on a map, user profiles, dashboards, AI chatbot.
-
-**Evolution to DOMMA-V2 (Current Requirement):**
-- The project was rebuilt from scratch with a new tech stack: **React (Frontend), FastAPI (Backend), and MongoDB (Database)**.
-- **New UI/UX:** A new, more modern design was implemented based on a user-provided screenshot, featuring a dark teal theme and serif typography.
-- **Role-Based System:** The core architecture must support distinct user roles (Renter, Landlord, Contractor) with different UIs and functionalities post-login.
-- **Core Marketplace Features:** The user has requested the immediate implementation of:
-    1.  **Stripe Payments:** For rent collection and other services.
-    2.  **Document Management:** For lease agreements, applications, etc.
-    3.  **Real-Time Messaging:** For communication between users (e.g., landlord and renter).
-- **Advanced AI Chatbot (Nova):** The user provided an extensive list of desired features for the chatbot, including lifestyle-based search, financial assistance, application help, and neighborhood intelligence.
+**Core Requirements:**
+*   **Tech Stack:** React (Frontend), FastAPI (Backend), and MongoDB (Database).
+*   **UI/UX:** A modern, dark teal theme with serif typography.
+*   **Role-Based System:** Distinct user roles (Renter, Landlord, Contractor) with different UIs and functionalities post-login.
+*   **Core Marketplace Features:** Stripe Payments, Document Management, Real-Time Messaging.
+*   **Role-Specific Features:** Rental Application management, Maintenance Request system, and a Contractor Job Marketplace.
+*   **Advanced AI Chatbot (Nova):** The user provided an extensive list of desired features for the chatbot, including lifestyle-based search, financial assistance, application help, and neighborhood intelligence.
+*   **UI Updates:**
+    *   Remove all Made with Emergent branding.
+    *   Feature the Nova AI chatbot more prominently on the homepage with a wide, pill-shaped search bar.
+    *   Display property listings on the homepage in a multi-column grid (e.g., 4 columns).
 
 ### **User's preferred language**
 English
 
 ### **what currently exists?**
-The agent successfully built DOMMMA V2 from scratch. This version includes:
-- A new UI based on the user's design, with a dark teal theme.
-- A functional backend using FastAPI and a MongoDB database.
-- A React-based frontend.
-- Role-based authentication, allowing users to sign up and log in as a Renter, Landlord, or Contractor.
-- An interactive Google Maps integration on the  page, displaying 20 sample property listings in Vancouver.
-- A functional Nova AI chatbot powered by Claude Sonnet 4.5.
-- The home page hero title and team members section have been updated as per the user's latest request.
+The agent has built a comprehensive V2 of the DOMMA platform. The application includes:
+*   **Core Architecture:** A React frontend, FastAPI backend, and MongoDB database.
+*   **Authentication:** Role-based JWT authentication (Renter, Landlord, Contractor) with secure password hashing ().
+*   **Core Features:**
+    *   **Payments:** A functional Payments page with Stripe integration for checkout, displaying transaction history and summaries.
+    *   **Documents:** A Document Management page allowing for upload, viewing, filtering, and signing.
+    *   **Messaging:** A real-time Messaging page using WebSockets, showing a list of conversations.
+*   **Role-Specific Dashboards:**
+    *   **Applications Page:** For Renters to apply and Landlords to review applications.
+    *   **Maintenance Page:** For Renters to submit requests and Landlords to track them.
+    *   **Jobs Page:** A marketplace for Contractors to find and manage jobs.
+*   **Homepage Redesign:** The landing page now features a large, interactive Nova AI search bar and displays property listings in a 4-column grid. The Made with Emergent logo has been hidden via CSS.
+*   **Integrations:**
+    *   **Google Maps:** Powers the  page with interactive property markers.
+    *   **Claude Sonnet 4.5:** For the Nova AI chatbot.
+    *   **Firebase:** Firebase Analytics for user behavior tracking and Firebase Cloud Messaging (FCM) for real-time push notifications, complete with a notification bell UI in the dashboard.
+*   **Enhanced AI Chatbot:** The Nova AI chat interface has been enhanced with a detailed welcome message, categorized quick actions, and a settings panel.
 
 ### **Last working item**
--   **Last item agent was working:** The agent was beginning the implementation of the core marketplace features requested by the user: Stripe payments, document management, and real-time messaging. It created the initial service and utility files for these features but has not yet added any implementation logic.
-    -   
-    -   
-    -   
-    -    (This seems incorrectly named and should likely be related to websockets/messaging, not just the AI chat).
--   **Status:** IN PROGRESS
--   **Agent Testing Done:** N
--   **Which testing method agent to use?** both
--   **User Testing Done:** N
+*   **Last item agent was working:** Implementing and verifying secure password hashing for user authentication. The agent updated the  and  endpoints to use  for hashing and verifying passwords, replacing the plain-text password handling.
+*   **Status:** USER VERIFICATION PENDING
+*   **Agent Testing Done:** Y
+*   **Which testing method agent to use?** NA (testing is already done)
+*   **User Testing Done:** N
 
 ### **All Pending/In progress Issue list**
--   **Issue 1: Implement Core Marketplace Features (P0)**
-    -   **Description:** The platform is missing the key transactional features of a marketplace. The agent needs to build out the functionality for payments, document handling, and messaging.
-    -   **Attempted fixes:** The agent created empty placeholder files to start the implementation. No logic has been written yet.
-    -   **Next debug checklist:**
-        1.  **Stripe Payments:**
-            -   Call  to get the Stripe integration playbook for FastAPI and React.
-            -   Backend: Create API endpoints in  (e.g., ) to handle payment logic.
-            -   Frontend: Implement the payment flow in  and create UI components for checkout.
-        2.  **Document Management:**
-            -   Backend: In , add endpoints for file upload, retrieval, and deletion (e.g., ). Use  for handling file uploads.
-            -   Frontend: Implement services in  and create UI components for users to manage their documents.
-        3.  **Real-Time Messaging:**
-            -   Backend: Implement WebSocket endpoints in  using FastAPI's  support to handle real-time chat connections.
-            -   Frontend: Utilize  to establish a WebSocket connection and create a full-featured chat interface component.
-    -   **Why fix this issue and what will be achieved with the fix?** This will transform the application from a property browser into a functional marketplace, which is the core user requirement.
-    -   **Status:** IN PROGRESS
-    -   **Is recurring issue?** N
-    -   **Should Test frontend/backend/both after fix?** both
-    -   **Blocked on other issue:** None
+There are no outstanding bugs or issues. All implemented features were successfully tested by the testing agent.
 
 ### **In progress Task List**
--   **Task 1: Complete Core Marketplace Features (P0)**
-    -   **Where to resume:** Start by implementing the backend logic for one of the features (e.g., Stripe payments) in , then build the corresponding frontend components and services.
-    -   **What will be achieved with this?** The platform will gain essential functionalities for payments, document management, and real-time communication, fulfilling the user's primary request.
-    -   **Status:** IN PROGRESS
-    -   **Should Test frontend/backend/both after fix?** both
-    -   **Blocked on something:** None
+No tasks are currently in progress.
 
 ### **Upcoming and Future Tasks**
-**Upcoming Tasks (P1):**
-*   **Enhance Nova AI Chatbot (Phase 1):** Implement the most feasible and high-impact ideas from the user's list.
-    *   **Lifestyle-Based Search:** Modify the  endpoint to understand queries like Find a place near coffee shops. This may require enriching the listing data.
-    *   **Financial Assistance:** Add a Budget Calculator function to the chatbot to answer questions like Can I afford 000/month?.
-    *   **Application & Paperwork Helper:** Implement a Rental Resume Builder or Application Optimizer to help users strengthen their rental applications.
+**Upcoming Tasks:**
+*   **P0: Implement Email Notifications:** The agent previously planned this. The next step is to integrate an email service like Resend or SendGrid to send transactional emails (e.g., registration confirmation, payment receipts, document notifications). The user has a Firebase account, but it does not support outbound emails.
+*   **P1: Build out Landlord My Properties Logic:** The  page exists, but it's a placeholder. The backend needs to be connected to allow landlords to add, edit, and manage their own property listings. The  model in  was updated to include a .
+*   **P2: Implement Contractor Bidding System:** The  page exists for contractors, showing Available Jobs and My Jobs. The logic for contractors to view details and place bids on available jobs needs to be implemented on both the backend and frontend.
 
-**Future Tasks (P2):**
-*   **Advanced AI Features:**
-    *   **Visual Search:** Allow users to upload an image to find visually similar properties.
-    *   **Document Analysis:** Implement a feature to scan and analyze lease documents for fairness.
-    *   **Commute Optimizer:** Integrate a directions API to find properties based on commute times.
-*   **Social Features:**
-    *   **Roommate Finder:** Build a system for users to find and match with potential roommates.
+**Future Tasks:**
+*   **Enhance Nova AI Chatbot (Phase 2):** Implement the more advanced features from the user's extensive list:
+    *   **Visual Search:** Allow users to upload an image to find similar properties.
+    *   **Document Analysis:** Scan and analyze lease documents for fairness.
+    *   **Commute Optimizer:** Find properties based on commute times to multiple locations.
+*   **Social & Community Features:**
+    *   **Roommate Finder:** Implement a system for users to find and match with potential roommates.
 *   **Advanced Integrations:**
-    *   Integrate with Google Calendar for scheduling viewings.
-    *   Connect with moving company APIs for quotes.
+    *   Integrate Google Calendar for scheduling property viewings.
+    *   Connect with moving company APIs for instant quotes.
 
 ### **Completed work in this session**
--   **DOMMA V2 Project Creation:** Built the application from scratch using React, FastAPI, and MongoDB.
--   **UI Overhaul:** Implemented a new, user-specified dark-theme design.
--   **Role-Based Authentication:** Created the backend and frontend for a multi-role (Renter, Landlord, Contractor) auth system.
--   **Google Maps Integration:** Successfully added an interactive map displaying sample property listings.
--   **AI Chatbot:** Integrated Claude Sonnet 4.5 for the Nova chatbot.
--   **Content Updates:** Updated the homepage hero text and team member list as requested.
--   **Full System Test:** Successfully ran the testing agent on the DOMMA V2 build, with all tests passing.
+-   **Homepage Redesign:**
+    -   Added a prominent, wide Nova AI search bar below the hero section.
+    -   Re-architected the property listings on the homepage into a 4-column grid.
+    -   Hid the Made with Emergent logo via a global CSS rule.
+-   **Firebase Integration:**
+    -   Integrated Firebase Analytics for user behavior tracking.
+    -   Implemented Firebase Cloud Messaging (FCM) for real-time push notifications.
+    -   Added a  component to the UI to display notifications.
+    -   Configured the backend to send push notifications using the user-provided VAPID key.
+-   **New Role-Based Features & Pages:**
+    -   Created , , , and  pages and their corresponding backend endpoints and database models.
+-   **Security Enhancement:**
+    -   Implemented secure password hashing using  for all user credentials.
+-   **Frontend Implementation for Core Features:**
+    -   Built the UI for Payments, Documents, and Messages pages, connecting them to the existing backend endpoints.
+-   **Comprehensive Testing:** Successfully ran the testing agent multiple times, achieving 100% pass rates on both frontend and backend after major feature additions.
+-   **PRD Update:** Consistently updated  to reflect the project's progress.
 
 ### **Earlier issues found/mentioned but not fixed**
-None. All identified issues during the session were resolved.
+None.
 
 ### **Known issue recurrence from previous fork**
 None.
@@ -112,75 +99,89 @@ None.
 -   **Frontend:** React.js
 -   **Backend:** Python (FastAPI)
 -   **Database:** MongoDB
--   **Authentication:** JWT-based, Role-Based Access Control (RBAC)
+-   **Authentication:** JWT with  for password hashing
+-   **Real-time Notifications:** Firebase Cloud Messaging (FCM) via Web Push
+-   **Analytics:** Firebase Analytics
+-   **Payments:** Stripe
 -   **Mapping:** Google Maps API
--   **AI/LLM:** Claude Sonnet 4.5 via Emergent LLM Key
--   **Real-time:** WebSockets (to be implemented)
--   **Payments:** Stripe (to be implemented)
+-   **AI/LLM:** Claude Sonnet 4.5
 
 ### **key DB schema**
 -   **users:** 
 -   **listings:** 
--   **documents:**  (To be created)
--   **messages:**  (To be created)
+-   **fcm_tokens:** 
+-   **rental_applications:** 
+-   **maintenance_requests:** 
+-   **contractor_jobs:** 
 
 ### **changes in tech stack**
--   The project was started with **React, FastAPI, and MongoDB** based on an agreement with the user, deviating from the initial problem statement which specified Next.js, Express, and MySQL.
+-   **Firebase Suite:** Added Firebase Analytics and Firebase Cloud Messaging to the stack.
 
 ### **All files of reference**
--   : The core backend file containing all API endpoints, database models, and business logic.
--   : The main entry point for the React frontend, handling routing.
--   : Handles the role-based login and registration flow.
--   : Contains the Google Maps implementation.
--   : The V2 landing page component.
--   : Contains the global styles, fonts, and CSS variables for the V2 design.
--   , , : Newly created, empty files for the next set of features.
+*   : The single most important (and largest) file, containing almost all backend logic.
+*   : Completely refactored to include the new Nova AI search bar and property grid.
+*   : Updated to include routing for all new pages and to initialize Firebase.
+*   : Updated with navigation links for the new role-specific pages.
+*   : The service worker essential for FCM push notifications.
+*   : Contains the Firebase configuration provided by the user.
+*   : Contains the logic for sending push notifications.
+*   All new component files under : , , , , .
+
+### **Areas that need refactoring**
+-   **CRITICAL: Refactor **. The file has grown to over 1000 lines and contains all database models, API endpoints, and business logic for more than 10 distinct features. It should be broken down into a standard FastAPI project structure:
+    -   : Main FastAPI app instance.
+    -   : Separate router files for auth, payments, documents, etc.
+    -   : Pydantic and database models.
+    -   : Business logic for different features.
+    -   : Database connection logic.
 
 ### **key api endpoints**
--   : Creates a new user with a specific role.
--   : Authenticates a user and returns a JWT.
--   : Fetches all property listings.
--   : Handles messages to the Nova AI chatbot.
-**To be implemented:**
--   
--   
--   
--   : WebSocket endpoint for real-time messaging.
+*    & : Now use password hashing.
+*   : To register a browser's FCM token.
+*   : To send a test push notification.
+*   **CRUD endpoints for:**
+    *   
+    *   
+    *   
+    *   
 
 ### **Critical Info for New Agent**
--   The project has been rebuilt from the ground up as **DOMMA V2** with a new tech stack (React/FastAPI/Mongo) and UI. Do not refer to the original problem statement's file structure or tech stack (Next.js/Express/MySQL).
--   The immediate priority is to implement the three core marketplace features: **Stripe payments, document management, and real-time messaging**.
--   The user has provided a very detailed and ambitious roadmap for the **Nova AI chatbot**. After the core features are done, tackle the Upcoming Tasks from this list first.
--   Role-based access is fundamental. Ensure that any new features consider the different experiences for Renters, Landlords, and Contractors.
+-   **Refactor the Backend:** The top priority before adding significant new features should be refactoring the monolithic  file. It is becoming unmaintainable.
+-   **Firebase VAPID Key:** The user has provided the necessary private key and key pair for Firebase Cloud Messaging. It is stored in the  file. No further action is needed from the user on this.
+-   **Made with Emergent Badge:** This is hidden using a CSS  rule () in . This is a fragile solution and might break if the platform's badge ID changes.
+-   **GitHub Sync:** The user was informed that saving to GitHub is a manual process using the Save to GitHub button in the UI.
 
 ### **documents and test reports created in this job**
--   
--    (V1 testing)
--    (V2 testing)
+*    (Updated)
+*   
+*   
+*   
 
 ### **Last 10 User Messages and any pending HUMAN messages**
-10. Agent confirms V2 architecture is working.
-9.  User sees login page with role selection.
-8.  Agent shows user the browse page with the new design.
-7.  Agent confirms V2 looks great and will start the testing agent.
-6.  Agent confirms all tests passed and will update the PRD.
-5.  **User requests text updates:** Change homepage hero to Home made simple and update team section with four founder names.
-4.  Agent confirms the card update is also done.
-3.  **User requests another text update** on a smaller card.
-2.  Agent shows a screenshot of the updated team section.
-1.  **User agrees with the plan** to implement Stripe, document management, and messaging, and then provides a massive, detailed list of feature ideas for the Nova AI chatbot, categorizing them from property search to financial assistance and more.
+10. **User:** Asks if GitHub sync is automatic.
+9.  **Agent:** Explains that sync is manual via the Save to GitHub button and recommends saving the recent progress.
+8.  **User:** Acknowledges the GitHub info and provides new UI update requests: 1) remove Emergent logo, 2) create a prominent Nova AI search bar on the homepage, 3) change homepage listings to a multi-column grid. Also asks to continue with the next action items.
+7.  **Agent:** Commits to implementing the UI updates.
+6.  **User:** Asks to continue.
+5.  **User:** Asks to continue.
+4.  **User:** Asks to continue.
+3.  **User:** you update this. and then continue on the next action items and future items too. (Provides Firebase VAPID key).
+2.  **User:** 1 - yes. 2 - yes . 3 - no. (Agrees to implement Firebase Push Notifications and Analytics, but NOT Firebase Auth).
+1.  **User:** i actually created a Firebase account earlier. Is that better than Resend or sendgrid? If it is, you can use it. (Provides Firebase config and asks for a recommendation).
 
 ### **Project Health Check:**
 -   **Broken:** None.
--   **Mocked:** Property listings are currently hardcoded/seeded in the backend. User data is generated via the registration flow.
+-   **Mocked:** Property listings are currently hardcoded/seeded in the backend. This will need to be replaced by landlord-managed properties.
 
 ### **3rd Party Integrations**
--   **Google Maps Platform:** Used for the interactive map on the  page. Requires a User API Key.
--   **Claude Sonnet 4.5:** Powers the Nova AI chatbot. Uses the Emergent LLM Key.
--   **Stripe (Pending):** To be integrated for payments. Will require a User API Key.
+*   **Google Maps Platform:** Used for maps on . Requires User API Key.
+*   **Claude Sonnet 4.5:** Powers the Nova AI chatbot. Uses Emergent LLM Key.
+*   **Stripe:** Implemented for payments. Requires User API Key.
+*   **Firebase Analytics:** Integrated for user tracking. Uses user-provided config.
+*   **Firebase Cloud Messaging (FCM):** Integrated for push notifications. Uses user-provided config and VAPID key.
 
 ### **Testing status**
--   **Testing agent used after significant changes:** YES (after the full DOMMA V2 rebuild).
+-   **Testing agent used after significant changes:** YES. The agent ran the testing agent multiple times, confirming the functionality of core features, the Firebase integration, new role-based pages, and password hashing. All tests passed.
 -   **Troubleshoot agent used after agent stuck in loop:** NO.
 -   **Test files created:** None.
 -   **Known regressions:** None.
@@ -189,4 +190,4 @@ None.
 New users can be created via the registration form on the login page. Select a role (Renter, Landlord, or Contractor) and provide an email/password.
 
 ### **What agent forgot to execute**
-The agent has correctly identified the next steps (implementing Stripe, docs, and messaging) and has created placeholder files. Nothing has been forgotten, but the implementation of these critical features has only just begun.</analysis>
+The agent correctly followed the user's priorities. The next planned items (Email Notifications, Landlord Property Management) were not forgotten but are correctly queued as the next tasks to be implemented.</analysis>
