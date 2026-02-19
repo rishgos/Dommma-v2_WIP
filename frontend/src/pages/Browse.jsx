@@ -76,12 +76,15 @@ const Browse = () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
+      if (filters.listingType) params.append('listing_type', filters.listingType);
       if (filters.bedrooms) params.append('bedrooms', filters.bedrooms);
       if (filters.bathrooms) params.append('bathrooms', filters.bathrooms);
       if (filters.minPrice) params.append('min_price', filters.minPrice);
       if (filters.maxPrice) params.append('max_price', filters.maxPrice);
       if (filters.petFriendly) params.append('pet_friendly', 'true');
-      if (filters.search) params.append('city', filters.search);
+      if (filters.parking) params.append('parking', 'true');
+      if (filters.propertyType) params.append('property_type', filters.propertyType);
+      if (filters.search) params.append('q', filters.search);
       const response = await axios.get(`${API}/listings?${params.toString()}`);
       setListings(response.data);
     } catch (error) {
