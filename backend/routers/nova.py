@@ -1,13 +1,15 @@
 """
 Nova AI Router - Enhanced AI capabilities for the chatbot
 """
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Response
 from typing import Optional, List
 from pydantic import BaseModel
 from db import db
 from services.voice import VoiceService
 from services.nova_memory import NovaMemoryService, SavedSearchService
 from services.image_analysis import ImageAnalysisService
+from services.tts import TextToSpeechService
+from services.nova_insights import NovaInsightsService
 
 router = APIRouter(prefix="/nova", tags=["nova-ai"])
 
@@ -15,12 +17,26 @@ voice_service = VoiceService(db)
 memory_service = NovaMemoryService(db)
 search_service = SavedSearchService(db)
 image_service = ImageAnalysisService(db)
+tts_service = TextToSpeechService(db)
+insights_service = NovaInsightsService(db)
 
 
 # Request/Response Models
 class TranscriptionRequest(BaseModel):
     audio_data: str  # base64 encoded
     language: str = "en"
+
+
+class TTSRequest(BaseModel):
+    text: str
+    voice: str = "nova"
+    speed: float = 1.0
+
+
+class VoicePreferenceRequest(BaseModel):
+    voice: Optional[str] = None
+    speed: Optional[float] = None
+    enabled: Optional[bool] = None
 
 
 class SaveSearchRequest(BaseModel):
