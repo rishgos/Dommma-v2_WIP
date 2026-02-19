@@ -1785,6 +1785,22 @@ async def update_booking_status(booking_id: str, status: str, user_id: str):
         "created_at": datetime.now(timezone.utc).isoformat()
     })
     
+    # Send email notification for confirmed bookings
+    if status == "confirmed":
+        customer = await db.users.find_one({"id": booking["customer_id"]}, {"_id": 0})
+        contractor_profile = await db.contractor_profiles.find_one({"user_id": booking["contractor_id"]}, {"_id": 0})
+        if customer and customer.get("email"):
+            asyncio.create_task(send_email(
+                customer["email"],
+                f"Booking Confirmed - {booking['title']}",
+                email_booking_confirmed(
+                    customer.get("name", ""),
+                    contractor_profile.get("business_name", "") if contractor_profile else "",
+                    booking["title"],
+                    booking.get("preferred_date", "")
+                )
+            ))
+    
     return {"status": "updated"}
 
 @api_router.post("/bookings/{booking_id}/pay")
