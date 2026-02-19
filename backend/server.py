@@ -1517,6 +1517,7 @@ async def create_contractor_profile(user_id: str, profile: ContractorProfileCrea
     
     doc = profile_obj.model_dump()
     await db.contractor_profiles.insert_one(doc)
+    doc.pop("_id", None)
     return doc
 
 @api_router.get("/contractors/profile/{user_id}")
