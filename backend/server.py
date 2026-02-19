@@ -123,7 +123,7 @@ class ListingCreate(BaseModel):
     description: str
     amenities: List[str] = []
     images: List[str] = []
-    available_date: str
+    available_date: str = ""
     pet_friendly: bool = False
     parking: bool = False
 
