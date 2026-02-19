@@ -42,9 +42,14 @@ const Browse = () => {
     bathrooms: '',
     minPrice: '',
     maxPrice: '',
-    petFriendly: false
+    petFriendly: false,
+    parking: false,
+    propertyType: '',
+    listingType: 'rent'
   });
   const [showFilters, setShowFilters] = useState(false);
+  
+  const propertyTypes = ['Apartment', 'Condo', 'House', 'Townhouse', 'Studio', 'Duplex', 'Penthouse'];
 
   const { isLoaded } = useJsApiLoader({ googleMapsApiKey: GOOGLE_MAPS_API_KEY });
 
