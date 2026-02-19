@@ -12,6 +12,8 @@ const CalendarPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const listingId = searchParams.get('listing');
+  const oauthCode = searchParams.get('code');
+  const oauthState = searchParams.get('state');
   
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,6 +22,7 @@ const CalendarPage = () => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [googleConnected, setGoogleConnected] = useState(false);
   const [listing, setListing] = useState(null);
+  const [oauthStatus, setOauthStatus] = useState(''); // 'success', 'error', ''
   
   const [newEvent, setNewEvent] = useState({
     title: '',
@@ -33,14 +36,42 @@ const CalendarPage = () => {
     notes: ''
   });
 
+  // Handle OAuth callback
+  useEffect(() => {
+    const handleOAuthCallback = async () => {
+      if (oauthCode && user?.id) {
+        try {
+          const redirectUri = `${window.location.origin}/calendar`;
+          await axios.post(`${API}/calendar/google/callback`, null, {
+            params: {
+              user_id: user.id,
+              code: oauthCode,
+              redirect_uri: redirectUri
+            }
+          });
+          setGoogleConnected(true);
+          setOauthStatus('success');
+          // Clean URL
+          window.history.replaceState({}, '', '/calendar');
+        } catch (error) {
+          console.error('OAuth callback error:', error);
+          setOauthStatus('error');
+        }
+      }
+    };
+    handleOAuthCallback();
+  }, [oauthCode, user]);
+
   useEffect(() => {
     if (!user) {
       navigate('/login');
       return;
     }
     fetchEvents();
-    checkGoogleStatus();
-  }, [user, navigate]);
+    if (!oauthCode) {
+      checkGoogleStatus();
+    }
+  }, [user, navigate, oauthCode]);
 
   useEffect(() => {
     if (listingId) {
