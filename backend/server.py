@@ -1279,6 +1279,20 @@ async def update_application_status(application_id: str, status: str, landlord_i
             "read": False,
             "created_at": datetime.now(timezone.utc).isoformat()
         })
+        
+        # Send email notification
+        applicant = await db.users.find_one({"id": app["user_id"]}, {"_id": 0})
+        listing = await db.listings.find_one({"id": app.get("listing_id")}, {"_id": 0, "title": 1})
+        if applicant and applicant.get("email"):
+            asyncio.create_task(send_email(
+                applicant["email"],
+                f"Application Update - {listing.get('title', 'Your Property') if listing else 'Your Property'}",
+                email_application_update(
+                    applicant.get("name", ""),
+                    listing.get("title", "the property") if listing else "the property",
+                    status
+                )
+            ))
     
     return {"status": "updated"}
 
