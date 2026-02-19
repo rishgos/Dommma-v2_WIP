@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Image, Star, Calendar, Edit2, Trash2, Eye, Award } from 'lucide-react';
 import { useAuth } from '../App';
 import axios from 'axios';
@@ -10,6 +10,7 @@ const API = `${BACKEND_URL}/api`;
 const ContractorPortfolio = () => {
   const { contractorId } = useParams();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [contractor, setContractor] = useState(null);
@@ -17,7 +18,8 @@ const ContractorPortfolio = () => {
   const [selectedProject, setSelectedProject] = useState(null);
   const [categories, setCategories] = useState([]);
   
-  const isOwner = user?.id === contractorId;
+  // Check if viewing own portfolio (no contractorId) or another's
+  const isOwner = !contractorId || user?.id === contractorId;
   
   const [formData, setFormData] = useState({
     title: '',
@@ -35,6 +37,11 @@ const ContractorPortfolio = () => {
   });
 
   useEffect(() => {
+    // If viewing own portfolio (no contractorId) and not logged in, redirect
+    if (!contractorId && !user) {
+      navigate('/login');
+      return;
+    }
     fetchPortfolio();
     fetchCategories();
     if (contractorId) {
