@@ -305,10 +305,29 @@ const MyProperties = () => {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm text-gray-600 mb-2">Available Date</label>
-                <input type="date" value={form.available_date} onChange={e => setForm({ ...form, available_date: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#1A2F3A] outline-none" />
-              </div>
+              {form.listing_type === 'rent' && (
+                <div>
+                  <label className="block text-sm text-gray-600 mb-2">Available Date</label>
+                  <input type="date" value={form.available_date} onChange={e => setForm({ ...form, available_date: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#1A2F3A] outline-none" />
+                </div>
+              )}
+
+              {form.listing_type === 'sale' && (
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-2">Year Built</label>
+                    <input type="number" value={form.year_built} onChange={e => setForm({ ...form, year_built: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#1A2F3A] outline-none" placeholder="2020" />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-2">Lot Size (sqft)</label>
+                    <input type="number" value={form.lot_size} onChange={e => setForm({ ...form, lot_size: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#1A2F3A] outline-none" placeholder="5000" />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-2">Garage Spots</label>
+                    <input type="number" value={form.garage} onChange={e => setForm({ ...form, garage: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#1A2F3A] outline-none" placeholder="2" />
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm text-gray-600 mb-2">Description</label>
