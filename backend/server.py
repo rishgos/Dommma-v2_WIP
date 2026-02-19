@@ -2771,6 +2771,13 @@ async def seed_data():
 # Include the router
 app.include_router(api_router)
 
+# Include new modular routers
+from routers import calendar_router, moving_router, compatibility_router, portfolio_router
+app.include_router(calendar_router, prefix="/api")
+app.include_router(moving_router, prefix="/api")
+app.include_router(compatibility_router, prefix="/api")
+app.include_router(portfolio_router, prefix="/api")
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
