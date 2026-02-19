@@ -31,6 +31,7 @@ import RoommateFinder from "@/pages/RoommateFinder";
 import MovingQuote from "@/pages/MovingQuote";
 import CalendarPage from "@/pages/CalendarPage";
 import ContractorPortfolio from "@/pages/ContractorPortfolio";
+import NovaInsights from "@/pages/NovaInsights";
 
 // Firebase Analytics
 import { initializeFirebase, trackPageView, trackLogin } from "@/lib/firebase";
