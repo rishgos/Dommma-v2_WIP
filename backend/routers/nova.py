@@ -196,3 +196,81 @@ async def assess_property_condition(image_data: str):
     """Assess property condition from image"""
     result = await image_service.assess_condition(image_data)
     return result
+
+
+
+# Text-to-Speech Endpoints
+@router.post("/tts")
+async def text_to_speech(request: TTSRequest):
+    """Convert text to speech audio"""
+    try:
+        audio_base64 = await tts_service.generate_speech_base64(
+            text=request.text,
+            voice=request.voice,
+            speed=request.speed
+        )
+        return {
+            "audio": audio_base64,
+            "format": "mp3",
+            "voice": request.voice
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/tts/voices")
+async def get_available_voices():
+    """Get list of available TTS voices"""
+    voices = tts_service.get_available_voices()
+    return {"voices": voices}
+
+
+@router.get("/tts/preferences/{user_id}")
+async def get_voice_preferences(user_id: str):
+    """Get user's voice preferences"""
+    prefs = await tts_service.get_user_voice_preference(user_id)
+    return prefs
+
+
+@router.post("/tts/preferences/{user_id}")
+async def set_voice_preferences(user_id: str, request: VoicePreferenceRequest):
+    """Set user's voice preferences"""
+    try:
+        prefs = await tts_service.set_user_voice_preference(
+            user_id,
+            voice=request.voice,
+            speed=request.speed,
+            enabled=request.enabled
+        )
+        return prefs
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+# Insights Endpoints
+@router.get("/insights/{user_id}")
+async def get_user_insights(user_id: str):
+    """Get comprehensive AI-generated insights for user"""
+    insights = await insights_service.get_user_insights(user_id)
+    return insights
+
+
+@router.get("/insights/{user_id}/timeline")
+async def get_moving_timeline(user_id: str):
+    """Get AI-generated moving timeline"""
+    insights = await insights_service.get_user_insights(user_id)
+    return {"timeline": insights.get("moving_timeline", {})}
+
+
+@router.get("/insights/{user_id}/matches")
+async def get_property_matches(user_id: str):
+    """Get property match scores"""
+    insights = await insights_service.get_user_insights(user_id)
+    return {"matches": insights.get("property_match_scores", {})}
+
+
+@router.get("/insights/{user_id}/trends")
+async def get_market_trends(user_id: str):
+    """Get personalized market trends"""
+    insights = await insights_service.get_user_insights(user_id)
+    return {"trends": insights.get("market_trends", {})}
