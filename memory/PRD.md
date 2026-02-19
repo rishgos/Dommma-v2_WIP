@@ -1,4 +1,4 @@
-# DOMMMA V2 - Complete Real Estate Marketplace Platform
+# DOMMMA V3 - Complete Real Estate Marketplace Platform
 
 ## Original Problem Statement
 Build a complete real estate marketplace called "DOMMMA" for Renters, Landlords, and Contractors with role-specific features, dark teal theme, AI chatbot (Nova), Stripe payments, and full marketplace functionality.
@@ -9,13 +9,14 @@ Build a complete real estate marketplace called "DOMMMA" for Renters, Landlords,
 - **Database**: MongoDB (Motor async driver)
 - **Auth**: JWT + passlib bcrypt
 - **Payments**: Stripe (test key)
-- **AI**: Claude Sonnet 4.5 (Emergent LLM Key)
+- **AI/LLM**: Claude Sonnet 4.5 (Emergent LLM Key)
 - **Maps**: Google Maps API
 - **Notifications**: Firebase Cloud Messaging
 - **Analytics**: Firebase Analytics
+- **Email**: Resend (transactional emails)
 
 ## User Personas
-1. **Renter** - Search properties, apply, message landlords, hire contractors, pay rent
+1. **Renter** - Search properties, apply, message landlords, hire contractors, pay rent, analyze leases, optimize commute
 2. **Landlord** - Manage properties (CRUD + photos), review applications, track maintenance
 3. **Contractor** - Create profile, post services, manage bookings, get paid
 
@@ -23,120 +24,117 @@ Build a complete real estate marketplace called "DOMMMA" for Renters, Landlords,
 ```
 /app/
 ├── backend/
-│   ├── server.py        # All API routes (needs refactoring)
-│   ├── fcm_utils.py     # Firebase messaging
-│   └── .env             # MONGO_URL, EMERGENT_LLM_KEY, STRIPE_API_KEY
+│   ├── server.py           # All API routes (needs refactoring)
+│   ├── fcm_utils.py        # Firebase messaging
+│   └── .env                # MONGO_URL, EMERGENT_LLM_KEY, STRIPE_API_KEY, RESEND_API_KEY
 ├── frontend/src/
-│   ├── App.js           # Router + Auth context
+│   ├── App.js              # Router + Auth context
 │   ├── pages/
-│   │   ├── Home.jsx                  # Landing page
-│   │   ├── Browse.jsx                # Property search + map
-│   │   ├── Login.jsx                 # Auth (register/login)
-│   │   ├── Dashboard.jsx             # Role-based dashboard
-│   │   ├── MyProperties.jsx          # Landlord property CRUD
-│   │   ├── ContractorMarketplace.jsx # Browse/book contractors
-│   │   ├── ContractorProfile.jsx     # Contractor dashboard
-│   │   ├── Applications.jsx          # Rental applications
-│   │   ├── Maintenance.jsx           # Maintenance requests
-│   │   ├── Jobs.jsx                  # Contractor jobs
-│   │   ├── Messages.jsx              # Messaging
-│   │   ├── Payments.jsx              # Payment history
-│   │   └── Documents.jsx             # Document management
+│   │   ├── Home.jsx                    # Landing page with AI tools & leaderboard
+│   │   ├── Browse.jsx                  # Property search + map + Apply/Message
+│   │   ├── Login.jsx                   # Auth (register/login)
+│   │   ├── Dashboard.jsx               # Role-based dashboard
+│   │   ├── MyProperties.jsx            # Landlord property CRUD with photos
+│   │   ├── ContractorMarketplace.jsx   # Browse/search/book contractors
+│   │   ├── ContractorProfile.jsx       # Contractor dashboard
+│   │   ├── SmartIssueReporter.jsx      # AI issue analysis + contractor matching
+│   │   ├── DocumentAnalyzer.jsx        # AI lease/document analysis
+│   │   ├── CommuteOptimizer.jsx        # AI commute-based property search
+│   │   ├── Applications.jsx            # Rental applications
+│   │   ├── Maintenance.jsx             # Maintenance requests
+│   │   ├── Jobs.jsx                    # Contractor jobs
+│   │   ├── Messages.jsx                # Messaging
+│   │   ├── Payments.jsx                # Payment history
+│   │   └── Documents.jsx               # Document management
 │   └── components/
-│       ├── chat/NovaChat.js          # AI chatbot
+│       ├── chat/NovaChat.js            # AI chatbot
 │       └── notifications/NotificationBell.js
 └── memory/PRD.md
 ```
 
-## What's Been Implemented (as of Feb 19, 2026)
+## What's Been Implemented
 
 ### Phase 1 - Core Platform ✅
 - [x] JWT auth with passlib bcrypt (register/login for 3 roles)
-- [x] Homepage with hero, Nova AI search, property grid, contractor section
+- [x] Homepage with hero, Nova AI search, property grid
 - [x] Property browsing with Google Maps integration
 - [x] Dashboard with role-based navigation
 - [x] Firebase Analytics + Cloud Messaging
 - [x] "Made with Emergent" badge hidden
 
 ### Phase 2 - Full Renter/Landlord ✅
-- [x] Browse properties → Apply Now + Message Landlord buttons in listing modal
+- [x] Browse properties → Apply Now + Message Landlord buttons
 - [x] Applications page (submit/track for renters, review for landlords)
 - [x] Maintenance requests (submit/track)
 - [x] Messaging system (WebSocket real-time)
 - [x] Payments page with Stripe checkout
 - [x] Documents management (upload, view, sign)
-- [x] **Landlord My Properties** - Full CRUD with photo upload, amenities, property details
+- [x] Landlord My Properties - Full CRUD with photo upload
 
 ### Phase 3 - Full Contractor Marketplace ✅
-- [x] **Contractor Profiles** - Business info, specialties, service areas, rates, insurance
-- [x] **Service Listings** - Contractors post services with pricing/duration
-- [x] **Contractor Search** - Browse by category, search by name/specialty/area
-- [x] **Service Booking** - Customers book contractors with date/time/address
-- [x] **Booking Management** - Contractors confirm/start/complete bookings
-- [x] **Review System** - Customers review completed bookings, auto-calculated ratings
-- [x] **Payment for Bookings** - Stripe integration for contractor payments
-- [x] Image upload endpoint for property photos and portfolios
+- [x] Contractor Profiles - Business info, specialties, service areas, rates
+- [x] Service Listings - Contractors post services with pricing
+- [x] Contractor Search - Browse by category, search by name/specialty
+- [x] Service Booking - Customers book contractors
+- [x] Booking Management - Contractors confirm/start/complete bookings
+- [x] Review System - Auto-calculated ratings
+- [x] Payment for Bookings - Stripe integration
+- [x] Image upload for property photos and portfolios
+
+### Phase 4 - Email & AI Features ✅ (Feb 19, 2026)
+- [x] **Resend Email Integration** - Welcome emails, booking confirmations, application updates
+- [x] **Smart Issue Reporter** - AI analyzes home issues from description, matches contractors
+- [x] **Document Analyzer** - AI reviews leases for fairness score, red/green flags, recommendations
+- [x] **Commute Optimizer** - AI ranks properties by commute time to work
+- [x] **Contractor Leaderboard** - Top-rated contractors featured on homepage
+- [x] **Homepage AI Tools Section** - 3 cards linking to AI features
+- [x] **Homepage Contractor Services** - 6 category cards
+- [x] **Updated Dashboard Sidebar** - AI tools for renters/landlords
 
 ### Key API Endpoints
-- `POST/GET /api/auth/register, /api/auth/login` - Authentication
-- `GET /api/listings` - Browse properties
-- `POST /api/listings/create` - Create listing (landlord)
-- `GET /api/listings/landlord/{id}` - Landlord's properties
-- `PUT /api/listings/{id}` - Update listing
-- `DELETE /api/listings/{id}` - Delete listing
-- `GET /api/contractors/search` - Search contractors
-- `POST /api/contractors/profile` - Create/update contractor profile
-- `POST/GET /api/contractors/services` - Contractor services
-- `GET /api/services/search` - Search all services
-- `POST /api/bookings` - Create booking
-- `PUT /api/bookings/{id}/status` - Update booking status
-- `POST /api/bookings/{id}/pay` - Pay for booking (Stripe)
-- `POST /api/bookings/{id}/review` - Leave review
-- `POST /api/upload/image` - Upload image
+- Auth: `POST /api/auth/register`, `/api/auth/login`
+- Listings: `GET/POST/PUT/DELETE /api/listings/*`
+- Contractors: `GET/POST /api/contractors/*`
+- Services: `GET/POST/DELETE /api/contractors/services/*`
+- Bookings: `POST/GET/PUT /api/bookings/*`
+- AI: `POST /api/ai/analyze-issue`, `/api/ai/analyze-document`, `/api/ai/commute-search`
+- Upload: `POST /api/upload/image`
+- Email: Triggered automatically on register, booking confirm, application update
 
 ### DB Collections
-- `users` - Auth and profiles
-- `listings` - Property listings
-- `contractor_profiles` - Contractor business profiles
-- `contractor_services` - Service offerings
-- `bookings` - Service bookings
-- `rental_applications` - Rental applications
-- `maintenance_requests` - Maintenance tickets
-- `payment_transactions` - Payment history
-- `images` - Uploaded images
-- `notifications` - Push notifications
-- `fcm_tokens` - Firebase messaging tokens
+users, listings, contractor_profiles, contractor_services, bookings, rental_applications, maintenance_requests, payment_transactions, images, notifications, fcm_tokens
 
 ## Prioritized Backlog
 
 ### P0 - Next Up
-- [ ] Email Notifications (Resend integration) - registration confirmation, payment receipts
 - [ ] Backend refactoring - split monolithic server.py into routers/models/services
+- [ ] Resend domain verification for production emails
 
 ### P1 - Important
-- [ ] Enhanced Nova AI Chatbot Phase 2 (visual search, document analysis, commute optimizer)
-- [ ] Application status tracking with email notifications
-- [ ] Landlord: view applicant details and approve/reject with notifications
+- [ ] Enhanced Nova AI features (more conversational, property recommendations)
+- [ ] Application approve/reject workflow with detailed notifications
+- [ ] Contractor portfolio image gallery
+- [ ] Search filters on Browse (price range, bedrooms, pet-friendly)
 
 ### P2 - Nice to Have
 - [ ] Roommate Finder system
-- [ ] Google Calendar integration for property viewings
+- [ ] Google Calendar for property viewings
 - [ ] Moving company API integration
-- [ ] Social features (community, reviews)
-- [ ] Advanced search filters (commute-based, lifestyle matching)
+- [ ] Advanced social features (community, reviews for properties)
+
+### P3 - Future
+- [ ] iOS & Android mobile apps (React Native)
+- [ ] Progressive Web App (PWA) features
+- [ ] Real-time location tracking for contractor arrivals
 
 ## Test Reports
-- `/app/test_reports/iteration_3.json` - Core features
-- `/app/test_reports/iteration_4.json` - Firebase + role pages
-- `/app/test_reports/iteration_5.json` - Password hashing
-- `/app/test_reports/iteration_6.json` - Contractor marketplace + landlord properties + enhanced browse (ALL PASSING 100%)
+- `/app/test_reports/iteration_6.json` - V2 features (100% pass)
+- `/app/test_reports/iteration_7.json` - V3 AI features + email (100% pass)
 
-## Test Credentials
-- Renter: `renter@dommma.com / password123`
-- Landlord: `landlord@dommma.com / password123`
-- Contractor: `contractor@dommma.com / password123`
-
-## Seed Data
-- 21+ property listings in Vancouver area
-- 7 contractor profiles (plumbing, electrical, painting, renovation, landscaping, cleaning, test)
-- 18+ contractor services
+## 3rd Party Integrations
+- Google Maps: Property browsing maps
+- Claude Sonnet 4.5: Nova chatbot + AI analysis features
+- Stripe: Payments (test key)
+- Firebase Analytics: User tracking
+- Firebase Cloud Messaging: Push notifications
+- Resend: Transactional emails (test mode)
