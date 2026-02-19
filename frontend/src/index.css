@@ -246,3 +246,20 @@ h1, h2, h3, h4, h5, h6, .heading-font {
     @apply border-border;
   }
 }
+
+/* Hide Made with Emergent badge */
+[class*="emergent"],
+[id*="emergent"],
+a[href*="emergent"],
+div[class*="MadeWith"],
+div[class*="made-with"],
+#made-with-emergent,
+.made-with-emergent,
+[data-emergent],
+div[style*="position: fixed"][style*="bottom"][style*="right"] > a[href*="emergent"],
+div[style*="position: fixed"][style*="bottom"][style*="right"]:has(> a[href*="emergent"]) {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
