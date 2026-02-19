@@ -273,9 +273,9 @@ const MyProperties = () => {
                     {propertyTypes.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </div>
-                <div>
-                  <label className="block text-sm text-gray-600 mb-2">Monthly Rent ($)</label>
-                  <input type="number" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#1A2F3A] outline-none" placeholder="2500" required />
+              <div>
+                <label className="block text-sm text-gray-600 mb-2">{form.listing_type === 'sale' ? 'Price ($)' : 'Monthly Rent ($)'}</label>
+                  <input type="number" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#1A2F3A] outline-none" placeholder={form.listing_type === 'sale' ? '850000' : '2500'} required />
                 </div>
               </div>
 
