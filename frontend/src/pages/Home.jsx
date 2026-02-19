@@ -435,6 +435,49 @@ const Home = () => {
         </div>
       </section>
 
+      {/* Properties For Sale Section */}
+      {saleListings.length > 0 && (
+        <section className="section-md bg-white" data-testid="sale-listings-section">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="flex items-end justify-between mb-12">
+              <div>
+                <p className="text-xs text-gray-500 uppercase tracking-widest mb-4">Buy Property</p>
+                <h2 className="text-4xl text-[#1A2F3A]" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+                  Properties For Sale
+                </h2>
+              </div>
+              <Link to="/browse?type=sale" className="flex items-center gap-2 text-[#1A2F3A] font-medium hover:gap-4 transition-all text-sm uppercase tracking-wider">
+                View All <ArrowRight size={16} />
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {saleListings.map(listing => (
+                <Link key={listing.id} to="/browse" className="group bg-[#F5F5F0] rounded-2xl overflow-hidden hover:shadow-xl transition-all" data-testid={`sale-card-${listing.id}`}>
+                  <div className="relative h-48 overflow-hidden">
+                    <img src={listing.images?.[0] || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600'} alt={listing.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                    <div className="absolute top-3 left-3">
+                      <span className="px-3 py-1 bg-blue-500 text-white rounded-full text-xs font-medium">For Sale</span>
+                    </div>
+                    <div className="absolute top-3 right-3">
+                      <span className="px-3 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium text-[#1A2F3A]">${listing.price?.toLocaleString()}</span>
+                    </div>
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-semibold text-[#1A2F3A] mb-1 line-clamp-1">{listing.title}</h3>
+                    <p className="text-sm text-gray-500 flex items-center gap-1 mb-3"><MapPin size={12} />{listing.address}, {listing.city}</p>
+                    <div className="flex items-center gap-4 text-xs text-gray-600">
+                      <span className="flex items-center gap-1"><Bed size={14} />{listing.bedrooms === 0 ? 'Studio' : `${listing.bedrooms} bed`}</span>
+                      <span className="flex items-center gap-1"><Bath size={14} />{listing.bathrooms} bath</span>
+                      <span>{listing.sqft} sqft</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Contractor Services Section */}
       <section className="section-md bg-white" data-testid="contractors-section">
         <div className="max-w-7xl mx-auto px-6">
