@@ -147,11 +147,7 @@ Build a complete real estate marketplace called "DOMMMA" for Renters, Landlords,
 ## Prioritized Backlog
 
 ### P0 - Immediate (Next)
-- [ ] Implement Viewing Scheduler UI
-  - Add "Schedule Viewing" button on property listings
-  - Connect to Google Calendar OAuth
-  - Allow users to pick time slots
-  - Create event on connected Google Calendar
+- [x] ~~Implement Viewing Scheduler UI~~ ✅ COMPLETED
 
 ### P1 - Next Sprint
 - [ ] Frontend Push Notifications
