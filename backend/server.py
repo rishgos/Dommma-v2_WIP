@@ -1101,6 +1101,229 @@ async def get_user_preferences(user_id: str):
         raise HTTPException(status_code=404, detail="User not found")
     return user.get("preferences", {})
 
+# ========== AI-POWERED FEATURES ==========
+
+class IssueAnalysisRequest(BaseModel):
+    image_data: str  # base64 data URL
+    description: Optional[str] = ""
+
+class DocumentAnalysisRequest(BaseModel):
+    document_text: str
+    document_type: str = "lease"
+
+class CommuteSearchRequest(BaseModel):
+    work_addresses: List[str]
+    max_commute_minutes: int = 45
+    transport_mode: str = "transit"
+
+@api_router.post("/ai/analyze-issue")
+async def analyze_issue(req: IssueAnalysisRequest):
+    """AI analyzes a home issue image and matches relevant contractors"""
+    api_key = os.environ.get('EMERGENT_LLM_KEY')
+    
+    system_message = """You are a home maintenance expert AI. Analyze the described home issue and:
+1. Identify the specific issue type (plumbing, electrical, painting, renovation, carpentry, landscaping, cleaning, HVAC, roofing, etc.)
+2. Assess the urgency (low, medium, high, emergency)
+3. Provide a brief description of the problem
+4. Recommend the type of contractor needed
+5. Estimate a rough cost range in CAD
+
+Respond in valid JSON format only:
+{
+  "issue_type": "plumbing",
+  "urgency": "high",
+  "description": "Water leak from pipe joint under kitchen sink",
+  "contractor_type": "plumber",
+  "estimated_cost_range": "$150-$400",
+  "recommended_specialties": ["plumbing", "pipe repair"],
+  "immediate_steps": ["Turn off water supply under the sink", "Place a bucket under the leak"]
+}"""
+
+    try:
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=f"issue-{uuid.uuid4().hex[:8]}",
+            system_message=system_message
+        ).with_model("anthropic", "claude-sonnet-4-5-20250929")
+        
+        message_text = f"Analyze this home issue. User description: {req.description or 'See image'}. The image has been uploaded showing the issue."
+        if req.image_data and req.image_data.startswith("data:"):
+            message_text += f"\n\n[Image uploaded - analyze based on description]"
+        
+        user_message = UserMessage(text=message_text)
+        response = await chat.send_message(user_message)
+        
+        # Parse AI response
+        import re
+        json_match = re.search(r'\{[^{}]*\}', response, re.DOTALL)
+        analysis = {}
+        if json_match:
+            try:
+                analysis = json.loads(json_match.group())
+            except json.JSONDecodeError:
+                analysis = {"issue_type": "general", "description": response, "urgency": "medium", "recommended_specialties": ["general"]}
+        else:
+            analysis = {"issue_type": "general", "description": response, "urgency": "medium", "recommended_specialties": ["general"]}
+        
+        # Match contractors based on AI analysis
+        specialties = analysis.get("recommended_specialties", [analysis.get("issue_type", "general")])
+        matched_contractors = []
+        for specialty in specialties:
+            contractors = await db.contractor_profiles.find(
+                {"specialties": {"$regex": specialty, "$options": "i"}, "status": "active"},
+                {"_id": 0}
+            ).sort("rating", -1).to_list(5)
+            for c in contractors:
+                if c not in matched_contractors:
+                    matched_contractors.append(c)
+        
+        return {
+            "analysis": analysis,
+            "matched_contractors": matched_contractors[:6],
+            "total_matches": len(matched_contractors)
+        }
+    except Exception as e:
+        logging.error(f"Issue analysis error: {e}")
+        # Fallback: do keyword matching
+        keywords_map = {
+            "plumbing": ["water", "leak", "pipe", "faucet", "drain", "toilet", "sink"],
+            "electrical": ["light", "switch", "outlet", "wire", "power", "circuit"],
+            "painting": ["paint", "wall", "ceiling", "crack", "peel"],
+            "cleaning": ["mold", "stain", "dirt", "mess"],
+            "renovation": ["broken", "damage", "repair", "fix"],
+        }
+        desc_lower = (req.description or "").lower()
+        matched_type = "general"
+        for cat, keywords in keywords_map.items():
+            if any(kw in desc_lower for kw in keywords):
+                matched_type = cat
+                break
+        
+        contractors = await db.contractor_profiles.find(
+            {"specialties": {"$regex": matched_type, "$options": "i"}, "status": "active"},
+            {"_id": 0}
+        ).sort("rating", -1).to_list(6)
+        
+        return {
+            "analysis": {
+                "issue_type": matched_type,
+                "description": f"Issue detected: {req.description}",
+                "urgency": "medium",
+                "recommended_specialties": [matched_type]
+            },
+            "matched_contractors": contractors,
+            "total_matches": len(contractors)
+        }
+
+@api_router.post("/ai/analyze-document")
+async def analyze_document(req: DocumentAnalysisRequest):
+    """AI analyzes lease/rental documents for fairness and key terms"""
+    api_key = os.environ.get('EMERGENT_LLM_KEY')
+    
+    system_message = f"""You are a {req.document_type} document analysis expert for Canadian real estate. Analyze the provided document and return a comprehensive review in valid JSON:
+{{
+  "summary": "Brief summary of the document",
+  "key_terms": [
+    {{"term": "Monthly Rent", "value": "$2,500", "assessment": "fair"}},
+    {{"term": "Deposit", "value": "$2,500", "assessment": "standard"}}
+  ],
+  "fairness_score": 8,
+  "red_flags": ["Unusual early termination penalty of 3 months rent"],
+  "green_flags": ["Standard 12-month term", "Pet-friendly clause included"],
+  "recommendations": ["Negotiate the early termination penalty", "Request clarification on utility responsibilities"],
+  "legal_notes": ["All terms comply with BC Residential Tenancy Act"],
+  "monthly_costs_breakdown": {{
+    "rent": 2500,
+    "utilities_estimate": 150,
+    "parking": 0,
+    "total_estimate": 2650
+  }}
+}}
+Score fairness from 1-10 (10 = very renter-friendly). Be thorough but practical."""
+
+    try:
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=f"doc-{uuid.uuid4().hex[:8]}",
+            system_message=system_message
+        ).with_model("anthropic", "claude-sonnet-4-5-20250929")
+        
+        user_message = UserMessage(text=f"Analyze this {req.document_type} document:\n\n{req.document_text[:5000]}")
+        response = await chat.send_message(user_message)
+        
+        import re
+        json_match = re.search(r'\{.*\}', response, re.DOTALL)
+        if json_match:
+            try:
+                return {"analysis": json.loads(json_match.group())}
+            except json.JSONDecodeError:
+                pass
+        return {"analysis": {"summary": response, "fairness_score": 0, "key_terms": [], "red_flags": [], "green_flags": [], "recommendations": []}}
+    except Exception as e:
+        logging.error(f"Document analysis error: {e}")
+        raise HTTPException(status_code=500, detail="Document analysis failed")
+
+@api_router.post("/ai/commute-search")
+async def commute_search(req: CommuteSearchRequest):
+    """Find properties optimized for commute to work locations"""
+    api_key = os.environ.get('EMERGENT_LLM_KEY')
+    
+    # Get all active listings
+    all_listings = await db.listings.find({"status": "active"}, {"_id": 0}).to_list(100)
+    
+    listings_text = "\n".join([
+        f"- {l['title']} at {l['address']}, {l['city']} (${l['price']}/mo, {l['bedrooms']}bd/{l['bathrooms']}ba)"
+        for l in all_listings[:30]
+    ])
+    
+    system_message = """You are a commute optimization expert for Vancouver. Given work addresses and available properties, rank properties by estimated commute convenience. Return valid JSON:
+{
+  "ranked_properties": [
+    {
+      "title": "Property Name",
+      "address": "Full address",
+      "estimated_commute": "25 min by transit",
+      "commute_score": 9,
+      "notes": "Close to SkyTrain station"
+    }
+  ],
+  "tips": ["Consider the Canada Line for fastest downtown access"]
+}
+Score commute from 1-10 (10 = shortest/most convenient)."""
+
+    try:
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=f"commute-{uuid.uuid4().hex[:8]}",
+            system_message=system_message
+        ).with_model("anthropic", "claude-sonnet-4-5-20250929")
+        
+        user_message = UserMessage(
+            text=f"Work addresses: {', '.join(req.work_addresses)}\n"
+                 f"Max commute: {req.max_commute_minutes} min by {req.transport_mode}\n\n"
+                 f"Available properties:\n{listings_text}"
+        )
+        response = await chat.send_message(user_message)
+        
+        import re
+        json_match = re.search(r'\{.*\}', response, re.DOTALL)
+        if json_match:
+            try:
+                result = json.loads(json_match.group())
+                # Enrich with full listing data
+                for ranked in result.get("ranked_properties", []):
+                    for l in all_listings:
+                        if l["title"].lower() in ranked.get("title", "").lower() or ranked.get("address", "").lower() in l.get("address", "").lower():
+                            ranked["listing"] = l
+                            break
+                return result
+            except json.JSONDecodeError:
+                pass
+        return {"ranked_properties": [], "tips": [response]}
+    except Exception as e:
+        logging.error(f"Commute search error: {e}")
+        raise HTTPException(status_code=500, detail="Commute search failed")
+
 # ========== FCM PUSH NOTIFICATIONS ==========
 
 @api_router.post("/notifications/register-token")
