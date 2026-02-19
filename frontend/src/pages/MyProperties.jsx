@@ -213,7 +213,9 @@ const MyProperties = () => {
                     </span>
                   </div>
                   <div className="absolute top-3 right-3">
-                    <span className="px-3 py-1 bg-[#1A2F3A] rounded-full text-xs font-medium text-white">${listing.price?.toLocaleString()}/mo</span>
+                    <span className="px-3 py-1 bg-[#1A2F3A] rounded-full text-xs font-medium text-white">
+                      ${listing.price?.toLocaleString()}{listing.listing_type !== 'sale' ? '/mo' : ''}
+                    </span>
                   </div>
                 </div>
                 <div className="p-5">
