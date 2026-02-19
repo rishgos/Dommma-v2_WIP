@@ -203,6 +203,138 @@ class ChatResponse(BaseModel):
     listings: List[dict] = []
     suggestions: List[str] = []  # Nova's proactive suggestions
 
+# FCM Token Model for Push Notifications
+class FCMTokenCreate(BaseModel):
+    user_id: str
+    token: str
+
+class FCMToken(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    token: str
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    updated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class NotificationCreate(BaseModel):
+    user_id: str
+    title: str
+    body: str
+    notification_type: str  # message, payment, document, property
+    data: Optional[Dict[str, Any]] = None
+
+# Rental Application Models
+class RentalApplication(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    listing_id: str
+    landlord_id: Optional[str] = None
+    # Personal Info
+    full_name: str
+    email: str
+    phone: str
+    current_address: str
+    move_in_date: str
+    # Employment Info
+    employer: Optional[str] = None
+    job_title: Optional[str] = None
+    monthly_income: Optional[float] = None
+    employment_length: Optional[str] = None
+    # References
+    references: List[Dict[str, str]] = []
+    # Additional
+    num_occupants: int = 1
+    has_pets: bool = False
+    pet_details: Optional[str] = None
+    additional_notes: Optional[str] = None
+    # Status tracking
+    status: str = "pending"  # pending, under_review, approved, rejected
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    updated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class ApplicationCreate(BaseModel):
+    listing_id: str
+    full_name: str
+    email: str
+    phone: str
+    current_address: str
+    move_in_date: str
+    employer: Optional[str] = None
+    job_title: Optional[str] = None
+    monthly_income: Optional[float] = None
+    employment_length: Optional[str] = None
+    references: List[Dict[str, str]] = []
+    num_occupants: int = 1
+    has_pets: bool = False
+    pet_details: Optional[str] = None
+    additional_notes: Optional[str] = None
+
+# Maintenance Request Models
+class MaintenanceRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str  # tenant who submitted
+    landlord_id: Optional[str] = None
+    property_id: Optional[str] = None
+    title: str
+    description: str
+    category: str  # plumbing, electrical, appliance, hvac, structural, pest, other
+    priority: str = "medium"  # low, medium, high, emergency
+    images: List[str] = []
+    status: str = "open"  # open, in_progress, scheduled, completed, cancelled
+    assigned_contractor_id: Optional[str] = None
+    scheduled_date: Optional[str] = None
+    completed_date: Optional[str] = None
+    cost: Optional[float] = None
+    notes: List[Dict[str, Any]] = []
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    updated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class MaintenanceRequestCreate(BaseModel):
+    property_id: Optional[str] = None
+    title: str
+    description: str
+    category: str
+    priority: str = "medium"
+    images: List[str] = []
+
+# Contractor Job Models
+class ContractorJob(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    maintenance_request_id: Optional[str] = None
+    landlord_id: str
+    contractor_id: Optional[str] = None
+    title: str
+    description: str
+    category: str
+    location: str
+    budget_min: Optional[float] = None
+    budget_max: Optional[float] = None
+    deadline: Optional[str] = None
+    status: str = "open"  # open, assigned, in_progress, completed, cancelled
+    bids: List[Dict[str, Any]] = []
+    selected_bid_id: Optional[str] = None
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    updated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class ContractorJobCreate(BaseModel):
+    title: str
+    description: str
+    category: str
+    location: str
+    budget_min: Optional[float] = None
+    budget_max: Optional[float] = None
+    deadline: Optional[str] = None
+    maintenance_request_id: Optional[str] = None
+
+class ContractorBid(BaseModel):
+    contractor_id: str
+    amount: float
+    estimated_days: int
+    message: str
+
 # ========== ROUTES ==========
 
 @api_router.get("/")
