@@ -614,6 +614,13 @@ async def register_user(user_data: UserCreate):
     user_doc['preferences'] = {}  # For Nova's memory
     await db.users.insert_one(user_doc)
     
+    # Send welcome email (non-blocking)
+    asyncio.create_task(send_email(
+        user.email,
+        "Welcome to DOMMMA!",
+        email_welcome(user.name, user.user_type)
+    ))
+    
     return {"id": user.id, "email": user.email, "name": user.name, "user_type": user.user_type}
 
 @api_router.post("/auth/login")
