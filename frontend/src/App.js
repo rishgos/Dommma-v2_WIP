@@ -105,6 +105,9 @@ function App() {
           <Route path="/document-analyzer" element={<DocumentAnalyzer />} />
           <Route path="/commute-optimizer" element={<CommuteOptimizer />} />
           <Route path="/offers" element={<Offers />} />
+          <Route path="/favorites" element={<Favorites />} />
+          <Route path="/compare" element={<Compare />} />
+          <Route path="/roommates" element={<RoommateFinder />} />
           <Route path="/dashboard/*" element={<Dashboard />} />
         </Routes>
       </BrowserRouter>
