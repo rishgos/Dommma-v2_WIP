@@ -422,6 +422,40 @@ const Home = () => {
         </div>
       </section>
 
+      {/* Contractor Services Section */}
+      <section className="section-md bg-white" data-testid="contractors-section">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex items-end justify-between mb-12">
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-widest mb-4">Home Services</p>
+              <h2 className="text-4xl text-[#1A2F3A]" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+                Trusted Contractors
+              </h2>
+              <p className="text-gray-500 mt-2">Find verified professionals for every job</p>
+            </div>
+            <Link to="/contractors" className="flex items-center gap-2 text-[#1A2F3A] font-medium hover:gap-4 transition-all text-sm uppercase tracking-wider">
+              Browse All <ArrowRight size={16} />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {[
+              { name: 'Plumbing', icon: '🔧' },
+              { name: 'Electrical', icon: '⚡' },
+              { name: 'Painting', icon: '🎨' },
+              { name: 'Renovation', icon: '🏗' },
+              { name: 'Landscaping', icon: '🌿' },
+              { name: 'Cleaning', icon: '✨' },
+            ].map((svc, i) => (
+              <Link key={i} to={`/contractors?category=${svc.name.toLowerCase()}`}
+                className="bg-[#F5F5F0] rounded-2xl p-6 text-center hover:bg-[#1A2F3A] hover:text-white transition-all group cursor-pointer">
+                <p className="text-3xl mb-3">{svc.icon}</p>
+                <p className="font-medium text-sm group-hover:text-white text-[#1A2F3A]">{svc.name}</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Team Section */}
       <section className="section-md bg-[#F5F5F0]" data-testid="team-section">
         <div className="max-w-7xl mx-auto px-6">
