@@ -1577,6 +1577,7 @@ async def create_contractor_service(contractor_id: str, service: ContractorServi
     service_obj = ContractorService(contractor_id=contractor_id, **service.model_dump())
     doc = service_obj.model_dump()
     await db.contractor_services.insert_one(doc)
+    doc.pop("_id", None)
     return doc
 
 @api_router.get("/contractors/{contractor_id}/services")
