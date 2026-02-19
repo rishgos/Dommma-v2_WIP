@@ -451,6 +451,20 @@ const NovaChat = () => {
               </div>
               <div className="flex items-center gap-2">
                 <button 
+                  onClick={toggleVoice}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                    voiceEnabled ? 'bg-green-500 hover:bg-green-600' : 'bg-white/10 hover:bg-white/20'
+                  }`}
+                  title={voiceEnabled ? 'Voice enabled' : 'Enable voice responses'}
+                  data-testid="nova-voice-toggle"
+                >
+                  {isSpeaking ? (
+                    <VolumeX size={16} onClick={(e) => { e.stopPropagation(); stopSpeaking(); }} />
+                  ) : (
+                    <Volume2 size={16} />
+                  )}
+                </button>
+                <button 
                   onClick={() => setShowPreferences(!showPreferences)}
                   className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
                   title="Preferences"
