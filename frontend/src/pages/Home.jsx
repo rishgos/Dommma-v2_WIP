@@ -464,6 +464,63 @@ const Home = () => {
         </div>
       </section>
 
+      {/* Contractor Leaderboard */}
+      {topContractors.length > 0 && (
+        <section className="section-md bg-white" data-testid="contractor-leaderboard">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="flex items-end justify-between mb-12">
+              <div>
+                <p className="text-xs text-gray-500 uppercase tracking-widest mb-4">Top Rated</p>
+                <h2 className="text-4xl text-[#1A2F3A]" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+                  Contractor Leaderboard
+                </h2>
+                <p className="text-gray-500 mt-2">Highest rated professionals on DOMMMA</p>
+              </div>
+              <Link to="/contractors" className="flex items-center gap-2 text-[#1A2F3A] font-medium hover:gap-4 transition-all text-sm uppercase tracking-wider">
+                View All <ArrowRight size={16} />
+              </Link>
+            </div>
+            <div className="grid md:grid-cols-3 gap-6">
+              {topContractors.map((c, i) => (
+                <Link key={c.id} to="/contractors" className="group relative bg-[#F5F5F0] rounded-2xl p-6 hover:shadow-lg transition-all">
+                  {i === 0 && (
+                    <div className="absolute -top-3 -right-3 w-10 h-10 rounded-full bg-yellow-400 flex items-center justify-center shadow-lg">
+                      <Trophy size={18} className="text-yellow-900" />
+                    </div>
+                  )}
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-14 h-14 rounded-xl bg-[#1A2F3A] flex items-center justify-center text-white text-2xl font-bold" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+                      {c.business_name?.charAt(0)}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-[#1A2F3A]">{c.business_name}</h3>
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: 5 }, (_, j) => (
+                          <Star key={j} size={12} className={j < Math.round(c.rating || 0) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'} />
+                        ))}
+                        <span className="text-xs text-gray-500 ml-1">{c.rating || 0}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-500 mb-3 line-clamp-2">{c.description}</p>
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-wrap gap-1">
+                      {c.specialties?.slice(0, 2).map(s => (
+                        <span key={s} className="px-2 py-0.5 bg-white text-gray-600 rounded text-xs capitalize">{s}</span>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {c.verified && <Shield size={14} className="text-green-600" />}
+                      <span className="text-sm font-semibold text-[#1A2F3A]">${c.hourly_rate}/hr</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* AI Tools Section */}
       <section className="section-md bg-[#1A2F3A]" data-testid="ai-tools-section">
         <div className="max-w-7xl mx-auto px-6">
