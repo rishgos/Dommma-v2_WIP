@@ -155,24 +155,17 @@ const CalendarPage = () => {
 
   const connectGoogle = async () => {
     try {
+      const redirectUri = `${window.location.origin}/calendar`;
       const response = await axios.get(`${API}/calendar/google/auth-url`, {
         params: {
-          redirect_uri: `${window.location.origin}/calendar/callback`,
+          redirect_uri: redirectUri,
           state: user.id
         }
       });
       window.location.href = response.data.auth_url;
     } catch (error) {
       console.error('Google auth error:', error);
-      // For demo purposes, simulate connection
-      await axios.post(`${API}/calendar/google/callback`, null, {
-        params: {
-          user_id: user.id,
-          code: 'demo_code',
-          redirect_uri: window.location.origin
-        }
-      });
-      setGoogleConnected(true);
+      setOauthStatus('error');
     }
   };
 
