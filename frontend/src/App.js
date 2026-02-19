@@ -111,6 +111,10 @@ function App() {
           <Route path="/favorites" element={<Favorites />} />
           <Route path="/compare" element={<Compare />} />
           <Route path="/roommates" element={<RoommateFinder />} />
+          <Route path="/moving-quote" element={<MovingQuote />} />
+          <Route path="/calendar" element={<CalendarPage />} />
+          <Route path="/portfolio" element={<ContractorPortfolio />} />
+          <Route path="/portfolio/:contractorId" element={<ContractorPortfolio />} />
           <Route path="/dashboard/*" element={<Dashboard />} />
         </Routes>
       </BrowserRouter>
