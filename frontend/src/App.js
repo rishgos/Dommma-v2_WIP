@@ -25,6 +25,9 @@ import SmartIssueReporter from "@/pages/SmartIssueReporter";
 import DocumentAnalyzer from "@/pages/DocumentAnalyzer";
 import CommuteOptimizer from "@/pages/CommuteOptimizer";
 import Offers from "@/pages/Offers";
+import Favorites from "@/pages/Favorites";
+import Compare from "@/pages/Compare";
+import RoommateFinder from "@/pages/RoommateFinder";
 
 // Firebase Analytics
 import { initializeFirebase, trackPageView, trackLogin } from "@/lib/firebase";
