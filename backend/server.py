@@ -487,6 +487,41 @@ class OfferCreate(BaseModel):
     closing_date: Optional[str] = None
     message: Optional[str] = None
 
+# Roommate Finder Models
+class RoommateProfile(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    name: str = ""
+    age: Optional[int] = None
+    gender: Optional[str] = None
+    occupation: Optional[str] = None
+    budget_min: int = 500
+    budget_max: int = 2000
+    move_in_date: Optional[str] = None
+    preferred_areas: List[str] = []
+    lifestyle: List[str] = []  # early_bird, night_owl, quiet, social, clean, etc.
+    pets: bool = False
+    smoking: bool = False
+    bio: str = ""
+    avatar: Optional[str] = None
+    status: str = "active"
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class RoommateProfileCreate(BaseModel):
+    name: str
+    age: Optional[int] = None
+    gender: Optional[str] = None
+    occupation: Optional[str] = None
+    budget_min: int = 500
+    budget_max: int = 2000
+    move_in_date: Optional[str] = None
+    preferred_areas: List[str] = []
+    lifestyle: List[str] = []
+    pets: bool = False
+    smoking: bool = False
+    bio: str = ""
+
 # ========== ROUTES ==========
 
 @api_router.get("/")
