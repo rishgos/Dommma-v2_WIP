@@ -1,5 +1,5 @@
 """
-Moving Quote Router - Get moving cost estimates
+Moving Quote Router - Get moving cost estimates with AI-powered tips
 """
 from fastapi import APIRouter, HTTPException
 from typing import Optional
@@ -12,10 +12,18 @@ moving_service = MovingQuoteService(db)
 
 
 @router.post("/quote")
-async def get_moving_quote(user_id: Optional[str] = None, request: MovingQuoteRequest = None):
-    """Generate a moving cost estimate"""
+async def get_moving_quote(
+    user_id: Optional[str] = None, 
+    request: MovingQuoteRequest = None,
+    include_ai_tips: bool = False
+):
+    """Generate a moving cost estimate with optional AI tips"""
     try:
-        quote = await moving_service.generate_quote(user_id or "", request.model_dump())
+        quote = await moving_service.generate_quote(
+            user_id or "", 
+            request.model_dump(),
+            include_ai_tips=include_ai_tips
+        )
         return quote
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -35,6 +43,15 @@ async def get_quote_details(quote_id: str):
     if not quote:
         raise HTTPException(status_code=404, detail="Quote not found")
     return quote
+
+
+@router.post("/quote/{quote_id}/ai-tips")
+async def get_ai_tips_for_quote(quote_id: str):
+    """Get AI-powered moving tips for an existing quote"""
+    tips = await moving_service.get_ai_tips_for_quote(quote_id)
+    if not tips:
+        raise HTTPException(status_code=404, detail="Quote not found or AI tips unavailable")
+    return tips
 
 
 @router.get("/pricing-info")
@@ -67,5 +84,11 @@ async def get_pricing_info():
             "Final price may vary based on actual conditions",
             "Quotes valid for 7 days",
             "Insurance options available at checkout"
+        ],
+        "ai_features": [
+            "Money-saving tips personalized to your move",
+            "Pre-move preparation checklist",
+            "Moving day best practices",
+            "Neighborhood insights for your destination"
         ]
     }
