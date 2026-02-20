@@ -1,10 +1,13 @@
 """
-Moving Quote Service - Simulated moving cost calculator
+Moving Quote Service - AI-Enhanced Moving Cost Calculator
+Uses real pricing algorithms with AI-powered tips and recommendations
 """
 from datetime import datetime, timezone, timedelta
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import math
 import logging
+import os
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -107,7 +110,64 @@ class MovingQuoteService:
         self.db = db
         self.config = PRICING_CONFIG
     
-    async def generate_quote(self, user_id: str, request_data: dict) -> dict:
+    async def _get_ai_tips(self, request_data: dict, quote_data: dict) -> Optional[Dict]:
+        """Get AI-powered moving tips and recommendations"""
+        try:
+            from emergentintegrations.llm.chat import chat, UserMessage
+            
+            api_key = os.environ.get("EMERGENT_LLM_KEY")
+            if not api_key:
+                return None
+            
+            prompt = f"""You are a moving consultant helping someone plan their move. Based on their details, provide helpful tips.
+
+MOVE DETAILS:
+- From: {request_data.get('origin_address')}
+- To: {request_data.get('destination_address')}
+- Home Size: {request_data.get('home_size')}
+- Move Date: {request_data.get('preferred_date', 'Not specified')}
+- Distance: {quote_data.get('distance_km')} km
+- Special Items: {', '.join(request_data.get('special_items', [])) or 'None'}
+- Packing Service: {'Yes' if request_data.get('packing_service') else 'No'}
+- Has Elevator (Origin): {'Yes' if request_data.get('has_elevator_origin') else 'No'}
+- Has Elevator (Destination): {'Yes' if request_data.get('has_elevator_destination') else 'No'}
+- Estimated Cost: ${quote_data.get('estimated_cost_low')} - ${quote_data.get('estimated_cost_high')}
+
+Provide a JSON response with:
+1. "summary": A brief 1-2 sentence summary of their move
+2. "money_saving_tips": Array of 3 tips to save money on this move
+3. "preparation_checklist": Array of 5 key things to do before moving day
+4. "moving_day_tips": Array of 3 tips for the actual moving day
+5. "neighborhood_info": Brief info about the destination area (if identifiable)
+6. "timing_advice": Advice about the best time/day to move
+
+Respond ONLY with valid JSON, no other text."""
+
+            response = await chat(
+                api_key=api_key,
+                model="claude-sonnet-4-5-20250514",
+                messages=[UserMessage(content=prompt)]
+            )
+            
+            # Parse AI response
+            content = response.content
+            try:
+                # Handle potential markdown code blocks
+                if "```json" in content:
+                    content = content.split("```json")[1].split("```")[0]
+                elif "```" in content:
+                    content = content.split("```")[1].split("```")[0]
+                
+                return json.loads(content.strip())
+            except json.JSONDecodeError:
+                logger.warning("Failed to parse AI tips response")
+                return None
+                
+        except Exception as e:
+            logger.error(f"AI tips generation error: {e}")
+            return None
+    
+    async def generate_quote(self, user_id: str, request_data: dict, include_ai_tips: bool = False) -> dict:
         """Generate a moving quote based on the request"""
         from models import MovingQuote, MovingQuoteRequest
         
@@ -195,10 +255,36 @@ class MovingQuoteService:
             notes=notes
         )
         
-        # Save quote to database
-        await self.db.moving_quotes.insert_one(quote.model_dump())
+        quote_dict = quote.model_dump()
         
-        return quote.model_dump()
+        # Get AI tips if requested
+        if include_ai_tips:
+            ai_tips = await self._get_ai_tips(request_data, quote_dict)
+            if ai_tips:
+                quote_dict["ai_tips"] = ai_tips
+        
+        # Save quote to database
+        await self.db.moving_quotes.insert_one(quote_dict)
+        
+        return quote_dict
+    
+    async def get_ai_tips_for_quote(self, quote_id: str) -> Optional[Dict]:
+        """Get AI tips for an existing quote"""
+        quote = await self.db.moving_quotes.find_one({"id": quote_id}, {"_id": 0})
+        if not quote:
+            return None
+        
+        request_data = quote.get("request", {})
+        ai_tips = await self._get_ai_tips(request_data, quote)
+        
+        if ai_tips:
+            # Update quote with AI tips
+            await self.db.moving_quotes.update_one(
+                {"id": quote_id},
+                {"$set": {"ai_tips": ai_tips}}
+            )
+        
+        return ai_tips
     
     async def get_user_quotes(self, user_id: str) -> List[dict]:
         """Get all quotes for a user"""
