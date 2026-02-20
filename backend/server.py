@@ -1091,6 +1091,17 @@ End responses with 1-2 proactive suggestions when relevant."""
             }}
         )
         
+        # Store interaction and extract preferences for logged-in users
+        if user_id:
+            from services.nova_memory import NovaMemoryService
+            memory_service = NovaMemoryService(db)
+            await memory_service.store_interaction(
+                user_id=user_id,
+                message=request.message,
+                response=response,
+                context=user_context
+            )
+        
         # Find mentioned listings
         mentioned_listings = []
         for listing in listings:
@@ -1109,7 +1120,8 @@ End responses with 1-2 proactive suggestions when relevant."""
             session_id=session_id,
             response=response,
             listings=mentioned_listings[:5],
-            suggestions=suggestions[:3]
+            suggestions=suggestions[:3],
+            preferences_loaded=user_preferences_loaded
         )
         
     except Exception as e:
@@ -1118,7 +1130,8 @@ End responses with 1-2 proactive suggestions when relevant."""
             session_id=session_id,
             response="I'm having a moment! Let me help you - try asking about apartments in Vancouver, budget advice, or neighborhood recommendations! 🏠",
             listings=[],
-            suggestions=["Try asking: 'What can I afford on $70k salary?'", "Try: 'Show me pet-friendly apartments near downtown'"]
+            suggestions=["Try asking: 'What can I afford on $70k salary?'", "Try: 'Show me pet-friendly apartments near downtown'"],
+            preferences_loaded=False
         )
 
 @api_router.get("/chat/{session_id}/history")
