@@ -123,8 +123,7 @@ class TestContractorReviewsAPI:
         
         # Step 2: Update booking status to completed (simulating contractor completing the job)
         update_response = self.session.put(
-            f"{BASE_URL}/api/bookings/{self.test_booking_id}?contractor_id={self.test_contractor_id}",
-            json={"status": "completed"}
+            f"{BASE_URL}/api/bookings/{self.test_booking_id}/status?status=completed&user_id={self.test_contractor_id}"
         )
         assert update_response.status_code == 200, f"Booking update failed: {update_response.text}"
         print("✓ Updated booking to completed status")
