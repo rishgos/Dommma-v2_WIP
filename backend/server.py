@@ -2272,6 +2272,32 @@ async def review_booking(booking_id: str, customer_id: str, review: ReviewCreate
     
     return {"status": "reviewed"}
 
+@api_router.get("/contractors/{contractor_id}/reviews")
+async def get_contractor_reviews(contractor_id: str, limit: int = 20):
+    """Get reviews for a contractor"""
+    reviews = await db.bookings.find(
+        {"contractor_id": contractor_id, "rating": {"$exists": True, "$ne": None}},
+        {"_id": 0, "id": 1, "customer_id": 1, "title": 1, "rating": 1, "review": 1, "created_at": 1, "updated_at": 1}
+    ).sort("updated_at", -1).to_list(limit)
+    
+    # Add customer info
+    for r in reviews:
+        user = await db.users.find_one({"id": r["customer_id"]}, {"_id": 0, "name": 1, "avatar": 1})
+        r["customer"] = user or {"name": "Anonymous"}
+    
+    return reviews
+
+@api_router.get("/contractors/leaderboard")
+async def get_contractor_leaderboard(limit: int = 10):
+    """Get top-rated contractors"""
+    contractors = await db.contractor_profiles.find(
+        {"status": "active", "rating": {"$gt": 0}},
+        {"_id": 0, "id": 1, "user_id": 1, "business_name": 1, "avatar": 1, "rating": 1, "review_count": 1, 
+         "completed_jobs": 1, "specialties": 1, "verified": 1, "service_areas": 1}
+    ).sort([("rating", -1), ("review_count", -1)]).to_list(limit)
+    
+    return contractors
+
 # ========== USER PROFILE ==========
 
 @api_router.get("/users/{user_id}")
