@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Truck, Package, Calendar, MapPin, DollarSign, Clock, CheckCircle, Info, ChevronDown, ChevronUp, Plus, Minus } from 'lucide-react';
+import { ArrowLeft, Truck, Package, Calendar, MapPin, DollarSign, Clock, CheckCircle, Info, ChevronDown, ChevronUp, Plus, Minus, Sparkles, Lightbulb, ListChecks, MessageSquare, Loader2, Brain } from 'lucide-react';
 import axios from 'axios';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -9,8 +9,11 @@ const API = `${BACKEND_URL}/api`;
 const MovingQuote = () => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [loadingAI, setLoadingAI] = useState(false);
   const [pricingInfo, setPricingInfo] = useState(null);
   const [quote, setQuote] = useState(null);
+  const [aiTips, setAiTips] = useState(null);
+  const [showAITips, setShowAITips] = useState(false);
   const [formData, setFormData] = useState({
     origin_address: '',
     destination_address: '',
