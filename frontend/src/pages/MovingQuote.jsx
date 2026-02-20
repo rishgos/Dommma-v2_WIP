@@ -438,11 +438,137 @@ const MovingQuote = () => {
         </div>
       )}
 
+      {/* AI Tips Section */}
+      <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-100 rounded-2xl overflow-hidden">
+        <button
+          onClick={() => {
+            if (!aiTips && !loadingAI) {
+              fetchAITips();
+            }
+            setShowAITips(!showAITips);
+          }}
+          className="w-full p-4 flex items-center justify-between"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-xl flex items-center justify-center">
+              <Brain className="text-white" size={20} />
+            </div>
+            <div className="text-left">
+              <h4 className="font-semibold text-[#1A2F3A]">AI Moving Assistant</h4>
+              <p className="text-xs text-gray-500">Personalized tips for your move</p>
+            </div>
+          </div>
+          {loadingAI ? (
+            <Loader2 className="animate-spin text-purple-500" size={20} />
+          ) : (
+            <ChevronDown className={`text-gray-400 transition-transform ${showAITips ? 'rotate-180' : ''}`} size={20} />
+          )}
+        </button>
+        
+        {showAITips && aiTips && (
+          <div className="px-4 pb-4 space-y-4">
+            {/* Summary */}
+            {aiTips.summary && (
+              <div className="p-3 bg-white rounded-xl">
+                <p className="text-sm text-gray-700">{aiTips.summary}</p>
+              </div>
+            )}
+            
+            {/* Money Saving Tips */}
+            {aiTips.money_saving_tips?.length > 0 && (
+              <div>
+                <h5 className="text-sm font-medium text-green-700 mb-2 flex items-center gap-2">
+                  <DollarSign size={14} /> Money-Saving Tips
+                </h5>
+                <div className="space-y-2">
+                  {aiTips.money_saving_tips.map((tip, i) => (
+                    <div key={i} className="flex items-start gap-2 text-sm text-gray-600 bg-white p-3 rounded-lg">
+                      <Sparkles size={14} className="text-green-500 mt-0.5 flex-shrink-0" />
+                      {tip}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Preparation Checklist */}
+            {aiTips.preparation_checklist?.length > 0 && (
+              <div>
+                <h5 className="text-sm font-medium text-blue-700 mb-2 flex items-center gap-2">
+                  <ListChecks size={14} /> Pre-Move Checklist
+                </h5>
+                <div className="bg-white rounded-xl p-3">
+                  <ul className="space-y-2">
+                    {aiTips.preparation_checklist.map((item, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
+                        <CheckCircle size={14} className="text-blue-500 mt-0.5 flex-shrink-0" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+            
+            {/* Moving Day Tips */}
+            {aiTips.moving_day_tips?.length > 0 && (
+              <div>
+                <h5 className="text-sm font-medium text-orange-700 mb-2 flex items-center gap-2">
+                  <Truck size={14} /> Moving Day Tips
+                </h5>
+                <div className="space-y-2">
+                  {aiTips.moving_day_tips.map((tip, i) => (
+                    <div key={i} className="flex items-start gap-2 text-sm text-gray-600 bg-white p-3 rounded-lg">
+                      <Lightbulb size={14} className="text-orange-500 mt-0.5 flex-shrink-0" />
+                      {tip}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Neighborhood Info */}
+            {aiTips.neighborhood_info && (
+              <div className="p-3 bg-white rounded-xl">
+                <h5 className="text-sm font-medium text-purple-700 mb-1 flex items-center gap-2">
+                  <MapPin size={14} /> About Your New Area
+                </h5>
+                <p className="text-sm text-gray-600">{aiTips.neighborhood_info}</p>
+              </div>
+            )}
+            
+            {/* Timing Advice */}
+            {aiTips.timing_advice && (
+              <div className="p-3 bg-white rounded-xl">
+                <h5 className="text-sm font-medium text-teal-700 mb-1 flex items-center gap-2">
+                  <Clock size={14} /> Best Time to Move
+                </h5>
+                <p className="text-sm text-gray-600">{aiTips.timing_advice}</p>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {showAITips && !aiTips && !loadingAI && (
+          <div className="px-4 pb-4">
+            <button
+              onClick={fetchAITips}
+              className="w-full py-3 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-xl text-sm font-medium hover:from-purple-600 hover:to-indigo-600"
+              data-testid="get-ai-tips-btn"
+            >
+              Get Personalized Tips
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Actions */}
       <div className="flex gap-3">
         <button
           onClick={() => {
             setQuote(null);
+            setAiTips(null);
+            setShowAITips(false);
             setStep(1);
             setFormData({
               origin_address: '',
