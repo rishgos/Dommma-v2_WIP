@@ -225,7 +225,7 @@ Build a complete real estate marketplace called "DOMMMA" for Renters, Landlords,
 
 ## Mocked/Simulated Features
 - Moving Quote: Simulated pricing at `/api/moving/quote`
-- AI Roommate Compatibility: Simulated scoring
+- ~~AI Roommate Compatibility: Simulated scoring~~ **NOW REAL** - Claude Sonnet 4.5
 - Google Calendar Sync: OAuth working, actual event sync requires user consent
 
 ## Credentials
