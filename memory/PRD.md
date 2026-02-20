@@ -193,10 +193,7 @@ Build a complete real estate marketplace called "DOMMMA" for Renters, Landlords,
 - [x] ~~Implement Viewing Scheduler UI~~ ✅ COMPLETED
 
 ### P1 - Next Sprint
-- [ ] Frontend Push Notifications
-  - Firebase SDK integration for permission requests
-  - Handle incoming messages for real-time alerts
-  - Notification types: new messages, offer updates
+- [x] ~~Frontend Push Notifications~~ ✅ COMPLETED
 
 ### P2 - Future
 - [ ] AI Roommate Compatibility Score (replace mock)
