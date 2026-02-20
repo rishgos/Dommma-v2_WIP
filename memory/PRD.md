@@ -91,6 +91,26 @@ Build a complete real estate marketplace called "DOMMMA" for Renters, Landlords,
 - [x] **Google Calendar Integration** - Optional sync when connected
 - [x] **Calendar Page Updates** - OAuth callback handling, success/error banners
 
+### Contractor Ratings System (V9) - NEW - VERIFIED WORKING
+- [x] **Review Submission** - ContractorReview modal with:
+  - 5-star rating selection with visual feedback
+  - Review text input with character counter
+  - Success confirmation screen
+- [x] **Reviews Display** - ContractorReviews component with:
+  - Overall rating summary
+  - Rating distribution bars (1-5 stars)
+  - Individual review cards with customer info
+  - "No reviews yet" empty state
+- [x] **Leaderboard** - ContractorLeaderboard component with:
+  - Top-rated contractors list
+  - Medal icons for top 3 (gold/silver/bronze)
+  - Rating, review count, and completed jobs display
+  - Sidebar on contractor marketplace (desktop)
+- [x] **Dashboard Integration** - PendingReviews on renter dashboard:
+  - Shows completed bookings needing reviews
+  - One-click to open review modal
+  - Auto-hides when no pending reviews
+
 ### Nova AI Enhancements (V7) - VERIFIED WORKING
 - [x] **Voice Input (STT)** - OpenAI Whisper transcription
   - Mic button in chat interface
