@@ -242,9 +242,9 @@ const Browse = () => {
             <p className="text-sm text-gray-500 mb-4">{loading ? 'Loading...' : `${listings.length} properties found`}</p>
             
             {loading ? (
-              <div className="space-y-4">{[1,2,3].map(i => <div key={i} className="h-48 bg-gray-200 rounded-2xl animate-pulse" />)}</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">{[1,2,3,4,5,6,7,8].map(i => <div key={i} className="h-64 bg-gray-200 rounded-2xl animate-pulse" />)}</div>
             ) : (
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {listings.map((listing) => (
                   <div
                     key={listing.id}
@@ -254,36 +254,32 @@ const Browse = () => {
                     className={`bg-white rounded-2xl overflow-hidden cursor-pointer transition-all border-2 hover:shadow-lg ${hoveredListing?.id === listing.id ? 'border-[#1A2F3A]' : 'border-transparent'}`}
                     data-testid={`listing-card-${listing.id}`}
                   >
-                    <div className="flex">
-                      <div className="w-40 h-40 flex-shrink-0">
+                    <div className="flex flex-col">
+                      <div className="w-full h-40 relative">
                         <img src={listing.images?.[0] || 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400'} alt={listing.title} className="w-full h-full object-cover" />
+                        <button 
+                          className={`absolute top-2 right-2 p-2 bg-white/80 backdrop-blur-sm rounded-full transition-colors ${favoriteIds.includes(listing.id) ? 'text-red-500' : 'text-gray-400'}`} 
+                          onClick={(e) => toggleFavorite(listing.id, e)}
+                          data-testid={`favorite-btn-${listing.id}`}
+                        >
+                          <Heart size={16} fill={favoriteIds.includes(listing.id) ? 'currentColor' : 'none'} />
+                        </button>
+                        <span className="absolute top-2 left-2 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium text-[#1A2F3A]">{listing.property_type}</span>
                       </div>
-                      <div className="flex-1 p-5">
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <span className="text-xs text-gray-500 uppercase tracking-wider">{listing.property_type}</span>
-                            <h3 className="font-semibold text-lg text-[#1A2F3A]" style={{ fontFamily: 'Cormorant Garamond, serif' }}>{listing.title}</h3>
-                          </div>
-                          <button 
-                            className={`p-2 hover:bg-gray-100 rounded-full transition-colors ${favoriteIds.includes(listing.id) ? 'text-red-500' : 'text-gray-400'}`} 
-                            onClick={(e) => toggleFavorite(listing.id, e)}
-                            data-testid={`favorite-btn-${listing.id}`}
-                          >
-                            <Heart size={18} fill={favoriteIds.includes(listing.id) ? 'currentColor' : 'none'} />
-                          </button>
-                        </div>
-                        <p className="text-gray-500 text-sm mb-3 flex items-center gap-1"><MapPin size={12} />{listing.address}, {listing.city}</p>
-                        <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
-                          <span className="flex items-center gap-1"><Bed size={14} /> {listing.bedrooms === 0 ? 'Studio' : `${listing.bedrooms} bed`}</span>
-                          <span className="flex items-center gap-1"><Bath size={14} /> {listing.bathrooms} bath</span>
+                      <div className="p-4">
+                        <h3 className="font-semibold text-[#1A2F3A] mb-1 truncate" style={{ fontFamily: 'Cormorant Garamond, serif' }}>{listing.title}</h3>
+                        <p className="text-gray-500 text-xs mb-2 flex items-center gap-1 truncate"><MapPin size={10} />{listing.address}, {listing.city}</p>
+                        <div className="flex items-center gap-3 text-xs text-gray-600 mb-2">
+                          <span className="flex items-center gap-1"><Bed size={12} /> {listing.bedrooms === 0 ? 'Studio' : listing.bedrooms}</span>
+                          <span className="flex items-center gap-1"><Bath size={12} /> {listing.bathrooms}</span>
                           <span>{listing.sqft} sqft</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <p className="text-xl font-semibold text-[#1A2F3A]">
+                          <p className="text-lg font-semibold text-[#1A2F3A]">
                             ${listing.price?.toLocaleString()}
-                            <span className="text-sm font-normal text-gray-500">{listing.listing_type === 'sale' ? '' : '/mo'}</span>
+                            <span className="text-xs font-normal text-gray-500">{listing.listing_type === 'sale' ? '' : '/mo'}</span>
                           </p>
-                          {listing.pet_friendly && <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">Pet Friendly</span>}
+                          {listing.pet_friendly && <span className="px-2 py-0.5 rounded-full text-[10px] bg-green-100 text-green-700">Pets</span>}
                         </div>
                       </div>
                     </div>
