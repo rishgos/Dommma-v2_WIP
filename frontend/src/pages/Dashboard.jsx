@@ -412,7 +412,7 @@ const Dashboard = () => {
           </div>
 
           <div className="flex items-center gap-4">
-            <NotificationBell />
+            <NotificationBell userId={user.id} />
             <div className="w-10 h-10 rounded-full bg-[#1A2F3A] flex items-center justify-center text-white font-medium">
               {user.name?.charAt(0) || 'U'}
             </div>
