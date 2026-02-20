@@ -520,7 +520,9 @@ const NovaChat = () => {
                     Nova AI
                     <Sparkles size={14} className="text-yellow-300" />
                   </h3>
-                  <p className="text-xs text-white/70">Your Smart Real Estate Assistant</p>
+                  <p className="text-xs text-white/70">
+                    {memoryLoaded ? '✨ Picking up where we left off...' : 'Your Smart Real Estate Assistant'}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -555,6 +557,24 @@ const NovaChat = () => {
                 </button>
               </div>
             </div>
+
+            {/* Memory Indicator - Shows saved preferences */}
+            {memoryLoaded && userMemory?.preferences && (
+              <div className="px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 border-b border-blue-100">
+                <p className="text-xs text-blue-700 flex items-center gap-1.5">
+                  <Sparkles size={12} />
+                  <span className="font-medium">Your preferences:</span>
+                  <span className="text-blue-600">
+                    {[
+                      userMemory.preferences.max_budget && `$${userMemory.preferences.max_budget}/mo`,
+                      userMemory.preferences.bedrooms && `${userMemory.preferences.bedrooms}bd`,
+                      userMemory.preferences.pet_friendly && 'Pet-friendly',
+                      userMemory.preferences.preferred_areas?.slice(0, 2).join(', ')
+                    ].filter(Boolean).join(' • ') || 'Learning your preferences...'}
+                  </span>
+                </p>
+              </div>
+            )}
 
             {/* Preferences Panel */}
             {showPreferences && (
