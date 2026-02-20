@@ -175,10 +175,6 @@ Build a complete real estate marketplace called "DOMMMA" for Renters, Landlords,
   - Firebase SDK integration for permission requests
   - Handle incoming messages for real-time alerts
   - Notification types: new messages, offer updates
-- [ ] Contractor Ratings System
-  - UI for submitting ratings/reviews
-  - Display average rating on contractor profiles
-  - Leaderboard integration
 
 ### P2 - Future
 - [ ] AI Roommate Compatibility Score (replace mock)
