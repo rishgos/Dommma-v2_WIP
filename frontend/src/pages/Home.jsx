@@ -325,55 +325,94 @@ const Home = () => {
 
           {/* Property Grid - 4 columns */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {featuredProperties.map((property) => (
-              <Link
-                key={property.id}
-                to="/browse"
-                className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300"
-                data-testid={`property-card-${property.id}`}
-              >
-                {/* Image */}
-                <div className="relative h-48 overflow-hidden">
-                  <img 
-                    src={property.image}
-                    alt={property.title}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                  />
-                  <div className="absolute top-3 left-3">
-                    <span className="px-3 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium text-[#1A2F3A]">
-                      {property.type}
-                    </span>
-                  </div>
-                  <div className="absolute top-3 right-3">
-                    <span className="px-3 py-1 bg-[#1A2F3A] rounded-full text-xs font-medium text-white">
-                      ${property.price.toLocaleString()}/mo
-                    </span>
+            {loadingListings ? (
+              // Loading skeleton
+              Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-sm animate-pulse">
+                  <div className="h-48 bg-gray-200" />
+                  <div className="p-4 space-y-3">
+                    <div className="h-4 bg-gray-200 rounded w-3/4" />
+                    <div className="h-3 bg-gray-200 rounded w-1/2" />
+                    <div className="h-3 bg-gray-200 rounded w-2/3" />
                   </div>
                 </div>
+              ))
+            ) : (
+              featuredProperties.map((property) => {
+                // Handle both real listings and sample data formats
+                const isSample = property.isSample;
+                const propertyId = property.id;
+                const title = property.title;
+                const location = isSample 
+                  ? `${property.address}, ${property.city}`
+                  : `${property.address || ''}, ${property.city || ''}`;
+                const propertyType = property.property_type || 'Apartment';
+                const image = isSample 
+                  ? property.images?.[0] 
+                  : (property.images?.[0] || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600');
+                const price = property.price;
+                const beds = property.bedrooms ?? property.beds ?? 0;
+                const baths = property.bathrooms ?? property.baths ?? 1;
+                const sqft = property.sqft || 0;
 
-                {/* Content */}
-                <div className="p-4">
-                  <h3 className="font-semibold text-[#1A2F3A] mb-1 group-hover:text-[#2C4A52] transition-colors line-clamp-1">
-                    {property.title}
-                  </h3>
-                  <p className="text-sm text-gray-500 flex items-center gap-1 mb-3">
-                    <MapPin size={12} />
-                    {property.location}
-                  </p>
-                  <div className="flex items-center gap-4 text-xs text-gray-600">
-                    <span className="flex items-center gap-1">
-                      <Bed size={14} />
-                      {property.beds === 0 ? 'Studio' : `${property.beds} bed`}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Bath size={14} />
-                      {property.baths} bath
-                    </span>
-                    <span>{property.sqft} sqft</span>
-                  </div>
-                </div>
-              </Link>
-            ))}
+                return (
+                  <Link
+                    key={propertyId}
+                    to={isSample ? "/browse" : `/browse?property=${propertyId}`}
+                    className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 relative"
+                    data-testid={`property-card-${propertyId}`}
+                  >
+                    {/* Sample Badge */}
+                    {isSample && (
+                      <div className="absolute top-0 left-0 right-0 bg-amber-500 text-white text-xs text-center py-1 z-10">
+                        Sample - Add your own listings!
+                      </div>
+                    )}
+                    
+                    {/* Image */}
+                    <div className={`relative h-48 overflow-hidden ${isSample ? 'mt-6' : ''}`}>
+                      <img 
+                        src={image}
+                        alt={title}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      />
+                      <div className="absolute top-3 left-3">
+                        <span className="px-3 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium text-[#1A2F3A]">
+                          {propertyType}
+                        </span>
+                      </div>
+                      <div className="absolute top-3 right-3">
+                        <span className="px-3 py-1 bg-[#1A2F3A] rounded-full text-xs font-medium text-white">
+                          ${price?.toLocaleString()}/mo
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="p-4">
+                      <h3 className="font-semibold text-[#1A2F3A] mb-1 group-hover:text-[#2C4A52] transition-colors line-clamp-1">
+                        {title}
+                      </h3>
+                      <p className="text-sm text-gray-500 flex items-center gap-1 mb-3">
+                        <MapPin size={12} />
+                        {location}
+                      </p>
+                      <div className="flex items-center gap-4 text-xs text-gray-600">
+                        <span className="flex items-center gap-1">
+                          <Bed size={14} />
+                          {beds === 0 ? 'Studio' : `${beds} bed`}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Bath size={14} />
+                          {baths} bath
+                        </span>
+                        <span>{sqft} sqft</span>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })
+            )}
           </div>
 
           {/* Mobile View All Button */}
