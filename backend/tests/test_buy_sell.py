@@ -9,7 +9,7 @@ import uuid
 from datetime import datetime
 
 # Use production URL from env for testing what users see
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://rental-hub-dev-1.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://rental-contractor.preview.emergentagent.com').rstrip('/')
 API = f"{BASE_URL}/api"
 
 
