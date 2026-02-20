@@ -10,6 +10,7 @@ import { useAuth } from '../App';
 import axios from 'axios';
 import NotificationBell from '../components/notifications/NotificationBell';
 import PendingReviews from '../components/reviews/PendingReviews';
+import NotificationPrompt from '../components/notifications/NotificationPrompt';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
