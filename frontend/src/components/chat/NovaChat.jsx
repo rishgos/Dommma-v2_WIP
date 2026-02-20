@@ -364,10 +364,16 @@ const NovaChat = () => {
       const response = await axios.post(`${API}/chat`, {
         session_id: sessionId,
         message: userMessage,
+        user_id: user?.id || null,  // Send user_id for long-term memory
         user_context: Object.keys(contextToSend).length > 0 ? contextToSend : null
       });
 
       setSessionId(response.data.session_id);
+      
+      // Update memory status if preferences were loaded
+      if (response.data.preferences_loaded && !memoryLoaded) {
+        setMemoryLoaded(true);
+      }
       
       const assistantMessage = { 
         role: 'assistant', 
