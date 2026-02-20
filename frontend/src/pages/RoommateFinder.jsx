@@ -330,10 +330,11 @@ const RoommateFinder = () => {
 
       {/* Profile Detail + Connect Modal */}
       {selectedProfile && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setSelectedProfile(null)} />
-          <div className="relative bg-white rounded-3xl max-w-lg w-full p-8">
+          <div className="relative bg-white rounded-3xl max-w-lg w-full p-8 my-8 max-h-[90vh] overflow-y-auto">
             <button onClick={() => setSelectedProfile(null)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><X size={20} /></button>
+            
             <div className="flex items-center gap-4 mb-6">
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#1A2F3A] to-[#2C4A52] flex items-center justify-center text-white text-2xl font-bold">{selectedProfile.name?.charAt(0)}</div>
               <div>
@@ -341,6 +342,117 @@ const RoommateFinder = () => {
                 <p className="text-gray-500">{selectedProfile.age ? `${selectedProfile.age} · ` : ''}{selectedProfile.occupation}</p>
               </div>
             </div>
+            
+            {/* Compatibility Score Section */}
+            {myProfile && compatibilityData[selectedProfile.id] && (
+              <div className={`mb-6 p-4 rounded-xl border ${getCompatibilityBg(compatibilityData[selectedProfile.id].compatibility_level)}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="text-purple-500" size={18} />
+                    <span className="font-semibold text-[#1A2F3A]">Compatibility Score</span>
+                  </div>
+                  <div className={`px-3 py-1 rounded-full text-white text-sm font-bold ${getCompatibilityColor(compatibilityData[selectedProfile.id].compatibility_level)}`}>
+                    {Math.round(compatibilityData[selectedProfile.id].percentage)}%
+                  </div>
+                </div>
+                
+                {/* Score Breakdown */}
+                <div className="space-y-2 mb-4">
+                  {Object.entries(compatibilityData[selectedProfile.id].breakdown || {}).map(([key, value]) => (
+                    <div key={key} className="flex items-center gap-3">
+                      <span className="text-xs text-gray-500 w-16 capitalize">{key}</span>
+                      <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-[#1A2F3A] rounded-full transition-all"
+                          style={{ width: `${(value / (key === 'lifestyle' ? 30 : key === 'budget' || key === 'location' ? 25 : 20)) * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-xs text-gray-600 w-8">{Math.round(value)}</span>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Compatibility Reasons */}
+                <div className="space-y-1">
+                  {compatibilityData[selectedProfile.id].reasons?.slice(0, 3).map((reason, idx) => (
+                    <p key={idx} className="text-xs text-gray-600 flex items-start gap-2">
+                      <span className="text-green-500 mt-0.5">✓</span>
+                      {reason}
+                    </p>
+                  ))}
+                </div>
+                
+                {/* AI Insights Button */}
+                {!aiInsights && (
+                  <button
+                    onClick={() => fetchAIInsights(selectedProfile.id)}
+                    disabled={loadingAI}
+                    className="mt-4 w-full py-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-xl text-sm font-medium hover:from-purple-600 hover:to-indigo-600 flex items-center justify-center gap-2"
+                    data-testid="get-ai-insights"
+                  >
+                    {loadingAI ? (
+                      <>
+                        <Loader2 className="animate-spin" size={14} />
+                        Analyzing...
+                      </>
+                    ) : (
+                      <>
+                        <Brain size={14} />
+                        Get AI Insights
+                      </>
+                    )}
+                  </button>
+                )}
+                
+                {/* AI Insights Display */}
+                {aiInsights && (
+                  <div className="mt-4 p-4 bg-white rounded-xl border border-purple-100">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Brain className="text-purple-500" size={16} />
+                      <span className="font-medium text-sm text-purple-700">AI Analysis</span>
+                    </div>
+                    
+                    {aiInsights.summary && (
+                      <p className="text-sm text-gray-700 mb-3">{aiInsights.summary}</p>
+                    )}
+                    
+                    {aiInsights.strengths?.length > 0 && (
+                      <div className="mb-3">
+                        <p className="text-xs font-medium text-green-600 mb-1">Strengths</p>
+                        {aiInsights.strengths.map((s, i) => (
+                          <p key={i} className="text-xs text-gray-600 flex items-start gap-1">
+                            <span className="text-green-500">+</span> {s}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {aiInsights.potential_challenges?.length > 0 && (
+                      <div className="mb-3">
+                        <p className="text-xs font-medium text-orange-600 mb-1">Things to Discuss</p>
+                        {aiInsights.potential_challenges.map((c, i) => (
+                          <p key={i} className="text-xs text-gray-600 flex items-start gap-1">
+                            <span className="text-orange-500">!</span> {c}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {aiInsights.conversation_starters?.length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-blue-600 mb-1">Conversation Starters</p>
+                        {aiInsights.conversation_starters.map((t, i) => (
+                          <p key={i} className="text-xs text-gray-600 flex items-start gap-1">
+                            <MessageSquare size={10} className="text-blue-400 mt-0.5" /> {t}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+            
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div className="bg-[#F5F5F0] p-3 rounded-xl"><p className="text-xs text-gray-500">Budget</p><p className="font-semibold text-[#1A2F3A]">${selectedProfile.budget_min}-${selectedProfile.budget_max}/mo</p></div>
               <div className="bg-[#F5F5F0] p-3 rounded-xl"><p className="text-xs text-gray-500">Move-in</p><p className="font-semibold text-[#1A2F3A]">{selectedProfile.move_in_date || 'Flexible'}</p></div>
