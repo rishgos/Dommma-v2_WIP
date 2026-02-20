@@ -972,7 +972,7 @@ async def chat_with_nova(request: ChatRequest):
     # Get available listings for context
     listings = await db.listings.find({"status": "active"}, {"_id": 0}).to_list(50)
     listings_context = "\n".join([
-        f"- {listing['title']}: {listing['bedrooms']}bd/{listing['bathrooms']}ba, ${listing['price']}/mo, {listing['address']}, {listing['city']}, {listing['sqft']}sqft, Pet-friendly: {listing['pet_friendly']}, Type: {listing['property_type']}"
+        f"- ID:{listing['id']} | {listing['title']}: {listing['bedrooms']}bd/{listing['bathrooms']}ba, ${listing['price']}/mo, {listing['address']}, {listing['city']}, {listing['sqft']}sqft, Pet-friendly: {listing.get('pet_friendly', False)}, Type: {listing.get('property_type', 'Apartment')}"
         for listing in listings
     ])
     
