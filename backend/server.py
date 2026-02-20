@@ -962,11 +962,12 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
 @api_router.post("/chat", response_model=ChatResponse)
 async def chat_with_nova(request: ChatRequest):
     session_id = request.session_id or str(uuid.uuid4())
+    user_id = request.user_id  # Get user_id if logged in
     
     # Get or create chat session
     session = await db.chat_sessions.find_one({"id": session_id}, {"_id": 0})
     if not session:
-        session = {"id": session_id, "messages": [], "created_at": datetime.now(timezone.utc).isoformat()}
+        session = {"id": session_id, "messages": [], "created_at": datetime.now(timezone.utc).isoformat(), "user_id": user_id}
         await db.chat_sessions.insert_one(session)
     
     # Get available listings for context
@@ -985,7 +986,18 @@ async def chat_with_nova(request: ChatRequest):
             for m in prev_messages
         ])
     
-    # User context for personalization
+    # Load long-term user memory if logged in
+    long_term_memory = ""
+    user_preferences_loaded = False
+    if user_id:
+        from services.nova_memory import NovaMemoryService
+        memory_service = NovaMemoryService(db)
+        memory_context = await memory_service.get_context_summary(user_id)
+        if memory_context:
+            long_term_memory = f"\n\n{memory_context}"
+            user_preferences_loaded = True
+    
+    # User context for personalization (from manual input)
     user_context = request.user_context or {}
     lifestyle_info = ""
     if user_context:
