@@ -18,14 +18,15 @@ const footerLinks = {
     { path: '/', label: 'Home' },
     { path: '/about', label: 'About Us' },
     { path: '/properties', label: 'Properties' },
+    { path: '/contractors', label: 'Find Pros' },
     { path: '/services', label: 'Services' },
     { path: '/contact', label: 'Contact' },
   ],
   services: [
     { path: '/browse', label: 'Find Rentals' },
+    { path: '/browse?type=sale', label: 'Buy Property' },
+    { path: '/contractors', label: 'Find Contractors' },
     { path: '/services', label: 'Property Management' },
-    { path: '/services', label: 'Strata Services' },
-    { path: '/services', label: 'Find Contractors' },
   ],
   utility: [
     { path: '#', label: 'Terms of Service' },
