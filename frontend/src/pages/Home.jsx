@@ -143,16 +143,37 @@ const Home = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [topContractors, setTopContractors] = useState([]);
   const [saleListings, setSaleListings] = useState([]);
+  const [featuredProperties, setFeaturedProperties] = useState([]);
+  const [loadingListings, setLoadingListings] = useState(true);
 
   useEffect(() => {
+    // Fetch contractors
     axios.get(`${API}/contractors/search`).then(res => {
       const sorted = (res.data || []).sort((a, b) => (b.rating || 0) - (a.rating || 0)).slice(0, 3);
       setTopContractors(sorted);
     }).catch(() => {});
     
+    // Fetch sale listings
     axios.get(`${API}/listings?listing_type=sale`).then(res => {
       setSaleListings((res.data || []).slice(0, 4));
     }).catch(() => {});
+
+    // Fetch featured rental properties from database
+    axios.get(`${API}/listings?listing_type=rent`).then(res => {
+      const listings = res.data || [];
+      if (listings.length > 0) {
+        // Use real listings from database (up to 8)
+        setFeaturedProperties(listings.slice(0, 8));
+      } else {
+        // Fallback to sample data if database is empty
+        setFeaturedProperties(sampleFeaturedProperties);
+      }
+      setLoadingListings(false);
+    }).catch(() => {
+      // On error, use sample data
+      setFeaturedProperties(sampleFeaturedProperties);
+      setLoadingListings(false);
+    });
   }, []);
 
   const handleNovaSearch = async (query) => {
