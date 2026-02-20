@@ -31,7 +31,10 @@ const RenterDashboard = ({ userId }) => {
   }, []);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8" data-testid="renter-dashboard">
+      {/* Pending Reviews */}
+      <PendingReviews userId={userId} />
+      
       {/* Quick Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-6 rounded-2xl">
