@@ -190,6 +190,15 @@ const ContractorMarketplace = () => {
             ))}
           </div>
         )}
+          </div>
+
+          {/* Leaderboard Sidebar */}
+          <div className="hidden lg:block w-80 flex-shrink-0">
+            <div className="sticky top-8">
+              <ContractorLeaderboard limit={5} />
+            </div>
+          </div>
+        </div>
       </main>
 
       {/* Contractor Detail Modal */}
