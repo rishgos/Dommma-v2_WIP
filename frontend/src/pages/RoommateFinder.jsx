@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Search, Users, Heart, MapPin, DollarSign, Calendar,
-  Sun, Moon, Music, Coffee, Dog, Cigarette, Send, X, Plus, Filter
+  Sun, Moon, Music, Coffee, Dog, Cigarette, Send, X, Plus, Filter,
+  Sparkles, Brain, ChevronDown, ChevronUp, MessageSquare, Loader2, RefreshCw
 } from 'lucide-react';
 import { useAuth } from '../App';
 import axios from 'axios';
@@ -22,6 +23,29 @@ const lifestyleOptions = [
 ];
 
 const areaOptions = ['Downtown', 'Kitsilano', 'Mount Pleasant', 'Yaletown', 'East Vancouver', 'West End', 'Fairview', 'Cambie', 'Commercial Drive', 'North Vancouver'];
+
+// Compatibility level colors
+const getCompatibilityColor = (level) => {
+  switch (level) {
+    case 'excellent': return 'bg-green-500';
+    case 'good': return 'bg-emerald-400';
+    case 'moderate': return 'bg-yellow-400';
+    case 'fair': return 'bg-orange-400';
+    case 'low': return 'bg-red-400';
+    default: return 'bg-gray-400';
+  }
+};
+
+const getCompatibilityBg = (level) => {
+  switch (level) {
+    case 'excellent': return 'bg-green-50 border-green-200';
+    case 'good': return 'bg-emerald-50 border-emerald-200';
+    case 'moderate': return 'bg-yellow-50 border-yellow-200';
+    case 'fair': return 'bg-orange-50 border-orange-200';
+    case 'low': return 'bg-red-50 border-red-200';
+    default: return 'bg-gray-50 border-gray-200';
+  }
+};
 
 const RoommateFinder = () => {
   const { user } = useAuth();
