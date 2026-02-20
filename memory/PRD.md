@@ -237,15 +237,37 @@ Build a complete real estate marketplace called "DOMMMA" for Renters, Landlords,
 - [x] ~~Frontend Push Notifications~~ ✅ COMPLETED
 
 ### P2 - Future
-- [ ] AI Roommate Compatibility Score (replace mock)
-- [ ] Moving company API integration (replace mock)
+- [ ] Moving company API integration (replace calculation-based)
 - [ ] Video support in contractor portfolios
 - [ ] Multi-image property comparison
 - [ ] iOS & Android native apps
 
+### V13 - Dynamic Landing Page & AI Property Links (Dec 2025) - NEW
+- [x] **Dynamic Featured Listings** - Landing page now fetches from database:
+  - Real listings displayed when database has data
+  - Sample data fallback with "Sample" banner when empty
+  - Loading skeleton during fetch
+  - Clickable cards link to property details
+- [x] **Nova AI Property Links** - AI returns clickable property links:
+  - Format: `[Property Name](property:ID)` 
+  - Frontend parses and renders as clickable links
+  - Links open property in browse view
+  - Listing cards below AI responses are also clickable
+- [x] **Enhanced Offline Support (PWA)** - Service worker v2:
+  - Caches listings API responses for offline viewing
+  - Static assets cached on install
+  - Graceful offline fallback
+- [x] **Documentation Updates** - Comprehensive README:
+  - Python 3.10/3.11 recommendation (avoid 3.14+)
+  - MongoDB setup instructions
+  - Step-by-step troubleshooting
+  - Database seeding examples
+  - Offline/PWA instructions
+
 ## Mocked/Simulated Features
 - ~~Moving Quote: Simulated pricing~~ **NOW REAL** - Full cost calculator + AI tips
 - ~~AI Roommate Compatibility: Simulated scoring~~ **NOW REAL** - Claude Sonnet 4.5
+- ~~Landing Page Listings: Hardcoded~~ **NOW REAL** - Dynamic from database
 - Google Calendar Sync: OAuth working, actual event sync requires user consent
 
 **ALL FEATURES ARE NOW REAL - NO MOCKS!**
