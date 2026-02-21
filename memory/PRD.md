@@ -242,7 +242,7 @@ Build a complete real estate marketplace called "DOMMMA" for Renters, Landlords,
 - [ ] Multi-image property comparison
 - [ ] iOS & Android native apps
 
-### V13 - Dynamic Landing Page & AI Property Links (Dec 2025) - NEW
+### V13 - Dynamic Landing Page & AI Property Links (Dec 2025)
 - [x] **Dynamic Featured Listings** - Landing page now fetches from database:
   - Real listings displayed when database has data
   - Sample data fallback with "Sample" banner when empty
@@ -264,6 +264,40 @@ Build a complete real estate marketplace called "DOMMMA" for Renters, Landlords,
   - Database seeding examples
   - Offline/PWA instructions
 
+### V14 - Nova AI Memory & UX Improvements (Dec 2025) - LATEST
+- [x] **Nova AI Long-Term Memory** - Remembers user preferences across sessions:
+  - Auto-extracts preferences from chat (budget, bedrooms, pets, areas)
+  - Stores in database per user_id
+  - Loads preferences when logged-in user opens chat
+  - Shows "Picking up where we left off..." message
+  - Displays saved preferences in chat header
+- [x] **Persistent Dashboard Sidebar** - Navigation stays visible:
+  - Created DashboardLayout wrapper component
+  - All dashboard pages now use consistent layout
+  - Sidebar highlights active page
+  - Mobile-friendly with hamburger menu
+- [x] **"Pros" Navigation Link** - Easy access to contractors:
+  - Added "Pros" link in main navbar (after Properties)
+  - Links to contractor marketplace
+  - Updated footer links
+- [x] **4-Column Property Grid** - Better Browse page layout:
+  - Changed from 2-column list to 4-column card grid
+  - More properties visible at once
+  - Compact, professional design
+- [x] **Homepage Improvements**:
+  - Removed non-functional play button
+  - Added "Browse Properties" CTA button
+  - Reduced hero height (100vh → 75vh)
+  - Nova search bar now visible without scrolling
+- [x] **Contractors Page Navigation** - Added MainLayout wrapper:
+  - Top navbar now visible on /contractors page
+  - Consistent navigation across all public pages
+- [x] **Updated Pitch Deck** - Reflects all new features:
+  - Updated stats (55k+ lines, 15 features, 6 AI systems)
+  - Added AI Memory section
+  - Added UX improvements section
+  - Updated competitive comparison table
+
 ## Mocked/Simulated Features
 - ~~Moving Quote: Simulated pricing~~ **NOW REAL** - Full cost calculator + AI tips
 - ~~AI Roommate Compatibility: Simulated scoring~~ **NOW REAL** - Claude Sonnet 4.5
@@ -277,4 +311,4 @@ Build a complete real estate marketplace called "DOMMMA" for Renters, Landlords,
 - **Emergent LLM Key**: Configured for Claude, Whisper, TTS
 
 ## Last Updated
-December 20, 2025 - V12 AI Moving Assistant implemented - ALL FEATURES NOW REAL (NO MOCKS)
+December 21, 2025 - V14 Nova AI Memory & UX Improvements completed
