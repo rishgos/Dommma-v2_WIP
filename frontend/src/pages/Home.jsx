@@ -208,7 +208,7 @@ const Home = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-[#1A2F3A]/90 via-[#1A2F3A]/70 to-transparent" />
         </div>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-6 py-32">
+        <div className="relative z-10 max-w-7xl mx-auto px-6 py-24 lg:py-28">
           <div className="max-w-2xl">
             <h1 
               className="display-xl text-white mb-6 uppercase"
@@ -222,22 +222,25 @@ const Home = () => {
             <div className="flex items-center gap-6">
               <Link
                 to="/about"
-                className="flex items-center gap-2 text-white hover:text-white/80 transition-colors"
+                className="flex items-center gap-2 text-white hover:text-white/80 transition-colors group"
                 data-testid="hero-cta"
               >
                 <span className="text-sm tracking-wider">Our Story</span>
-                <ArrowRight size={16} />
+                <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
               </Link>
-              <button className="w-12 h-12 rounded-full border border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition-colors">
-                <Play size={16} fill="white" />
-              </button>
+              <Link 
+                to="/browse"
+                className="px-6 py-3 bg-white text-[#1A2F3A] rounded-full text-sm font-medium hover:bg-white/90 transition-colors"
+              >
+                Browse Properties
+              </Link>
             </div>
           </div>
         </div>
       </section>
 
       {/* Nova AI Search Bar Section */}
-      <section className="relative -mt-24 z-20 px-6" data-testid="nova-search-section">
+      <section className="relative -mt-16 z-20 px-6 mb-8" data-testid="nova-search-section">
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-full shadow-2xl p-2 flex items-center gap-3">
             {/* Nova Icon */}
