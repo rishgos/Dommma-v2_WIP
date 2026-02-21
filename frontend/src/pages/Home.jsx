@@ -195,7 +195,7 @@ const Home = () => {
     <MainLayout hideNovaButton={true}>
       {/* Hero Section */}
       <section 
-        className="relative min-h-screen flex items-center"
+        className="relative h-[75vh] min-h-[500px] flex items-center"
         data-testid="hero-section"
       >
         {/* Background Image */}
