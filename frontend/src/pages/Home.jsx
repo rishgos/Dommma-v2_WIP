@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, Play, Search, Sparkles, Bot, MapPin, Bed, Bath, Star, Shield, Trophy } from 'lucide-react';
+import { ArrowRight, Search, Sparkles, Bot, MapPin, Bed, Bath, Star, Shield, Trophy } from 'lucide-react';
 import MainLayout from '../components/layout/MainLayout';
 import axios from 'axios';
 
