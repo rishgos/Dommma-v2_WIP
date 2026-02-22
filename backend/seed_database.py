@@ -166,12 +166,15 @@ def generate_contractor(index):
     company_name, owner_name = CONTRACTOR_NAMES[index % len(CONTRACTOR_NAMES)]
     specialties = CONTRACTOR_SPECIALTIES[index % len(CONTRACTOR_SPECIALTIES)]
     
+    # Create email from company name
+    email_name = company_name.lower().replace(' ', '').replace("'", '')
+    
     return {
         "id": str(uuid.uuid4()),
         "user_id": str(uuid.uuid4()),
         "company_name": company_name,
         "owner_name": owner_name,
-        "email": f"{company_name.lower().replace(' ', '').replace(\"'\", '')}@example.com",
+        "email": f"{email_name}@example.com",
         "phone": f"604-{random.randint(100,999)}-{random.randint(1000,9999)}",
         "specialties": specialties,
         "description": f"{company_name} provides professional {specialties[0].lower()} services in Vancouver. "
