@@ -4,7 +4,7 @@ import {
   Home, Building2, Users, Wrench, FileText, DollarSign, 
   Search, Plus, Calendar, TrendingUp,
   ChevronRight, Heart, MapPin, Clock, Sparkles, 
-  Briefcase, BarChart2
+  Briefcase, BarChart2, MessageSquare
 } from 'lucide-react';
 import { useAuth } from '../App';
 import axios from 'axios';
