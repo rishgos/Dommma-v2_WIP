@@ -44,6 +44,7 @@ const MyProperties = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingListing, setEditingListing] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [geocoding, setGeocoding] = useState(false);
   const [form, setForm] = useState({
     title: '', address: '', city: 'Vancouver', province: 'BC',
     postal_code: '', lat: 49.2827, lng: -123.1207, price: '',
