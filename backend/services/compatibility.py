@@ -180,7 +180,7 @@ class RoommateCompatibilityService:
     ) -> Optional[dict]:
         """Get AI-powered compatibility insights"""
         try:
-            from emergentintegrations.llm.chat import LlmChat, UserMessage
+            anthropic_client = AsyncAnthropic(api_key=self.api_key)
             
             system_prompt = """You are a roommate compatibility expert. Analyze two potential roommate profiles and provide brief, helpful insights.
             
@@ -192,12 +192,6 @@ Respond in JSON format:
     "tips": ["tip for living together"],
     "conversation_starters": ["suggested topic to discuss"]
 }"""
-            
-            chat = LlmChat(
-                api_key=self.api_key,
-                session_id=f"compat-{profile1['id'][:8]}-{profile2['id'][:8]}",
-                system_message=system_prompt
-            ).with_model("anthropic", "claude-sonnet-4-5-20250929")
             
             profile_info = f"""
 Profile 1: {profile1.get('name', 'User 1')}
@@ -221,7 +215,14 @@ Profile 2: {profile2.get('name', 'User 2')}
 Basic compatibility score: {basic_score['percentage']}%
 """
             
-            response = await chat.send_message(UserMessage(text=profile_info))
+            claude_response = await anthropic_client.messages.create(
+                model="claude-sonnet-4-5-20250929",
+                max_tokens=1024,
+                system=system_prompt,
+                messages=[{"role": "user", "content": profile_info}]
+            )
+            
+            response = claude_response.content[0].text
             
             # Parse JSON response
             import re
