@@ -308,7 +308,8 @@ Build a complete real estate marketplace called "DOMMMA" for Renters, Landlords,
 
 ## Credentials
 - **Google OAuth**: Configured in backend/.env
-- **Emergent LLM Key**: Configured for Claude, Whisper, TTS
+- **Anthropic API Key**: Direct Claude Sonnet 4.5 access
+- **OpenAI API Key**: Direct access for Whisper & TTS
 
 ## Last Updated
-December 21, 2025 - V14 Nova AI Memory & UX Improvements completed
+December 22, 2025 - V15 Migrated from Emergent LLM Key to Direct Claude/OpenAI APIs
