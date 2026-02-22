@@ -2,13 +2,39 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Building2, ArrowLeft, Plus, MapPin, Bed, Bath, Edit, Trash2,
-  Image as ImageIcon, X, DollarSign, Check, Eye, EyeOff
+  Image as ImageIcon, X, DollarSign, Check, Eye, EyeOff, Loader2
 } from 'lucide-react';
 import { useAuth } from '../App';
 import axios from 'axios';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
+
+// Geocode address using Google Maps API
+const geocodeAddress = async (address, city, province, postalCode) => {
+  const fullAddress = `${address}, ${city}, ${province} ${postalCode}, Canada`;
+  const apiKey = process.env.REACT_APP_GOOGLE_MAPS_KEY;
+  
+  if (!apiKey) {
+    console.warn('Google Maps API key not found, using default coordinates');
+    return null;
+  }
+  
+  try {
+    const response = await fetch(
+      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(fullAddress)}&key=${apiKey}`
+    );
+    const data = await response.json();
+    
+    if (data.status === 'OK' && data.results.length > 0) {
+      const { lat, lng } = data.results[0].geometry.location;
+      return { lat, lng };
+    }
+  } catch (error) {
+    console.error('Geocoding error:', error);
+  }
+  return null;
+};
 
 const MyProperties = () => {
   const { user } = useAuth();
