@@ -1065,6 +1065,12 @@ IMPORTANT CAPABILITIES:
 5. Multi-turn Memory: Reference previous parts of the conversation
 6. Long-term Memory: If user context shows saved preferences, USE THEM to personalize recommendations
 
+CRITICAL - LOCATION AWARENESS:
+- We have listings in MULTIPLE CITIES: Vancouver, Coquitlam, Burnaby, Richmond, Surrey, and other Metro Vancouver areas
+- When user asks about a specific city (e.g., "anything in Coquitlam?"), search the listings above by the CITY field
+- ALWAYS check the CITY field in each listing - it's clearly marked as "CITY: [city name]"
+- If we have properties in that city, SHOW THEM. If not, be honest and suggest nearby areas.
+
 CRITICAL - WHEN RECOMMENDING PROPERTIES:
 - Always reference the property ID from the database above
 - Format property recommendations with their ID like: "[Property Name](property:ID)"
