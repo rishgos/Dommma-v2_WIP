@@ -7,6 +7,7 @@ import base64
 import logging
 from typing import Optional
 from datetime import datetime, timezone
+from openai import AsyncOpenAI
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +15,8 @@ logger = logging.getLogger(__name__)
 class VoiceService:
     def __init__(self, db):
         self.db = db
-        self.api_key = os.environ.get('EMERGENT_LLM_KEY', '')
+        self.api_key = os.environ.get('OPENAI_API_KEY', '')
+        self.client = AsyncOpenAI(api_key=self.api_key)
     
     async def transcribe_audio(
         self,
@@ -24,11 +26,8 @@ class VoiceService:
     ) -> dict:
         """Transcribe audio to text using Whisper"""
         try:
-            from emergentintegrations.llm.openai import OpenAISpeechToText
             import tempfile
             import os as os_module
-            
-            stt = OpenAISpeechToText(api_key=self.api_key)
             
             # Write audio data to temp file
             with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as tmp:
@@ -37,7 +36,7 @@ class VoiceService:
             
             try:
                 with open(tmp_path, 'rb') as audio_file:
-                    response = await stt.transcribe(
+                    response = await self.client.audio.transcriptions.create(
                         file=audio_file,
                         model="whisper-1",
                         response_format="verbose_json",
@@ -54,7 +53,7 @@ class VoiceService:
                 }
                 
                 # Include segments if available
-                if hasattr(response, 'segments'):
+                if hasattr(response, 'segments') and response.segments:
                     result["segments"] = [
                         {
                             "start": seg.start,
