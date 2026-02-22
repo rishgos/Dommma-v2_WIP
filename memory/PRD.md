@@ -9,9 +9,9 @@ Build a complete real estate marketplace called "DOMMMA" for Renters, Landlords,
 - **Database**: MongoDB (Motor async driver)
 - **Auth**: JWT + passlib bcrypt
 - **Payments**: Stripe (test key)
-- **AI/LLM**: Claude Sonnet 4.5 (Emergent LLM Key)
-- **Voice STT**: OpenAI Whisper (Emergent LLM Key)
-- **Voice TTS**: OpenAI TTS (Emergent LLM Key)
+- **AI/LLM**: Claude Sonnet 4.5 (Direct Anthropic API)
+- **Voice STT**: OpenAI Whisper (Direct OpenAI API)
+- **Voice TTS**: OpenAI TTS (Direct OpenAI API)
 - **Maps**: Google Maps API
 - **Calendar**: Google Calendar OAuth2
 - **Notifications**: Firebase Cloud Messaging
