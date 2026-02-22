@@ -264,7 +264,7 @@ Build a complete real estate marketplace called "DOMMMA" for Renters, Landlords,
   - Database seeding examples
   - Offline/PWA instructions
 
-### V14 - Nova AI Memory & UX Improvements (Dec 2025) - LATEST
+### V14 - Nova AI Memory & UX Improvements (Dec 2025)
 - [x] **Nova AI Long-Term Memory** - Remembers user preferences across sessions:
   - Auto-extracts preferences from chat (budget, bedrooms, pets, areas)
   - Stores in database per user_id
@@ -297,6 +297,30 @@ Build a complete real estate marketplace called "DOMMMA" for Renters, Landlords,
   - Added AI Memory section
   - Added UX improvements section
   - Updated competitive comparison table
+
+### V15 - Direct API Migration (Dec 2025) - LATEST
+- [x] **Removed Emergent LLM Key Dependency** - Full API control:
+  - Migrated from emergentintegrations library to direct SDKs
+  - User provides their own Anthropic & OpenAI API keys
+  - Full control over billing, rate limits, and usage
+- [x] **Direct Anthropic Integration** - Claude Sonnet 4.5:
+  - Nova AI chatbot (main chat endpoint)
+  - AI issue analysis for contractors
+  - Document analysis (lease scanner)
+  - Commute optimization search
+  - Roommate compatibility AI insights
+  - Moving tips generation
+  - Property image analysis
+- [x] **Direct OpenAI Integration**:
+  - Whisper speech-to-text (voice input)
+  - TTS text-to-speech (voice output)
+- [x] **Updated Environment Variables**:
+  - ANTHROPIC_API_KEY replaces EMERGENT_LLM_KEY for Claude
+  - OPENAI_API_KEY for Whisper & TTS
+- [x] **Documentation Updates**:
+  - Updated backend README with new env vars
+  - Updated pitch deck (removed Emergent LLM Key references)
+  - Clarified direct API integration approach
 
 ## Mocked/Simulated Features
 - ~~Moving Quote: Simulated pricing~~ **NOW REAL** - Full cost calculator + AI tips
