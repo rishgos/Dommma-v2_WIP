@@ -185,6 +185,55 @@ A **production-ready** real estate platform that rivals established players like
 
 ---
 
+# Production Cost Estimates 💰
+
+## Monthly Operating Costs (1,000 Active Users)
+
+| Category | Service | Estimated Cost | Notes |
+|----------|---------|----------------|-------|
+| **Hosting** | | | |
+| | Backend (AWS/Railway) | $25-50/mo | FastAPI on container |
+| | Frontend (Vercel/Netlify) | $0-20/mo | Free tier often sufficient |
+| | MongoDB Atlas (M10) | $57/mo | 2GB RAM, auto-scaling |
+| **AI/LLM** | | | |
+| | Claude Sonnet 4.5 | $50-150/mo | ~$3/1M input, $15/1M output tokens |
+| | OpenAI Whisper | $10-30/mo | $0.006/min audio |
+| | OpenAI TTS | $20-50/mo | $15/1M characters |
+| **Third-Party APIs** | | | |
+| | Google Maps | $0-200/mo | $200 free credit/mo |
+| | Google Calendar | $0/mo | Free with OAuth |
+| | Stripe | 2.9% + $0.30/txn | Per transaction |
+| | Firebase (FCM) | $0/mo | Free tier |
+| | Resend (Email) | $0-20/mo | 3,000 free/mo |
+| **Domain & SSL** | | $15/mo | Annual domain + SSL |
+
+### 📊 Cost Summary by Scale
+
+| Scale | Monthly Users | Est. Monthly Cost | Cost/User |
+|-------|---------------|-------------------|-----------|
+| **Startup** | 100-500 | $150-250 | $0.50 |
+| **Growth** | 1,000-5,000 | $300-600 | $0.12 |
+| **Scale** | 10,000+ | $1,000-2,500 | $0.10 |
+
+### 💡 Cost Optimization Tips
+
+1. **AI Caching**: Cache common Nova responses to reduce API calls by 40%
+2. **Rate Limiting**: Implement per-user limits on AI features
+3. **Lazy Loading**: Only load AI features when users engage
+4. **CDN**: Use CloudFlare (free) for static assets
+5. **Reserved Instances**: 30-50% savings on hosting with annual commitment
+
+### 🎯 Break-Even Analysis
+
+| Revenue Model | Price Point | Users Needed to Cover $500/mo |
+|---------------|-------------|-------------------------------|
+| Freemium + Premium | $9.99/mo premium | 50 premium users |
+| Landlord Subscription | $29.99/mo | 17 landlords |
+| Contractor Lead Fee | $5/booking | 100 bookings |
+| Transaction Fee | 2% on rent | $25,000 rent volume |
+
+---
+
 # Customer Value Proposition
 
 ## For Renters
