@@ -134,11 +134,23 @@ const MyProperties = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setGeocoding(true);
+    
+    // Geocode the address to get real coordinates
+    let lat = parseFloat(form.lat);
+    let lng = parseFloat(form.lng);
+    
+    const coords = await geocodeAddress(form.address, form.city, form.province, form.postal_code);
+    if (coords) {
+      lat = coords.lat;
+      lng = coords.lng;
+    }
+    
     const data = {
       ...form,
       price: parseInt(form.price), bedrooms: parseInt(form.bedrooms),
       bathrooms: parseFloat(form.bathrooms), sqft: parseInt(form.sqft),
-      lat: parseFloat(form.lat), lng: parseFloat(form.lng),
+      lat, lng,
       year_built: form.year_built ? parseInt(form.year_built) : null,
       lot_size: form.lot_size ? parseInt(form.lot_size) : null,
       garage: form.garage ? parseInt(form.garage) : null
@@ -155,6 +167,8 @@ const MyProperties = () => {
     } catch (err) {
       console.error(err);
       alert('Failed to save. Please try again.');
+    } finally {
+      setGeocoding(false);
     }
   };
 
