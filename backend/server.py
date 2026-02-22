@@ -1303,7 +1303,6 @@ Respond in valid JSON format only:
 @api_router.post("/ai/analyze-document")
 async def analyze_document(req: DocumentAnalysisRequest):
     """AI analyzes lease/rental documents for fairness and key terms"""
-    api_key = os.environ.get('EMERGENT_LLM_KEY')
     
     system_message = f"""You are a {req.document_type} document analysis expert for Canadian real estate. Analyze the provided document and return a comprehensive review in valid JSON:
 {{
@@ -1327,14 +1326,16 @@ async def analyze_document(req: DocumentAnalysisRequest):
 Score fairness from 1-10 (10 = very renter-friendly). Be thorough but practical."""
 
     try:
-        chat = LlmChat(
-            api_key=api_key,
-            session_id=f"doc-{uuid.uuid4().hex[:8]}",
-            system_message=system_message
-        ).with_model("anthropic", "claude-sonnet-4-5-20250929")
+        anthropic_client = AsyncAnthropic(api_key=os.environ.get('ANTHROPIC_API_KEY'))
         
-        user_message = UserMessage(text=f"Analyze this {req.document_type} document:\n\n{req.document_text[:5000]}")
-        response = await chat.send_message(user_message)
+        claude_response = await anthropic_client.messages.create(
+            model="claude-sonnet-4-5-20250929",
+            max_tokens=2048,
+            system=system_message,
+            messages=[{"role": "user", "content": f"Analyze this {req.document_type} document:\n\n{req.document_text[:5000]}"}]
+        )
+        
+        response = claude_response.content[0].text
         
         import re
         json_match = re.search(r'\{.*\}', response, re.DOTALL)
