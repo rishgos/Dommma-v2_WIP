@@ -422,9 +422,10 @@ const MyProperties = () => {
               </div>
 
               <div className="flex gap-3 pt-4">
-                <button type="button" onClick={() => setShowModal(false)} className="flex-1 px-4 py-3 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50">Cancel</button>
-                <button type="submit" className="flex-1 px-4 py-3 rounded-xl bg-[#1A2F3A] text-white hover:bg-[#2C4A52]" data-testid="save-property-btn">
-                  {editingListing ? 'Update Property' : 'Create Listing'}
+                <button type="button" onClick={() => setShowModal(false)} className="flex-1 px-4 py-3 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50" disabled={geocoding}>Cancel</button>
+                <button type="submit" className="flex-1 px-4 py-3 rounded-xl bg-[#1A2F3A] text-white hover:bg-[#2C4A52] disabled:opacity-50 flex items-center justify-center gap-2" data-testid="save-property-btn" disabled={geocoding}>
+                  {geocoding && <Loader2 size={16} className="animate-spin" />}
+                  {geocoding ? 'Locating address...' : (editingListing ? 'Update Property' : 'Create Listing')}
                 </button>
               </div>
             </form>
