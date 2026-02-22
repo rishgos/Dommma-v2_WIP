@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 class NovaMemoryService:
     def __init__(self, db):
         self.db = db
-        self.api_key = os.environ.get('EMERGENT_LLM_KEY', '')
     
     async def store_interaction(
         self,
