@@ -1203,7 +1203,6 @@ class CommuteSearchRequest(BaseModel):
 @api_router.post("/ai/analyze-issue")
 async def analyze_issue(req: IssueAnalysisRequest):
     """AI analyzes a home issue image and matches relevant contractors"""
-    api_key = os.environ.get('EMERGENT_LLM_KEY')
     
     system_message = """You are a home maintenance expert AI. Analyze the described home issue and:
 1. Identify the specific issue type (plumbing, electrical, painting, renovation, carpentry, landscaping, cleaning, HVAC, roofing, etc.)
@@ -1224,18 +1223,20 @@ Respond in valid JSON format only:
 }"""
 
     try:
-        chat = LlmChat(
-            api_key=api_key,
-            session_id=f"issue-{uuid.uuid4().hex[:8]}",
-            system_message=system_message
-        ).with_model("anthropic", "claude-sonnet-4-5-20250929")
+        anthropic_client = AsyncAnthropic(api_key=os.environ.get('ANTHROPIC_API_KEY'))
         
         message_text = f"Analyze this home issue. User description: {req.description or 'See image'}. The image has been uploaded showing the issue."
         if req.image_data and req.image_data.startswith("data:"):
             message_text += f"\n\n[Image uploaded - analyze based on description]"
         
-        user_message = UserMessage(text=message_text)
-        response = await chat.send_message(user_message)
+        claude_response = await anthropic_client.messages.create(
+            model="claude-sonnet-4-5-20250929",
+            max_tokens=1024,
+            system=system_message,
+            messages=[{"role": "user", "content": message_text}]
+        )
+        
+        response = claude_response.content[0].text
         
         # Parse AI response
         import re
