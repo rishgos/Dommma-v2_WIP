@@ -1070,15 +1070,27 @@ End responses with 1-2 proactive suggestions when relevant."""
     suggestions = []
     
     try:
-        api_key = os.environ.get('EMERGENT_LLM_KEY')
-        chat = LlmChat(
-            api_key=api_key,
-            session_id=f"{session_id}-{uuid.uuid4().hex[:8]}",
-            system_message=system_message
-        ).with_model("anthropic", "claude-sonnet-4-5-20250929")
+        # Use direct Anthropic SDK
+        anthropic_client = AsyncAnthropic(api_key=os.environ.get('ANTHROPIC_API_KEY'))
         
-        user_message = UserMessage(text=request.message)
-        response = await chat.send_message(user_message)
+        # Build messages array with conversation history
+        messages = []
+        prev_messages = session.get("messages", [])[-6:]
+        for m in prev_messages:
+            messages.append({"role": m['role'] if m['role'] != 'assistant' else 'assistant', "content": m['content'][:500]})
+        
+        # Add current user message
+        messages.append({"role": "user", "content": request.message})
+        
+        # Call Claude API
+        claude_response = await anthropic_client.messages.create(
+            model="claude-sonnet-4-5-20250929",
+            max_tokens=1024,
+            system=system_message,
+            messages=messages
+        )
+        
+        response = claude_response.content[0].text
         
         # Save messages to session
         await db.chat_sessions.update_one(
