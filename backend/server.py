@@ -10,7 +10,7 @@ import uuid
 from datetime import datetime, timezone
 import json
 import base64
-from emergentintegrations.llm.chat import LlmChat, UserMessage
+from anthropic import AsyncAnthropic
 from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
 from passlib.context import CryptContext
 import asyncio
