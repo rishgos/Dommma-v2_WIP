@@ -1,5 +1,6 @@
 import "@/index.css";
 import "@/App.css";
+import "./i18n"; // i18n initialization
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { useState, useEffect, createContext, useContext } from "react";
 
