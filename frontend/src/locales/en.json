@@ -1,0 +1,113 @@
+{
+  "nav": {
+    "home": "Home",
+    "about": "About",
+    "properties": "Properties",
+    "pros": "Pros",
+    "services": "Services",
+    "contact": "Contact",
+    "login": "Login",
+    "logout": "Logout",
+    "dashboard": "Dashboard"
+  },
+  "hero": {
+    "title": "HOME MADE SIMPLE",
+    "subtitle": "Complete real estate marketplace for renting, buying, property management, and finding trusted contractors.",
+    "ourStory": "Our Story",
+    "browseProperties": "Browse Properties",
+    "askNova": "Ask Nova AI: Find apartments, calculate budget, get neighborhood tips..."
+  },
+  "chat": {
+    "placeholder": "Type your message...",
+    "voiceButton": "Click to speak",
+    "voiceListening": "Listening...",
+    "send": "Send",
+    "thinking": "Nova is thinking...",
+    "greeting": "Hi! I'm Nova, your AI real estate assistant. How can I help you today?",
+    "pickingUp": "Picking up where we left off..."
+  },
+  "browse": {
+    "title": "Browse Properties",
+    "rent": "Rent",
+    "buy": "Buy",
+    "search": "Search by location, address...",
+    "filters": "Filters",
+    "bedrooms": "Bedrooms",
+    "bathrooms": "Bathrooms",
+    "priceRange": "Price Range",
+    "propertyType": "Property Type",
+    "petFriendly": "Pet Friendly",
+    "parking": "Parking",
+    "apply": "Apply Filters",
+    "clear": "Clear",
+    "noResults": "No properties found",
+    "propertiesFound": "properties found"
+  },
+  "property": {
+    "perMonth": "/month",
+    "beds": "Beds",
+    "baths": "Baths",
+    "sqft": "Sq Ft",
+    "pets": "Pets",
+    "parking": "Parking",
+    "amenities": "Amenities",
+    "description": "Description",
+    "contactLandlord": "Contact Landlord",
+    "scheduleViewing": "Schedule Viewing",
+    "makeOffer": "Make Offer"
+  },
+  "contractors": {
+    "title": "Find Trusted Contractors",
+    "subtitle": "Connect with verified home service professionals",
+    "search": "Search by service type...",
+    "hourlyRate": "Hourly Rate",
+    "reviews": "Reviews",
+    "viewProfile": "View Profile",
+    "bookNow": "Book Now",
+    "verified": "Verified",
+    "specialties": "Specialties"
+  },
+  "auth": {
+    "login": "Login",
+    "signup": "Sign Up",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "fullName": "Full Name",
+    "userType": "I am a...",
+    "renter": "Renter",
+    "landlord": "Landlord",
+    "contractor": "Contractor",
+    "buyer": "Buyer",
+    "seller": "Seller",
+    "forgotPassword": "Forgot Password?",
+    "noAccount": "Don't have an account?",
+    "haveAccount": "Already have an account?"
+  },
+  "footer": {
+    "about": "About DOMMMA",
+    "aboutText": "Complete real estate marketplace for renting, buying, and property services in Metro Vancouver.",
+    "quickLinks": "Quick Links",
+    "support": "Support",
+    "legal": "Legal",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "contact": "Contact Us",
+    "faq": "FAQ",
+    "copyright": "© 2026 DOMMMA. All rights reserved."
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "yes": "Yes",
+    "no": "No"
+  }
+}
