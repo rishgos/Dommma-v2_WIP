@@ -1,0 +1,113 @@
+{
+  "nav": {
+    "home": "Accueil",
+    "about": "À propos",
+    "properties": "Propriétés",
+    "pros": "Pros",
+    "services": "Services",
+    "contact": "Contact",
+    "login": "Connexion",
+    "logout": "Déconnexion",
+    "dashboard": "Tableau de bord"
+  },
+  "hero": {
+    "title": "L'IMMOBILIER SIMPLIFIÉ",
+    "subtitle": "Marché immobilier complet pour la location, l'achat, la gestion immobilière et la recherche d'entrepreneurs de confiance.",
+    "ourStory": "Notre Histoire",
+    "browseProperties": "Parcourir les Propriétés",
+    "askNova": "Demandez à Nova IA: Trouvez des appartements, calculez votre budget, obtenez des conseils..."
+  },
+  "chat": {
+    "placeholder": "Tapez votre message...",
+    "voiceButton": "Cliquez pour parler",
+    "voiceListening": "Écoute en cours...",
+    "send": "Envoyer",
+    "thinking": "Nova réfléchit...",
+    "greeting": "Bonjour! Je suis Nova, votre assistante immobilière IA. Comment puis-je vous aider?",
+    "pickingUp": "Reprenons là où nous en étions..."
+  },
+  "browse": {
+    "title": "Parcourir les Propriétés",
+    "rent": "Location",
+    "buy": "Achat",
+    "search": "Rechercher par lieu, adresse...",
+    "filters": "Filtres",
+    "bedrooms": "Chambres",
+    "bathrooms": "Salles de bain",
+    "priceRange": "Fourchette de prix",
+    "propertyType": "Type de propriété",
+    "petFriendly": "Animaux acceptés",
+    "parking": "Stationnement",
+    "apply": "Appliquer",
+    "clear": "Effacer",
+    "noResults": "Aucune propriété trouvée",
+    "propertiesFound": "propriétés trouvées"
+  },
+  "property": {
+    "perMonth": "/mois",
+    "beds": "Chambres",
+    "baths": "SdB",
+    "sqft": "Pi²",
+    "pets": "Animaux",
+    "parking": "Stationnement",
+    "amenities": "Commodités",
+    "description": "Description",
+    "contactLandlord": "Contacter le Propriétaire",
+    "scheduleViewing": "Planifier une Visite",
+    "makeOffer": "Faire une Offre"
+  },
+  "contractors": {
+    "title": "Trouvez des Entrepreneurs de Confiance",
+    "subtitle": "Connectez-vous avec des professionnels vérifiés",
+    "search": "Rechercher par type de service...",
+    "hourlyRate": "Taux Horaire",
+    "reviews": "Avis",
+    "viewProfile": "Voir le Profil",
+    "bookNow": "Réserver",
+    "verified": "Vérifié",
+    "specialties": "Spécialités"
+  },
+  "auth": {
+    "login": "Connexion",
+    "signup": "Inscription",
+    "email": "Courriel",
+    "password": "Mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "fullName": "Nom complet",
+    "userType": "Je suis un(e)...",
+    "renter": "Locataire",
+    "landlord": "Propriétaire",
+    "contractor": "Entrepreneur",
+    "buyer": "Acheteur",
+    "seller": "Vendeur",
+    "forgotPassword": "Mot de passe oublié?",
+    "noAccount": "Pas de compte?",
+    "haveAccount": "Déjà un compte?"
+  },
+  "footer": {
+    "about": "À propos de DOMMMA",
+    "aboutText": "Marché immobilier complet pour la location, l'achat et les services immobiliers dans le Grand Vancouver.",
+    "quickLinks": "Liens Rapides",
+    "support": "Support",
+    "legal": "Légal",
+    "privacy": "Politique de Confidentialité",
+    "terms": "Conditions d'Utilisation",
+    "contact": "Contactez-nous",
+    "faq": "FAQ",
+    "copyright": "© 2026 DOMMMA. Tous droits réservés."
+  },
+  "common": {
+    "loading": "Chargement...",
+    "error": "Une erreur s'est produite",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "close": "Fermer",
+    "back": "Retour",
+    "next": "Suivant",
+    "submit": "Soumettre",
+    "yes": "Oui",
+    "no": "Non"
+  }
+}
