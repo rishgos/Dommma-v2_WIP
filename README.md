@@ -113,12 +113,15 @@ Dommma-v2_WIP/
 
 | Feature | Description |
 |---------|-------------|
-| 🏠 Property Listings | Browse, search, filter rentals & sales |
-| 🤖 Nova AI Chatbot | Claude-powered assistant with voice |
+| 🏠 Property Listings | Browse, search, filter rentals & sales across Metro Vancouver |
+| 🤖 Nova AI Chatbot | Claude-powered assistant with voice input/output |
+| 🌐 Bilingual | Full English/French language support |
+| 🎤 Voice Input | Speak to the chatbot, see real-time transcription |
 | 🔧 Contractor Marketplace | Find & book home service pros |
 | 👥 Roommate Finder | AI-powered compatibility matching |
 | 📅 Viewing Scheduler | Google Calendar integration |
 | 💳 Payments | Stripe integration |
+| 🗺️ Maps | Google Maps with address geocoding |
 | 📱 PWA | Installable, works offline |
 
 ---
