@@ -1203,6 +1203,228 @@ async def get_chat_history(session_id: str):
         raise HTTPException(status_code=404, detail="Session not found")
     return session
 
+
+# ========== AI CONCIERGE WITH TOOL CALLING ==========
+
+class ConciergeRequest(BaseModel):
+    session_id: Optional[str] = None
+    message: str
+    user_id: Optional[str] = None
+    user_context: Optional[Dict[str, Any]] = None
+
+class ConciergeResponse(BaseModel):
+    session_id: str
+    response: str
+    tool_results: Optional[List[Dict[str, Any]]] = None
+    listings: Optional[List[Dict[str, Any]]] = None
+    contractors: Optional[List[Dict[str, Any]]] = None
+    suggestions: Optional[List[str]] = None
+
+@api_router.post("/ai/concierge", response_model=ConciergeResponse)
+async def ai_concierge(request: ConciergeRequest):
+    """
+    AI Concierge endpoint with Claude tool calling.
+    Handles structured actions like creating listings, searching, scheduling viewings.
+    """
+    from services.ai_tools import AIToolsService, NOVA_TOOLS
+    
+    session_id = request.session_id or str(uuid.uuid4())
+    user_id = request.user_id
+    
+    # Get or create chat session
+    session = await db.chat_sessions.find_one({"id": session_id}, {"_id": 0})
+    if not session:
+        session = {
+            "id": session_id, 
+            "messages": [], 
+            "created_at": datetime.now(timezone.utc).isoformat(), 
+            "user_id": user_id,
+            "mode": "concierge"
+        }
+        await db.chat_sessions.insert_one(session)
+    
+    # Initialize tools service
+    tools_service = AIToolsService(db)
+    
+    # Get context for system prompt
+    listings = await db.listings.find({"status": "active"}, {"_id": 0}).to_list(50)
+    contractors = await db.contractor_profiles.find({"status": "active"}, {"_id": 0}).to_list(30)
+    
+    # Build context summaries
+    listings_summary = f"Currently {len(listings)} active listings in database."
+    contractors_summary = f"Currently {len(contractors)} active contractors available."
+    
+    # Get user info if logged in
+    user_info = ""
+    if user_id:
+        user = await db.users.find_one({"id": user_id}, {"_id": 0, "password": 0})
+        if user:
+            user_info = f"\nUser: {user.get('name', 'Unknown')} ({user.get('role', 'renter')})"
+    
+    system_message = f"""You are Nova, DOMMMA's AI real estate concierge. You help users with all aspects of real estate through natural conversation.
+
+You have access to tools that let you take real actions:
+- **create_listing**: Create property listings for landlords
+- **search_listings**: Find properties based on criteria
+- **find_contractors**: Find plumbers, electricians, cleaners, etc.
+- **triage_maintenance**: Handle maintenance requests
+- **calculate_budget**: Help users understand what they can afford
+- **schedule_viewing**: Book property viewings
+
+WHEN TO USE TOOLS:
+- User says "I want to list my apartment" → Use create_listing (gather details first if needed)
+- User says "Find me a 2 bedroom under $2500" → Use search_listings
+- User says "I need a plumber" → Use find_contractors
+- User says "My sink is leaking" → Use triage_maintenance
+- User says "What can I afford on $80k" → Use calculate_budget
+- User says "I want to see this property" → Use schedule_viewing
+
+RESPONSE FORMAT:
+- After using create_listing, format the result as: [Listing Title](property:LISTING_ID)
+- After using find_contractors, format each as: [Contractor Name](contractor:CONTRACTOR_ID)
+- Be conversational and helpful
+- If you need more info to use a tool, ask for it naturally
+
+{user_info}
+{listings_summary}
+{contractors_summary}
+
+Keep responses concise and action-oriented. You're a helpful concierge that gets things done!"""
+
+    try:
+        anthropic_client = AsyncAnthropic(api_key=os.environ.get('ANTHROPIC_API_KEY'))
+        
+        # Build messages from history
+        messages = []
+        prev_messages = session.get("messages", [])[-10:]
+        for m in prev_messages:
+            messages.append({
+                "role": m['role'], 
+                "content": m['content'][:1000]
+            })
+        
+        # Add current message
+        messages.append({"role": "user", "content": request.message})
+        
+        # Initial Claude call with tools
+        response = await anthropic_client.messages.create(
+            model="claude-sonnet-4-5-20250929",
+            max_tokens=2048,
+            system=system_message,
+            tools=NOVA_TOOLS,
+            messages=messages
+        )
+        
+        tool_results = []
+        final_response = ""
+        result_listings = []
+        result_contractors = []
+        
+        # Process response - may include tool calls
+        while response.stop_reason == "tool_use":
+            # Find tool use blocks
+            tool_use_block = None
+            text_content = ""
+            
+            for block in response.content:
+                if block.type == "tool_use":
+                    tool_use_block = block
+                elif block.type == "text":
+                    text_content = block.text
+            
+            if tool_use_block:
+                # Execute the tool
+                tool_name = tool_use_block.name
+                tool_input = tool_use_block.input
+                tool_id = tool_use_block.id
+                
+                logger.info(f"Executing tool: {tool_name}")
+                result = await tools_service.execute_tool(tool_name, tool_input, user_id)
+                tool_results.append({
+                    "tool": tool_name,
+                    "input": tool_input,
+                    "result": result
+                })
+                
+                # Collect listings/contractors from results
+                if result.get("listings"):
+                    result_listings.extend(result["listings"])
+                if result.get("contractors"):
+                    result_contractors.extend(result["contractors"])
+                if result.get("listing"):
+                    result_listings.append(result["listing"])
+                
+                # Continue conversation with tool result
+                messages.append({"role": "assistant", "content": response.content})
+                messages.append({
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": tool_id,
+                            "content": json.dumps(result)
+                        }
+                    ]
+                })
+                
+                # Get Claude's interpretation of the result
+                response = await anthropic_client.messages.create(
+                    model="claude-sonnet-4-5-20250929",
+                    max_tokens=2048,
+                    system=system_message,
+                    tools=NOVA_TOOLS,
+                    messages=messages
+                )
+        
+        # Extract final text response
+        for block in response.content:
+            if hasattr(block, 'text'):
+                final_response = block.text
+                break
+        
+        # Save messages to session
+        await db.chat_sessions.update_one(
+            {"id": session_id},
+            {"$push": {
+                "messages": {
+                    "$each": [
+                        {"role": "user", "content": request.message, "timestamp": datetime.now(timezone.utc).isoformat()},
+                        {"role": "assistant", "content": final_response, "timestamp": datetime.now(timezone.utc).isoformat(), "tool_results": tool_results}
+                    ]
+                }
+            }}
+        )
+        
+        # Generate suggestions
+        suggestions = []
+        if not tool_results:
+            if "list" in request.message.lower() or "rent out" in request.message.lower():
+                suggestions.append("💡 I can help you create a listing - just say 'I want to list my property'")
+            if "find" in request.message.lower() or "search" in request.message.lower():
+                suggestions.append("🏠 Tell me your requirements and I'll search for matching properties")
+        
+        return ConciergeResponse(
+            session_id=session_id,
+            response=final_response,
+            tool_results=tool_results if tool_results else None,
+            listings=result_listings if result_listings else None,
+            contractors=result_contractors if result_contractors else None,
+            suggestions=suggestions if suggestions else None
+        )
+        
+    except Exception as e:
+        logger.error(f"Concierge error: {e}")
+        import traceback
+        traceback.print_exc()
+        return ConciergeResponse(
+            session_id=session_id,
+            response="I'm having a moment! Let me help you - try asking me to find apartments, create a listing, or connect you with a contractor.",
+            tool_results=None,
+            listings=None,
+            contractors=None,
+            suggestions=["Try: 'I want to list my 2 bedroom apartment'", "Try: 'Find me a plumber'"]
+        )
+
 # Nova Memory endpoint - Get saved preferences for a user
 @api_router.get("/nova/memory/{user_id}")
 async def get_nova_memory(user_id: str):
