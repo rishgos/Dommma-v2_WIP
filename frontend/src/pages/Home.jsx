@@ -178,13 +178,18 @@ const Home = () => {
     });
   }, []);
 
+  const [showNovaChat, setShowNovaChat] = useState(false);
+  
   const handleNovaSearch = async (query) => {
     const searchText = query || searchQuery;
     if (!searchText.trim()) return;
     
     setIsSearching(true);
-    // Navigate to browse with the search query for Nova
-    navigate(`/browse?nova=${encodeURIComponent(searchText)}`);
+    // Open Nova chat with the query instead of navigating away
+    setShowNovaChat(true);
+    // Store the initial query to pass to chat
+    sessionStorage.setItem('novaInitialQuery', searchText);
+    setIsSearching(false);
   };
 
   const handleKeyPress = (e) => {
