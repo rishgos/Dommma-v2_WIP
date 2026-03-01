@@ -5,9 +5,24 @@ Build a complete real estate marketplace called "DOMMMA" for Renters, Landlords,
 
 **Latest Direction (AI-First Pivot):** The platform is pivoting to an AI-first concierge model where users interact with a persistent chatbot (Nova) to perform all key actions via natural language (searching, listing, booking, maintenance requests).
 
-## Recent Fixes (Dec 2025)
-- [x] **Homepage Chat Search Bug** - Fixed the homepage Nova search bar to properly open the chat modal when users type and click search (was navigating away instead)
-- [x] **Contractor Link Rendering** - Fixed contractor links in chat responses to render as clickable links instead of raw text
+## Recent Updates (Mar 2026)
+
+### Claude Tool Calling Implementation ✅
+- [x] **AI Concierge Endpoint** - New `/api/ai/concierge` with Claude tool calling
+- [x] **6 AI Tools Implemented:**
+  - `create_listing` - Create property listings via conversation
+  - `search_listings` - Search properties with natural language
+  - `find_contractors` - Find plumbers, electricians, cleaners, etc.
+  - `triage_maintenance` - Handle maintenance requests with urgency
+  - `calculate_budget` - Budget calculations using 30% rule
+  - `schedule_viewing` - Book property viewings
+- [x] **Multiple Tool Support** - Claude can call multiple tools in one response (e.g., triage + find contractor)
+- [x] **Frontend Integration** - NovaChat uses new endpoint with fallback to original
+
+### Bug Fixes
+- [x] **Homepage Chat Search** - Fixed search bar to open chat modal
+- [x] **Contractor Link Rendering** - Clickable links in chat responses
+- [x] **Missing lat/lng Fix** - Added default coordinates for AI-created listings
 
 ## Tech Stack
 - **Frontend**: React.js with Tailwind CSS, Shadcn UI
