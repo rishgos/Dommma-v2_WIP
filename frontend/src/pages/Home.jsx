@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Search, Sparkles, Bot, MapPin, Bed, Bath, Star, Shield, Trophy } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import MainLayout from '../components/layout/MainLayout';
+import NovaChat from '../components/chat/NovaChat';
 import axios from 'axios';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
