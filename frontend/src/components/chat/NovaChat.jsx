@@ -509,25 +509,24 @@ const NovaChat = ({ isOpenProp = false, onClose = null, initialQuery = '' }) => 
       if (userContext.commute_location) contextToSend.commute_location = userContext.commute_location;
       if (userContext.preferences) contextToSend.preferences = userContext.preferences;
 
-      const response = await axios.post(`${API}/chat`, {
+      // Use the new AI Concierge endpoint with tool calling
+      const response = await axios.post(`${API}/ai/concierge`, {
         session_id: sessionId,
         message: userMessage,
-        user_id: user?.id || null,  // Send user_id for long-term memory
+        user_id: user?.id || null,
         user_context: Object.keys(contextToSend).length > 0 ? contextToSend : null
       });
 
       setSessionId(response.data.session_id);
       
-      // Update memory status if preferences were loaded
-      if (response.data.preferences_loaded && !memoryLoaded) {
-        setMemoryLoaded(true);
-      }
-      
+      // Build the assistant message with tool results
       const assistantMessage = { 
         role: 'assistant', 
         content: response.data.response,
-        listings: response.data.listings,
-        suggestions: response.data.suggestions
+        listings: response.data.listings || [],
+        contractors: response.data.contractors || [],
+        suggestions: response.data.suggestions,
+        toolResults: response.data.tool_results
       };
       
       setMessages(prev => [...prev, assistantMessage]);
@@ -542,10 +541,27 @@ const NovaChat = ({ isOpenProp = false, onClose = null, initialQuery = '' }) => 
       }
     } catch (error) {
       console.error('Chat error:', error);
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: "I'm having a moment! Try asking about:\n• Apartments in Vancouver\n• Budget advice\n• Rental application tips\n• Neighborhood recommendations" 
-      }]);
+      // Fallback to original endpoint if concierge fails
+      try {
+        const fallbackResponse = await axios.post(`${API}/chat`, {
+          session_id: sessionId,
+          message: userMessage,
+          user_id: user?.id || null
+        });
+        
+        setSessionId(fallbackResponse.data.session_id);
+        setMessages(prev => [...prev, { 
+          role: 'assistant', 
+          content: fallbackResponse.data.response,
+          listings: fallbackResponse.data.listings,
+          suggestions: fallbackResponse.data.suggestions
+        }]);
+      } catch (fallbackError) {
+        setMessages(prev => [...prev, { 
+          role: 'assistant', 
+          content: "I'm having a moment! Try asking about:\n• Apartments in Vancouver\n• Budget advice\n• Rental application tips\n• Neighborhood recommendations" 
+        }]);
+      }
     } finally {
       setIsLoading(false);
     }
