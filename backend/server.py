@@ -1329,62 +1329,68 @@ Keep responses concise and action-oriented. You're a helpful concierge that gets
         
         while response.stop_reason == "tool_use" and iteration < max_tool_iterations:
             iteration += 1
-            # Find tool use blocks
-            tool_use_block = None
+            # Find ALL tool use blocks in this response
+            tool_use_blocks = []
             text_content = ""
             
             for block in response.content:
                 if block.type == "tool_use":
-                    tool_use_block = block
+                    tool_use_blocks.append(block)
                 elif block.type == "text":
                     text_content = block.text
             
-            if tool_use_block:
-                # Execute the tool
-                tool_name = tool_use_block.name
-                tool_input = tool_use_block.input
-                tool_id = tool_use_block.id
-                
-                logger.info(f"Executing tool: {tool_name}")
-                result = await tools_service.execute_tool(tool_name, tool_input, user_id)
-                tool_results.append({
-                    "tool": tool_name,
-                    "input": tool_input,
-                    "result": result
-                })
-                
-                # Collect listings/contractors from results
-                if result.get("listings"):
-                    result_listings.extend(result["listings"])
-                if result.get("contractors"):
-                    result_contractors.extend(result["contractors"])
-                if result.get("listing"):
-                    result_listings.append(result["listing"])
-                
-                # Build proper assistant message with tool use
+            if tool_use_blocks:
+                # Build assistant content with all tool uses
                 assistant_content = []
-                for block in response.content:
-                    if block.type == "text":
-                        assistant_content.append({"type": "text", "text": block.text})
-                    elif block.type == "tool_use":
-                        assistant_content.append({
-                            "type": "tool_use",
-                            "id": block.id,
-                            "name": block.name,
-                            "input": block.input
-                        })
+                if text_content:
+                    assistant_content.append({"type": "text", "text": text_content})
                 
+                tool_result_content = []
+                
+                for tool_use_block in tool_use_blocks:
+                    # Add tool use to assistant content
+                    assistant_content.append({
+                        "type": "tool_use",
+                        "id": tool_use_block.id,
+                        "name": tool_use_block.name,
+                        "input": tool_use_block.input
+                    })
+                    
+                    # Execute the tool
+                    tool_name = tool_use_block.name
+                    tool_input = tool_use_block.input
+                    tool_id = tool_use_block.id
+                    
+                    logger.info(f"Executing tool: {tool_name}")
+                    result = await tools_service.execute_tool(tool_name, tool_input, user_id)
+                    tool_results.append({
+                        "tool": tool_name,
+                        "input": tool_input,
+                        "result": result
+                    })
+                    
+                    # Collect listings/contractors from results
+                    if result.get("listings"):
+                        result_listings.extend(result["listings"])
+                    if result.get("contractors"):
+                        result_contractors.extend(result["contractors"])
+                    if result.get("listing"):
+                        result_listings.append(result["listing"])
+                    if result.get("suggested_contractors"):
+                        for c in result["suggested_contractors"]:
+                            result_contractors.append(c)
+                    
+                    # Add tool result
+                    tool_result_content.append({
+                        "type": "tool_result",
+                        "tool_use_id": tool_id,
+                        "content": json.dumps(result)
+                    })
+                
+                # Add assistant message with all tool uses
                 messages.append({"role": "assistant", "content": assistant_content})
-                messages.append({
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "tool_result",
-                            "tool_use_id": tool_id,
-                            "content": json.dumps(result)
-                        }
-                    ]
-                })
+                # Add user message with all tool results
+                messages.append({"role": "user", "content": tool_result_content})
                 
                 # Get Claude's interpretation of the result
                 response = await anthropic_client.messages.create(
