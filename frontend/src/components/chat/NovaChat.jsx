@@ -65,10 +65,10 @@ const preferenceFields = [
   { key: 'commute_location', label: 'Commute To', icon: MapPin, type: 'text', placeholder: 'Downtown Vancouver' },
 ];
 
-const NovaChat = () => {
+const NovaChat = ({ isOpenProp = false, onClose = null, initialQuery = '' }) => {
   const { user } = useAuth();
   const { t, i18n } = useTranslation();
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(isOpenProp);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
