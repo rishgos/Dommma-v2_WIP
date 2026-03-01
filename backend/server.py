@@ -1294,14 +1294,22 @@ Keep responses concise and action-oriented. You're a helpful concierge that gets
     try:
         anthropic_client = AsyncAnthropic(api_key=os.environ.get('ANTHROPIC_API_KEY'))
         
-        # Build messages from history
+        # Build messages from history (only text content, skip tool results)
         messages = []
         prev_messages = session.get("messages", [])[-10:]
         for m in prev_messages:
-            messages.append({
-                "role": m['role'], 
-                "content": m['content'][:1000]
-            })
+            # Only include plain text messages, skip any with tool_results
+            if m.get('tool_results'):
+                # For messages with tool results, only include the response text
+                messages.append({
+                    "role": m['role'], 
+                    "content": m['content'][:1000] if m['content'] else "I performed some actions."
+                })
+            else:
+                messages.append({
+                    "role": m['role'], 
+                    "content": m['content'][:1000] if isinstance(m['content'], str) else str(m['content'])[:1000]
+                })
         
         # Add current message
         messages.append({"role": "user", "content": request.message})
@@ -1321,7 +1329,11 @@ Keep responses concise and action-oriented. You're a helpful concierge that gets
         result_contractors = []
         
         # Process response - may include tool calls
-        while response.stop_reason == "tool_use":
+        max_tool_iterations = 5  # Prevent infinite loops
+        iteration = 0
+        
+        while response.stop_reason == "tool_use" and iteration < max_tool_iterations:
+            iteration += 1
             # Find tool use blocks
             tool_use_block = None
             text_content = ""
