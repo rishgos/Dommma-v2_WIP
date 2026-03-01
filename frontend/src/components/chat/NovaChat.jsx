@@ -628,7 +628,7 @@ const NovaChat = ({ isOpenProp = false, onClose = null, initialQuery = '' }) => 
         <div className="fixed inset-0 z-50 flex items-end justify-end p-4 md:p-8" data-testid="nova-chat-modal">
           <div 
             className="absolute inset-0 bg-black/30 backdrop-blur-sm"
-            onClick={() => setIsOpen(false)}
+            onClick={handleClose}
           />
 
           <div 
