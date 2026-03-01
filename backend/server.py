@@ -977,10 +977,17 @@ async def chat_with_nova(request: ChatRequest):
     # Get available listings for context - fetch ALL active listings
     listings = await db.listings.find({"status": "active"}, {"_id": 0}).to_list(200)
     
-    # Build clear context with CITY prominently displayed
+    # Build clear context with CITY, OFFERS prominently displayed
     listings_context = "\n".join([
-        f"- ID:{listing['id']} | CITY: {listing.get('city', 'Vancouver')} | {listing['title']}: {listing.get('bedrooms', 0)}bd/{listing.get('bathrooms', 1)}ba, ${listing.get('price', 0)}/mo, {listing.get('address', '')}, {listing.get('sqft', 0)}sqft, Pet-friendly: {listing.get('pet_friendly', False)}, Type: {listing.get('property_type', 'Apartment')}, Listing: {listing.get('listing_type', 'rent')}"
+        f"- ID:{listing['id']} | CITY: {listing.get('city', 'Vancouver')} | {listing['title']}: {listing.get('bedrooms', 0)}bd/{listing.get('bathrooms', 1)}ba, ${listing.get('price', 0)}/mo, {listing.get('address', '')}, {listing.get('sqft', 0)}sqft, Pet-friendly: {listing.get('pet_friendly', False)}, Type: {listing.get('property_type', 'Apartment')}, Listing: {listing.get('listing_type', 'rent')}, Lease: {listing.get('lease_duration', 12)} months, OFFERS: {', '.join(listing.get('offers', [])) if listing.get('offers') else 'None'}"
         for listing in listings
+    ])
+    
+    # Get contractors for context
+    contractors = await db.contractor_profiles.find({"status": "active"}, {"_id": 0}).to_list(50)
+    contractors_context = "\n".join([
+        f"- CONTRACTOR ID:{c['id']} | {c.get('company_name', 'Unknown')} | Specialties: {', '.join(c.get('specialties', []))} | Rate: ${c.get('hourly_rate', 0)}/hr | Rating: {c.get('rating', 0)}/5 | Verified: {c.get('verified', False)}"
+        for c in contractors
     ])
     
     # Log for debugging
@@ -988,7 +995,7 @@ async def chat_with_nova(request: ChatRequest):
     for l in listings:
         c = l.get('city', 'Unknown')
         cities[c] = cities.get(c, 0) + 1
-    logger.info(f"Chat context: {len(listings)} listings, cities: {cities}")
+    logger.info(f"Chat context: {len(listings)} listings, cities: {cities}, {len(contractors)} contractors")
     
     # Build conversation context from history
     history_context = ""
