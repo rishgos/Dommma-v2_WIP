@@ -109,24 +109,19 @@ const NovaChat = ({ isOpenProp = false, onClose = null, initialQuery = '' }) => 
   const [memoryLoaded, setMemoryLoaded] = useState(false);
   
   const messagesEndRef = useRef(null);
+  const pendingQueryRef = useRef(initialQuery);
 
   // Sync with external control
   useEffect(() => {
     setIsOpen(isOpenProp);
   }, [isOpenProp]);
 
-  // Handle initial query from homepage search
+  // Store pending query for later execution
   useEffect(() => {
-    if (isOpen && initialQuery && messages.length <= 1) {
-      // Auto-send the initial query after a short delay
-      const timer = setTimeout(() => {
-        if (initialQuery.trim()) {
-          sendMessage(initialQuery);
-        }
-      }, 500);
-      return () => clearTimeout(timer);
+    if (initialQuery) {
+      pendingQueryRef.current = initialQuery;
     }
-  }, [isOpen, initialQuery]);
+  }, [initialQuery]);
 
   const handleClose = () => {
     setIsOpen(false);
