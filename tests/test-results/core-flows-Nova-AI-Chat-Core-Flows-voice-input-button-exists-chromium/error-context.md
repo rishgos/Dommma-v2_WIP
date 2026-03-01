@@ -1,0 +1,578 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - navigation [ref=e4]:
+    - generic [ref=e6]:
+      - link "DOMMMA" [ref=e7] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e9]:
+        - link "Home" [ref=e10] [cursor=pointer]:
+          - /url: /
+        - link "About" [ref=e11] [cursor=pointer]:
+          - /url: /about
+        - link "Properties" [ref=e12] [cursor=pointer]:
+          - /url: /properties
+        - link "Pros" [ref=e13] [cursor=pointer]:
+          - /url: /contractors
+        - link "Services" [ref=e14] [cursor=pointer]:
+          - /url: /services
+        - link "Contact" [ref=e15] [cursor=pointer]:
+          - /url: /contact
+      - generic [ref=e16]:
+        - button "FR" [ref=e17] [cursor=pointer]:
+          - img [ref=e18]
+          - generic [ref=e21]: FR
+        - link "Login" [ref=e23] [cursor=pointer]:
+          - /url: /login
+  - main [ref=e24]:
+    - generic [ref=e25]:
+      - generic [ref=e30]:
+        - heading "HOME MADE SIMPLE" [level=1] [ref=e31]
+        - paragraph [ref=e32]: Complete real estate marketplace for renting, buying, property management, and finding trusted contractors.
+        - generic [ref=e33]:
+          - link "Our Story" [ref=e34] [cursor=pointer]:
+            - /url: /about
+            - generic [ref=e35]: Our Story
+            - img [ref=e36]
+          - link "Browse Properties" [ref=e38] [cursor=pointer]:
+            - /url: /browse
+      - generic [ref=e40]:
+        - generic [ref=e41]:
+          - img [ref=e43]
+          - 'textbox "Ask Nova AI: Find apartments, calculate budget, get neighborhood tips..." [ref=e47]'
+          - button [disabled] [ref=e48]:
+            - img [ref=e50]
+        - paragraph [ref=e53]:
+          - img [ref=e54]
+          - text: Powered by Nova AI — Ask anything about properties, budgets, or neighborhoods
+      - generic [ref=e57]:
+        - generic [ref=e58]:
+          - generic [ref=e59]:
+            - paragraph [ref=e60]: Featured Listings
+            - heading "Discover Your Next Home" [level=2] [ref=e61]
+          - link "View All" [ref=e62] [cursor=pointer]:
+            - /url: /browse
+            - generic [ref=e63]: View All
+            - img [ref=e64]
+        - generic [ref=e67]:
+          - link "Sample - Add your own listings! Modern Downtown Condo Condo $ 2,800 /mo Modern Downtown Condo Downtown, Vancouver, BC 2 bed 2 bath 950 sqft" [ref=e68] [cursor=pointer]:
+            - /url: /browse
+            - generic [ref=e69]: Sample - Add your own listings!
+            - generic [ref=e70]:
+              - img "Modern Downtown Condo" [ref=e71]
+              - generic [ref=e73]: Condo
+              - generic [ref=e75]: $ 2,800 /mo
+            - generic [ref=e76]:
+              - heading "Modern Downtown Condo" [level=3] [ref=e77]
+              - paragraph [ref=e78]:
+                - img [ref=e79]
+                - text: Downtown, Vancouver, BC
+              - generic [ref=e82]:
+                - generic [ref=e83]:
+                  - img [ref=e84]
+                  - text: 2 bed
+                - generic [ref=e86]:
+                  - img [ref=e87]
+                  - text: 2 bath
+                - generic [ref=e90]: 950 sqft
+          - link "Sample - Add your own listings! Cozy Kitsilano Character House $ 3,200 /mo Cozy Kitsilano Character Kitsilano, Vancouver 3 bed 1.5 bath 1400 sqft" [ref=e91] [cursor=pointer]:
+            - /url: /browse
+            - generic [ref=e92]: Sample - Add your own listings!
+            - generic [ref=e93]:
+              - img "Cozy Kitsilano Character" [ref=e94]
+              - generic [ref=e96]: House
+              - generic [ref=e98]: $ 3,200 /mo
+            - generic [ref=e99]:
+              - heading "Cozy Kitsilano Character" [level=3] [ref=e100]
+              - paragraph [ref=e101]:
+                - img [ref=e102]
+                - text: Kitsilano, Vancouver
+              - generic [ref=e105]:
+                - generic [ref=e106]:
+                  - img [ref=e107]
+                  - text: 3 bed
+                - generic [ref=e109]:
+                  - img [ref=e110]
+                  - text: 1.5 bath
+                - generic [ref=e113]: 1400 sqft
+          - link "Sample - Add your own listings! Yaletown Luxury Loft Loft $ 3,500 /mo Yaletown Luxury Loft Yaletown, Vancouver 1 bed 1 bath 850 sqft" [ref=e114] [cursor=pointer]:
+            - /url: /browse
+            - generic [ref=e115]: Sample - Add your own listings!
+            - generic [ref=e116]:
+              - img "Yaletown Luxury Loft" [ref=e117]
+              - generic [ref=e119]: Loft
+              - generic [ref=e121]: $ 3,500 /mo
+            - generic [ref=e122]:
+              - heading "Yaletown Luxury Loft" [level=3] [ref=e123]
+              - paragraph [ref=e124]:
+                - img [ref=e125]
+                - text: Yaletown, Vancouver
+              - generic [ref=e128]:
+                - generic [ref=e129]:
+                  - img [ref=e130]
+                  - text: 1 bed
+                - generic [ref=e132]:
+                  - img [ref=e133]
+                  - text: 1 bath
+                - generic [ref=e136]: 850 sqft
+          - link "Sample - Add your own listings! Mount Pleasant Studio Studio $ 1,650 /mo Mount Pleasant Studio Mt Pleasant, Vancouver Studio 1 bath 450 sqft" [ref=e137] [cursor=pointer]:
+            - /url: /browse
+            - generic [ref=e138]: Sample - Add your own listings!
+            - generic [ref=e139]:
+              - img "Mount Pleasant Studio" [ref=e140]
+              - generic [ref=e142]: Studio
+              - generic [ref=e144]: $ 1,650 /mo
+            - generic [ref=e145]:
+              - heading "Mount Pleasant Studio" [level=3] [ref=e146]
+              - paragraph [ref=e147]:
+                - img [ref=e148]
+                - text: Mt Pleasant, Vancouver
+              - generic [ref=e151]:
+                - generic [ref=e152]:
+                  - img [ref=e153]
+                  - text: Studio
+                - generic [ref=e155]:
+                  - img [ref=e156]
+                  - text: 1 bath
+                - generic [ref=e159]: 450 sqft
+          - link "Sample - Add your own listings! West End High-Rise Apartment $ 2,400 /mo West End High-Rise West End, Vancouver 1 bed 1 bath 650 sqft" [ref=e160] [cursor=pointer]:
+            - /url: /browse
+            - generic [ref=e161]: Sample - Add your own listings!
+            - generic [ref=e162]:
+              - img "West End High-Rise" [ref=e163]
+              - generic [ref=e165]: Apartment
+              - generic [ref=e167]: $ 2,400 /mo
+            - generic [ref=e168]:
+              - heading "West End High-Rise" [level=3] [ref=e169]
+              - paragraph [ref=e170]:
+                - img [ref=e171]
+                - text: West End, Vancouver
+              - generic [ref=e174]:
+                - generic [ref=e175]:
+                  - img [ref=e176]
+                  - text: 1 bed
+                - generic [ref=e178]:
+                  - img [ref=e179]
+                  - text: 1 bath
+                - generic [ref=e182]: 650 sqft
+          - link "Sample - Add your own listings! Coal Harbour Penthouse Penthouse $ 5,500 /mo Coal Harbour Penthouse Coal Harbour, Vancouver 3 bed 2.5 bath 2200 sqft" [ref=e183] [cursor=pointer]:
+            - /url: /browse
+            - generic [ref=e184]: Sample - Add your own listings!
+            - generic [ref=e185]:
+              - img "Coal Harbour Penthouse" [ref=e186]
+              - generic [ref=e188]: Penthouse
+              - generic [ref=e190]: $ 5,500 /mo
+            - generic [ref=e191]:
+              - heading "Coal Harbour Penthouse" [level=3] [ref=e192]
+              - paragraph [ref=e193]:
+                - img [ref=e194]
+                - text: Coal Harbour, Vancouver
+              - generic [ref=e197]:
+                - generic [ref=e198]:
+                  - img [ref=e199]
+                  - text: 3 bed
+                - generic [ref=e201]:
+                  - img [ref=e202]
+                  - text: 2.5 bath
+                - generic [ref=e205]: 2200 sqft
+          - link "Sample - Add your own listings! Gastown Heritage Suite Suite $ 2,200 /mo Gastown Heritage Suite Gastown, Vancouver 1 bed 1 bath 720 sqft" [ref=e206] [cursor=pointer]:
+            - /url: /browse
+            - generic [ref=e207]: Sample - Add your own listings!
+            - generic [ref=e208]:
+              - img "Gastown Heritage Suite" [ref=e209]
+              - generic [ref=e211]: Suite
+              - generic [ref=e213]: $ 2,200 /mo
+            - generic [ref=e214]:
+              - heading "Gastown Heritage Suite" [level=3] [ref=e215]
+              - paragraph [ref=e216]:
+                - img [ref=e217]
+                - text: Gastown, Vancouver
+              - generic [ref=e220]:
+                - generic [ref=e221]:
+                  - img [ref=e222]
+                  - text: 1 bed
+                - generic [ref=e224]:
+                  - img [ref=e225]
+                  - text: 1 bath
+                - generic [ref=e228]: 720 sqft
+          - link "Sample - Add your own listings! Fairview Slopes Duplex Duplex $ 3,800 /mo Fairview Slopes Duplex Fairview, Vancouver 2 bed 2 bath 1100 sqft" [ref=e229] [cursor=pointer]:
+            - /url: /browse
+            - generic [ref=e230]: Sample - Add your own listings!
+            - generic [ref=e231]:
+              - img "Fairview Slopes Duplex" [ref=e232]
+              - generic [ref=e234]: Duplex
+              - generic [ref=e236]: $ 3,800 /mo
+            - generic [ref=e237]:
+              - heading "Fairview Slopes Duplex" [level=3] [ref=e238]
+              - paragraph [ref=e239]:
+                - img [ref=e240]
+                - text: Fairview, Vancouver
+              - generic [ref=e243]:
+                - generic [ref=e244]:
+                  - img [ref=e245]
+                  - text: 2 bed
+                - generic [ref=e247]:
+                  - img [ref=e248]
+                  - text: 2 bath
+                - generic [ref=e251]: 1100 sqft
+      - generic [ref=e254]:
+        - generic [ref=e255]:
+          - heading "Architecture in Motion" [level=2] [ref=e256]:
+            - text: Architecture
+            - text: in Motion
+          - paragraph [ref=e257]: Your complete real estate platform - from finding your perfect home to managing properties and connecting with trusted contractors. We bring innovation to every aspect of real estate.
+          - link "Our Services" [ref=e258] [cursor=pointer]:
+            - /url: /about
+            - generic [ref=e259]: Our Services
+            - img [ref=e260]
+        - generic [ref=e263]:
+          - generic [ref=e264]:
+            - paragraph [ref=e265]: 200+
+            - paragraph [ref=e266]: Properties
+            - paragraph [ref=e267]: Premium listings across Vancouver
+          - generic [ref=e268]:
+            - paragraph [ref=e269]: 100%
+            - paragraph [ref=e270]: Happy Clients
+            - paragraph [ref=e271]: Satisfaction guaranteed
+          - generic [ref=e272]:
+            - paragraph [ref=e273]: 900K
+            - paragraph [ref=e274]: Square Feet
+            - paragraph [ref=e275]: Managed properties
+          - generic [ref=e276]:
+            - paragraph [ref=e277]: 50+
+            - paragraph [ref=e278]: Contractors
+            - paragraph [ref=e279]: Verified professionals
+      - generic [ref=e281]:
+        - generic [ref=e282]:
+          - generic [ref=e283]:
+            - paragraph [ref=e284]: Buy Property
+            - heading "Properties For Sale" [level=2] [ref=e285]
+          - link "View All" [ref=e286] [cursor=pointer]:
+            - /url: /browse?type=sale
+            - text: View All
+            - img [ref=e287]
+        - generic [ref=e290]:
+          - link "3BR House in Mount Pleasant For Sale $ 1,210,061 3BR House in Mount Pleasant 5070 Davie St , Vancouver 3 bed 3 bath 912 sqft" [ref=e291] [cursor=pointer]:
+            - /url: /browse
+            - generic [ref=e292]:
+              - img "3BR House in Mount Pleasant" [ref=e293]
+              - generic [ref=e294]: For Sale
+              - generic [ref=e296]: $ 1,210,061
+            - generic [ref=e297]:
+              - heading "3BR House in Mount Pleasant" [level=3] [ref=e298]
+              - paragraph [ref=e299]:
+                - img [ref=e300]
+                - text: 5070 Davie St , Vancouver
+              - generic [ref=e303]:
+                - generic [ref=e304]:
+                  - img [ref=e305]
+                  - text: 3 bed
+                - generic [ref=e307]:
+                  - img [ref=e308]
+                  - text: 3 bath
+                - generic [ref=e311]: 912 sqft
+          - link "2BR Townhouse in Richmond For Sale $ 1,603,105 2BR Townhouse in Richmond 6053 Oak St , Richmond 2 bed 2 bath 1387 sqft" [ref=e312] [cursor=pointer]:
+            - /url: /browse
+            - generic [ref=e313]:
+              - img "2BR Townhouse in Richmond" [ref=e314]
+              - generic [ref=e315]: For Sale
+              - generic [ref=e317]: $ 1,603,105
+            - generic [ref=e318]:
+              - heading "2BR Townhouse in Richmond" [level=3] [ref=e319]
+              - paragraph [ref=e320]:
+                - img [ref=e321]
+                - text: 6053 Oak St , Richmond
+              - generic [ref=e324]:
+                - generic [ref=e325]:
+                  - img [ref=e326]
+                  - text: 2 bed
+                - generic [ref=e328]:
+                  - img [ref=e329]
+                  - text: 2 bath
+                - generic [ref=e332]: 1387 sqft
+          - link "Studio Apartment in Downtown For Sale $ 1,354,017 Studio Apartment in Downtown 1201 Oak St , Vancouver Studio 1 bath 1574 sqft" [ref=e333] [cursor=pointer]:
+            - /url: /browse
+            - generic [ref=e334]:
+              - img "Studio Apartment in Downtown" [ref=e335]
+              - generic [ref=e336]: For Sale
+              - generic [ref=e338]: $ 1,354,017
+            - generic [ref=e339]:
+              - heading "Studio Apartment in Downtown" [level=3] [ref=e340]
+              - paragraph [ref=e341]:
+                - img [ref=e342]
+                - text: 1201 Oak St , Vancouver
+              - generic [ref=e345]:
+                - generic [ref=e346]:
+                  - img [ref=e347]
+                  - text: Studio
+                - generic [ref=e349]:
+                  - img [ref=e350]
+                  - text: 1 bath
+                - generic [ref=e353]: 1574 sqft
+          - link "4BR Apartment in Burnaby For Sale $ 1,054,525 4BR Apartment in Burnaby 3834 Main St , Burnaby 4 bed 4 bath 1208 sqft" [ref=e354] [cursor=pointer]:
+            - /url: /browse
+            - generic [ref=e355]:
+              - img "4BR Apartment in Burnaby" [ref=e356]
+              - generic [ref=e357]: For Sale
+              - generic [ref=e359]: $ 1,054,525
+            - generic [ref=e360]:
+              - heading "4BR Apartment in Burnaby" [level=3] [ref=e361]
+              - paragraph [ref=e362]:
+                - img [ref=e363]
+                - text: 3834 Main St , Burnaby
+              - generic [ref=e366]:
+                - generic [ref=e367]:
+                  - img [ref=e368]
+                  - text: 4 bed
+                - generic [ref=e370]:
+                  - img [ref=e371]
+                  - text: 4 bath
+                - generic [ref=e374]: 1208 sqft
+      - generic [ref=e376]:
+        - generic [ref=e377]:
+          - generic [ref=e378]:
+            - paragraph [ref=e379]: Home Services
+            - heading "Trusted Contractors" [level=2] [ref=e380]
+            - paragraph [ref=e381]: Find verified professionals for every job
+          - link "Browse All" [ref=e382] [cursor=pointer]:
+            - /url: /contractors
+            - text: Browse All
+            - img [ref=e383]
+        - generic [ref=e386]:
+          - link "🔧 Plumbing" [ref=e387] [cursor=pointer]:
+            - /url: /contractors?category=plumbing
+            - paragraph [ref=e388]: 🔧
+            - paragraph [ref=e389]: Plumbing
+          - link "⚡ Electrical" [ref=e390] [cursor=pointer]:
+            - /url: /contractors?category=electrical
+            - paragraph [ref=e391]: ⚡
+            - paragraph [ref=e392]: Electrical
+          - link "🎨 Painting" [ref=e393] [cursor=pointer]:
+            - /url: /contractors?category=painting
+            - paragraph [ref=e394]: 🎨
+            - paragraph [ref=e395]: Painting
+          - link "🏗 Renovation" [ref=e396] [cursor=pointer]:
+            - /url: /contractors?category=renovation
+            - paragraph [ref=e397]: 🏗
+            - paragraph [ref=e398]: Renovation
+          - link "🌿 Landscaping" [ref=e399] [cursor=pointer]:
+            - /url: /contractors?category=landscaping
+            - paragraph [ref=e400]: 🌿
+            - paragraph [ref=e401]: Landscaping
+          - link "✨ Cleaning" [ref=e402] [cursor=pointer]:
+            - /url: /contractors?category=cleaning
+            - paragraph [ref=e403]: ✨
+            - paragraph [ref=e404]: Cleaning
+      - generic [ref=e406]:
+        - generic [ref=e407]:
+          - generic [ref=e408]:
+            - paragraph [ref=e409]: Top Rated
+            - heading "Contractor Leaderboard" [level=2] [ref=e410]
+            - paragraph [ref=e411]: Highest rated professionals on DOMMMA
+          - link "View All" [ref=e412] [cursor=pointer]:
+            - /url: /contractors
+            - text: View All
+            - img [ref=e413]
+        - generic [ref=e416]:
+          - link "4.8 Electrical $ 138 /hr" [ref=e417] [cursor=pointer]:
+            - /url: /contractors
+            - img [ref=e419]
+            - generic [ref=e427]:
+              - heading [level=3]
+              - generic [ref=e428]:
+                - generic [ref=e429]:
+                  - img [ref=e430]
+                  - img [ref=e432]
+                  - img [ref=e434]
+                  - img [ref=e436]
+                  - img [ref=e438]
+                - generic [ref=e440]: "4.8"
+            - paragraph
+            - generic [ref=e441]:
+              - generic [ref=e444]: Electrical
+              - generic [ref=e445]:
+                - img [ref=e447]
+                - generic [ref=e449]: $ 138 /hr
+          - link "4.8 Cleaning $ 72 /hr" [ref=e450] [cursor=pointer]:
+            - /url: /contractors
+            - generic [ref=e453]:
+              - heading [level=3]
+              - generic [ref=e454]:
+                - generic [ref=e455]:
+                  - img [ref=e456]
+                  - img [ref=e458]
+                  - img [ref=e460]
+                  - img [ref=e462]
+                  - img [ref=e464]
+                - generic [ref=e466]: "4.8"
+            - paragraph
+            - generic [ref=e467]:
+              - generic [ref=e470]: Cleaning
+              - generic [ref=e471]:
+                - img [ref=e473]
+                - generic [ref=e475]: $ 72 /hr
+          - link "4.3 Plumbing $ 75 /hr" [ref=e476] [cursor=pointer]:
+            - /url: /contractors
+            - generic [ref=e479]:
+              - heading [level=3]
+              - generic [ref=e480]:
+                - generic [ref=e481]:
+                  - img [ref=e482]
+                  - img [ref=e484]
+                  - img [ref=e486]
+                  - img [ref=e488]
+                  - img [ref=e490]
+                - generic [ref=e492]: "4.3"
+            - paragraph
+            - generic [ref=e493]:
+              - generic [ref=e496]: Plumbing
+              - generic [ref=e497]:
+                - img [ref=e499]
+                - generic [ref=e501]: $ 75 /hr
+      - generic [ref=e503]:
+        - generic [ref=e504]:
+          - paragraph [ref=e505]: Powered by AI
+          - heading "Smart Tools for Smarter Living" [level=2] [ref=e506]
+          - paragraph [ref=e507]: Nova AI helps you at every step of your journey
+        - generic [ref=e508]:
+          - link "📸 Smart Issue Reporter Upload a photo of any issue — our AI identifies the problem and matches you with the right contractor instantly." [ref=e509] [cursor=pointer]:
+            - /url: /report-issue
+            - generic [ref=e511]: 📸
+            - heading "Smart Issue Reporter" [level=3] [ref=e512]
+            - paragraph [ref=e513]: Upload a photo of any issue — our AI identifies the problem and matches you with the right contractor instantly.
+          - link "📄 Lease Analyzer Paste your lease agreement and get an instant fairness score, red flags, and negotiation tips powered by AI." [ref=e514] [cursor=pointer]:
+            - /url: /document-analyzer
+            - generic [ref=e516]: 📄
+            - heading "Lease Analyzer" [level=3] [ref=e517]
+            - paragraph [ref=e518]: Paste your lease agreement and get an instant fairness score, red flags, and negotiation tips powered by AI.
+          - link "🚇 Commute Optimizer Enter your workplace addresses and find properties ranked by commute time. No more guessing." [ref=e519] [cursor=pointer]:
+            - /url: /commute-optimizer
+            - generic [ref=e521]: 🚇
+            - heading "Commute Optimizer" [level=3] [ref=e522]
+            - paragraph [ref=e523]: Enter your workplace addresses and find properties ranked by commute time. No more guessing.
+      - generic [ref=e526]:
+        - generic [ref=e527]:
+          - paragraph [ref=e528]: Our Team
+          - generic [ref=e530]:
+            - generic [ref=e531]:
+              - img "Jayraj Panchal" [ref=e532]
+              - generic [ref=e533]:
+                - paragraph [ref=e534]: Jayraj Panchal
+                - paragraph [ref=e535]: Founder
+              - generic [ref=e536]:
+                - generic [ref=e537]: in
+                - generic [ref=e538]: tw
+            - generic [ref=e539]:
+              - img "Monika Aggarwal" [ref=e540]
+              - generic [ref=e541]:
+                - paragraph [ref=e542]: Monika Aggarwal
+                - paragraph [ref=e543]: Founder
+              - generic [ref=e544]:
+                - generic [ref=e545]: in
+                - generic [ref=e546]: tw
+            - generic [ref=e547]:
+              - img "Geoffrey Routledge" [ref=e548]
+              - generic [ref=e549]:
+                - paragraph [ref=e550]: Geoffrey Routledge
+                - paragraph [ref=e551]: Founder
+              - generic [ref=e552]:
+                - generic [ref=e553]: in
+                - generic [ref=e554]: tw
+            - generic [ref=e555]:
+              - img "Rishabh Goswami" [ref=e556]
+              - generic [ref=e557]:
+                - paragraph [ref=e558]: Rishabh Goswami
+                - paragraph [ref=e559]: Founder
+              - generic [ref=e560]:
+                - generic [ref=e561]: in
+                - generic [ref=e562]: tw
+        - generic [ref=e563]:
+          - img "Architecture" [ref=e564]
+          - generic [ref=e565]:
+            - heading "Home Made Simple" [level=3] [ref=e566]:
+              - text: Home Made
+              - text: Simple
+            - paragraph [ref=e567]: Your complete real estate solution
+            - link "Our Story" [ref=e568] [cursor=pointer]:
+              - /url: /about
+              - text: Our Story
+              - img [ref=e569]
+  - generic [ref=e571]:
+    - paragraph [ref=e572]: Contact
+    - heading "Curious about what we can do for you?" [level=2] [ref=e573]:
+      - text: Curious about what we
+      - text: can do for you?
+    - link "Get In Touch" [ref=e574] [cursor=pointer]:
+      - /url: /contact
+  - contentinfo [ref=e575]:
+    - generic [ref=e576]:
+      - generic [ref=e577]:
+        - generic [ref=e578]:
+          - paragraph [ref=e579]: Contact
+          - link "hello@dommma.com" [ref=e580] [cursor=pointer]:
+            - /url: mailto:hello@dommma.com
+          - link "+1 604 123 456 78" [ref=e581] [cursor=pointer]:
+            - /url: tel:+16041234567
+          - generic [ref=e582]:
+            - link [ref=e583] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=e584]
+            - link [ref=e586] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=e587]
+            - link [ref=e590] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=e591]
+        - generic [ref=e595]:
+          - paragraph [ref=e596]: Pages
+          - list [ref=e597]:
+            - generic [ref=e598]:
+              - listitem [ref=e599]:
+                - link "Home" [ref=e600] [cursor=pointer]:
+                  - /url: /
+              - listitem [ref=e601]:
+                - link "About" [ref=e602] [cursor=pointer]:
+                  - /url: /about
+              - listitem [ref=e603]:
+                - link "Properties" [ref=e604] [cursor=pointer]:
+                  - /url: /properties
+              - listitem [ref=e605]:
+                - link "Pros" [ref=e606] [cursor=pointer]:
+                  - /url: /contractors
+              - listitem [ref=e607]:
+                - link "Services" [ref=e608] [cursor=pointer]:
+                  - /url: /services
+              - listitem [ref=e609]:
+                - link "Contact" [ref=e610] [cursor=pointer]:
+                  - /url: /contact
+        - generic [ref=e611]:
+          - paragraph [ref=e612]: Services
+          - list [ref=e613]:
+            - generic [ref=e614]:
+              - listitem [ref=e615]:
+                - link "Rent" [ref=e616] [cursor=pointer]:
+                  - /url: /browse
+              - listitem [ref=e617]:
+                - link "Buy" [ref=e618] [cursor=pointer]:
+                  - /url: /browse?type=sale
+              - listitem [ref=e619]:
+                - link "Find Trusted Contractors" [ref=e620] [cursor=pointer]:
+                  - /url: /contractors
+        - generic [ref=e621]:
+          - paragraph [ref=e622]: Utility Pages
+          - list [ref=e623]:
+            - generic [ref=e624]:
+              - listitem [ref=e625]:
+                - link "Terms of Service" [ref=e626] [cursor=pointer]:
+                  - /url: /
+              - listitem [ref=e627]:
+                - link "Privacy Policy" [ref=e628] [cursor=pointer]:
+                  - /url: /
+              - listitem [ref=e629]:
+                - link "Login" [ref=e630] [cursor=pointer]:
+                  - /url: /login
+      - generic [ref=e631]:
+        - paragraph [ref=e632]: © 2026 DOMMMA. Powered by Nova AI.
+        - paragraph [ref=e633]: Complete Real Estate Marketplace
+```
