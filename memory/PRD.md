@@ -3,6 +3,12 @@
 ## Original Problem Statement
 Build a complete real estate marketplace called "DOMMMA" for Renters, Landlords, Buyers, Sellers, and Contractors with role-specific features, dark teal theme, AI chatbot (Nova), Stripe payments, and full marketplace functionality.
 
+**Latest Direction (AI-First Pivot):** The platform is pivoting to an AI-first concierge model where users interact with a persistent chatbot (Nova) to perform all key actions via natural language (searching, listing, booking, maintenance requests).
+
+## Recent Fixes (Dec 2025)
+- [x] **Homepage Chat Search Bug** - Fixed the homepage Nova search bar to properly open the chat modal when users type and click search (was navigating away instead)
+- [x] **Contractor Link Rendering** - Fixed contractor links in chat responses to render as clickable links instead of raw text
+
 ## Tech Stack
 - **Frontend**: React.js with Tailwind CSS, Shadcn UI
 - **Backend**: Python FastAPI (modular structure)
