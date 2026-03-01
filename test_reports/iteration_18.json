@@ -1,0 +1,96 @@
+{
+  "summary": "AI Concierge tool calling tests for DOMMMA real estate platform. All 6 tools tested: search_listings, find_contractors, calculate_budget, create_listing, triage_maintenance, schedule_viewing (via API). Frontend NovaChat integration verified with property cards and contractor links rendering correctly.",
+  "mode": "generate",
+  "baseline_commit": "0c9d95d08e2f49a9d0c2ab7dc320c80d24da8254",
+  "head_commit": "0c9d95d08e2f49a9d0c2ab7dc320c80d24da8254",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "GET /api/listings",
+        "issue": "Returns 500 error due to listing created via AI Concierge missing lat/lng fields. The ai_tools.py _create_listing function doesn't set lat/lng but the Listing Pydantic model requires them.",
+        "priority": "CRITICAL",
+        "reproduction_steps": "1. Ask Nova to create a listing via AI Concierge. 2. Call GET /api/listings. 3. API returns 500 Internal Server Error",
+        "root_cause": "In /app/backend/services/ai_tools.py _create_listing(), the listing dictionary is missing lat and lng fields which are required by the Listing model in server.py",
+        "suggested_fix": "Add default lat/lng values (e.g., Vancouver coordinates 49.2827, -123.1207) to the _create_listing function when not provided"
+      }
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "regression_results": {
+    "total_specs": 2,
+    "passed": 16,
+    "failed": 0,
+    "skipped": 0
+  },
+  "specs_created": [
+    "/app/tests/e2e/core-flows.spec.ts",
+    "/app/tests/e2e/ai-concierge.spec.ts"
+  ],
+  "specs_updated": [],
+  "quarantined_tests": [],
+  "test_report_links": [
+    "/app/backend/tests/test_ai_concierge.py",
+    "/app/test_reports/pytest/pytest_ai_concierge.xml",
+    "/app/tests/e2e/core-flows.spec.ts",
+    "/app/tests/e2e/ai-concierge.spec.ts"
+  ],
+  "action_items": [
+    "CRITICAL: Fix /app/backend/services/ai_tools.py _create_listing() to include lat/lng fields - add defaults like lat: 49.2827, lng: -123.1207 when not provided",
+    "Note: The /api/listings endpoint returns 500 because a listing was created via AI Concierge without lat/lng. Either add defaults or make lat/lng optional in the Listing model"
+  ],
+  "updated_files": [
+    "/app/tests/playwright.config.ts",
+    "/app/tests/fixtures/helpers.ts",
+    "/app/tests/e2e/core-flows.spec.ts",
+    "/app/tests/e2e/ai-concierge.spec.ts",
+    "/app/backend/tests/test_ai_concierge.py"
+  ],
+  "success_rate": {
+    "backend": "79% (11/14 tests passed - 3 failed due to /api/listings 500 error)",
+    "frontend": "100% (16/16 tests passed)"
+  },
+  "seed_data_creation": "None - used existing database listings and contractors",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "AI Concierge endpoint /api/ai/concierge is working correctly with Claude tool calling. All 6 tools verified: search_listings, find_contractors, calculate_budget, create_listing, triage_maintenance, schedule_viewing. Frontend NovaChat correctly uses the new endpoint with fallback to /api/chat. Property cards and contractor links render correctly in chat responses. CRITICAL BUG: The /api/listings endpoint returns 500 because a listing created via AI tool calling is missing lat/lng fields required by the Listing Pydantic model.",
+  "rca_of_issue": "The ai_tools.py _create_listing function doesn't include lat and lng fields when creating a listing via tool calling. The Listing model in server.py has lat: float and lng: float as required fields without defaults. When GET /api/listings tries to serialize all listings including the one missing lat/lng, FastAPI's ResponseValidationError is raised. Fix: Add default coordinates (e.g., Vancouver center: 49.2827, -123.1207) in _create_listing() or make lat/lng optional in the Listing model.",
+  "features_tested": {
+    "Homepage_Search_Opens_Chat": {
+      "status": "WORKING",
+      "notes": "Clicking search bar with query opens Nova chat modal"
+    },
+    "AI_Concierge_search_listings": {
+      "status": "WORKING",
+      "notes": "Returns property cards with images and clickable links to /browse?property=ID"
+    },
+    "AI_Concierge_find_contractors": {
+      "status": "WORKING",
+      "notes": "Returns contractor recommendations with clickable links to /contractors/ID"
+    },
+    "AI_Concierge_calculate_budget": {
+      "status": "WORKING",
+      "notes": "Returns budget advice using 30% rule"
+    },
+    "AI_Concierge_create_listing": {
+      "status": "PARTIAL - Creates listing but missing lat/lng",
+      "notes": "AI gathers info and creates listing, but missing lat/lng causes /api/listings to 500"
+    },
+    "AI_Concierge_triage_maintenance": {
+      "status": "WORKING",
+      "notes": "Handles maintenance issues and suggests contractors"
+    },
+    "Property_Cards_Render": {
+      "status": "WORKING",
+      "notes": "Cards show image, title, address, price, beds/baths with external link"
+    },
+    "Contractor_Links_Render": {
+      "status": "WORKING",
+      "notes": "Contractor names render as clickable links in chat text"
+    }
+  }
+}
