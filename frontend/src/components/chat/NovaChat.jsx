@@ -547,7 +547,7 @@ const NovaChat = ({ isOpenProp = false, onClose = null, initialQuery = '' }) => 
               key={`${linkType}-${match.index}`}
               to={`/browse?property=${linkId}`}
               className="text-blue-600 hover:text-blue-800 underline font-medium inline-flex items-center gap-1"
-              onClick={() => setIsOpen(false)}
+              onClick={handleClose}
             >
               🏠 {linkText}
               <ExternalLink size={12} />
@@ -559,7 +559,7 @@ const NovaChat = ({ isOpenProp = false, onClose = null, initialQuery = '' }) => 
               key={`${linkType}-${match.index}`}
               to={`/contractors/${linkId}`}
               className="text-emerald-600 hover:text-emerald-800 underline font-medium inline-flex items-center gap-1"
-              onClick={() => setIsOpen(false)}
+              onClick={handleClose}
             >
               🔧 {linkText}
               <ExternalLink size={12} />
