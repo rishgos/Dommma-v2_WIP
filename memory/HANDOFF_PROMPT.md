@@ -291,14 +291,25 @@ async def chat_with_nova(request: ChatRequest):
 **What's done:**
 - Full-stack app with React/FastAPI/MongoDB
 - Working AI chatbot (Nova) with voice, image analysis, memory
-- Homepage search → chat flow (just fixed)
-- Contractor links rendering (just fixed)
+- Homepage search → chat flow (fixed)
+- Contractor links rendering (fixed)
 - Phase 0 features (address autocomplete, lease duration, offers)
+- **Claude Tool Calling (NEW):** Full implementation with 6 tools:
+  - `create_listing` - Create property listings via conversation
+  - `search_listings` - Search properties with natural language
+  - `find_contractors` - Find plumbers, electricians, etc.
+  - `triage_maintenance` - Handle maintenance requests
+  - `calculate_budget` - Budget calculations (30% rule)
+  - `schedule_viewing` - Book property viewings
+
+**Key New Files:**
+- `/app/backend/services/ai_tools.py` - Tool definitions and execution logic
+- `/api/ai/concierge` endpoint in `server.py` - Claude tool calling implementation
 
 **What's next:**
-1. Implement `create_listing()` AI tool - let landlords create listings via chat
-2. Implement `triage_maintenance()` AI tool - analyze maintenance requests
-3. Make Nova more prominent as the primary interface
-4. Add liv.rent parity features (renter resume, e-sign, AI ranking)
+1. Add more AI tools (e.g., lease assignment pricing)
+2. Improve tool responses with richer data (images, maps)
+3. Add liv.rent parity features (renter resume, e-sign, AI ranking)
+4. Build persistent AI concierge sticky button across all pages
 
 **The vision:** Users should be able to do EVERYTHING through conversation with Nova - searching, listing properties, booking viewings, submitting maintenance requests, finding contractors. Forms are secondary, AI is primary.
