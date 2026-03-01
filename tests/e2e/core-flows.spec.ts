@@ -61,7 +61,8 @@ test.describe('Homepage and Nova Chat Core Flows', () => {
     await expect(page.getByTestId('nova-chat-modal')).toBeVisible({ timeout: 10000 });
     
     await expect(page.locator('text=Quick Actions')).toBeVisible();
-    await expect(page.locator('text=Property Search')).toBeVisible();
-    await expect(page.locator('text=Financial Help')).toBeVisible();
+    // Check for quick action category labels - use first() to avoid strict mode violations
+    await expect(page.locator('text=Property Search').first()).toBeVisible();
+    await expect(page.locator('text=Financial Help').first()).toBeVisible();
   });
 });
