@@ -497,29 +497,51 @@ const NovaChat = () => {
 
   const renderMessageContent = (content) => {
     // Parse property links like [Property Name](property:ID)
-    const parsePropertyLinks = (text) => {
-      const propertyLinkRegex = /\[([^\]]+)\]\(property:([^)]+)\)/g;
+    // and contractor links like [Contractor Name](contractor:ID)
+    const parseLinks = (text) => {
+      // Combined regex for both property and contractor links
+      const linkRegex = /\[([^\]]+)\]\((property|contractor):([^)]+)\)/g;
       const parts = [];
       let lastIndex = 0;
       let match;
 
-      while ((match = propertyLinkRegex.exec(text)) !== null) {
+      while ((match = linkRegex.exec(text)) !== null) {
         // Add text before the link
         if (match.index > lastIndex) {
           parts.push(text.slice(lastIndex, match.index));
         }
-        // Add the link component
-        parts.push(
-          <Link
-            key={match.index}
-            to={`/browse?property=${match[2]}`}
-            className="text-blue-600 hover:text-blue-800 underline font-medium inline-flex items-center gap-1"
-            onClick={() => setIsOpen(false)}
-          >
-            {match[1]}
-            <ExternalLink size={12} />
-          </Link>
-        );
+        
+        const linkText = match[1];
+        const linkType = match[2];
+        const linkId = match[3];
+        
+        // Add the link component based on type
+        if (linkType === 'property') {
+          parts.push(
+            <Link
+              key={`${linkType}-${match.index}`}
+              to={`/browse?property=${linkId}`}
+              className="text-blue-600 hover:text-blue-800 underline font-medium inline-flex items-center gap-1"
+              onClick={() => setIsOpen(false)}
+            >
+              🏠 {linkText}
+              <ExternalLink size={12} />
+            </Link>
+          );
+        } else if (linkType === 'contractor') {
+          parts.push(
+            <Link
+              key={`${linkType}-${match.index}`}
+              to={`/contractors/${linkId}`}
+              className="text-emerald-600 hover:text-emerald-800 underline font-medium inline-flex items-center gap-1"
+              onClick={() => setIsOpen(false)}
+            >
+              🔧 {linkText}
+              <ExternalLink size={12} />
+            </Link>
+          );
+        }
+        
         lastIndex = match.index + match[0].length;
       }
       // Add remaining text
@@ -533,8 +555,8 @@ const NovaChat = () => {
     return content.split('\n').map((line, i) => {
       // Bold text
       const formattedLine = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-      // Parse for property links
-      const parsedContent = parsePropertyLinks(formattedLine);
+      // Parse for property and contractor links
+      const parsedContent = parseLinks(formattedLine);
       
       if (Array.isArray(parsedContent)) {
         return (
