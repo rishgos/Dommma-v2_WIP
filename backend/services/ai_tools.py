@@ -293,6 +293,10 @@ class AIToolsService:
         """Create a new property listing"""
         listing_id = str(uuid.uuid4())
         
+        # Default Vancouver coordinates if not provided
+        default_lat = 49.2827
+        default_lng = -123.1207
+        
         # Build listing document
         listing = {
             "id": listing_id,
@@ -316,6 +320,8 @@ class AIToolsService:
             "images": [],
             "status": "active",
             "owner_id": user_id,
+            "lat": default_lat,
+            "lng": default_lng,
             "created_at": datetime.now(timezone.utc).isoformat(),
             "updated_at": datetime.now(timezone.utc).isoformat()
         }
