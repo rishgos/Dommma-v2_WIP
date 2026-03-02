@@ -509,6 +509,15 @@ export default function ESign() {
                         <div className="flex gap-2">
                           {doc.status === 'pending' && (
                             <>
+                              {docusignStatus.connected && !doc.docusign_envelope_id && (
+                                <button
+                                  onClick={() => handleSendViaDocuSign(doc.id)}
+                                  className="px-3 py-2 bg-[#0072CE] text-white rounded-lg text-sm hover:bg-[#005BA1] flex items-center gap-1"
+                                  title="Send via DocuSign"
+                                >
+                                  <ExternalLink size={14} /> DocuSign
+                                </button>
+                              )}
                               <button
                                 onClick={() => {
                                   setSelectedDoc(doc);
