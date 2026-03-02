@@ -1,49 +1,179 @@
 """
 DocuSign Integration Service
-Handles OAuth flow and envelope creation for e-signatures
+Handles OAuth 2.0 Authorization Code Grant flow and envelope creation for e-signatures
 """
 import os
 import base64
+import secrets
 import logging
+import httpx
 from datetime import datetime, timezone
 from typing import Optional, Dict, Any
-import docusign_esign as docusign
-from docusign_esign import ApiClient, EnvelopesApi, EnvelopeDefinition, Document, Signer, SignHere, Tabs, Recipients
+from urllib.parse import urlencode
 
 logger = logging.getLogger(__name__)
 
+
+class DocuSignError(Exception):
+    """Custom exception for DocuSign errors"""
+    pass
+
+
 class DocuSignService:
-    """Service for DocuSign e-signature integration"""
+    """Service for DocuSign e-signature integration with OAuth 2.0"""
     
     def __init__(self):
         self.integration_key = os.environ.get("DOCUSIGN_INTEGRATION_KEY")
+        self.client_secret = os.environ.get("DOCUSIGN_CLIENT_SECRET", "")
         self.account_id = os.environ.get("DOCUSIGN_ACCOUNT_ID")
         self.base_url = os.environ.get("DOCUSIGN_BASE_URL", "https://demo.docusign.net/restapi")
-        self.oauth_base_url = "https://account-d.docusign.com"  # Demo environment
-        self.api_client = None
+        self.oauth_base_url = os.environ.get("DOCUSIGN_AUTH_SERVER", "account-d.docusign.com")
         self.configured = bool(self.integration_key)
         
-    def get_oauth_url(self, redirect_uri: str, state: str = "") -> str:
-        """Generate DocuSign OAuth authorization URL"""
+    def generate_authorization_url(self, redirect_uri: str) -> tuple:
+        """Generate OAuth authorization URL and state parameter for CSRF protection"""
         if not self.integration_key:
-            raise ValueError("DocuSign integration key not configured")
-            
-        scopes = "signature"
-        auth_url = (
-            f"{self.oauth_base_url}/oauth/auth"
-            f"?response_type=code"
-            f"&scope={scopes}"
-            f"&client_id={self.integration_key}"
-            f"&redirect_uri={redirect_uri}"
-            f"&state={state}"
-        )
-        return auth_url
+            raise DocuSignError("DocuSign integration key not configured")
+        
+        state = secrets.token_urlsafe(32)
+        
+        auth_params = {
+            "response_type": "code",
+            "scope": "signature impersonation",
+            "client_id": self.integration_key,
+            "redirect_uri": redirect_uri,
+            "state": state,
+        }
+        
+        auth_url = f"https://{self.oauth_base_url}/oauth/auth?{urlencode(auth_params)}"
+        return auth_url, state
     
-    def exchange_code_for_token(self, code: str, redirect_uri: str) -> Dict[str, Any]:
-        """Exchange authorization code for access token"""
-        # Note: This requires the secret key for code exchange
-        # For JWT authentication, use get_jwt_token instead
-        raise NotImplementedError("Use JWT authentication for server-to-server")
+    def get_oauth_url(self, redirect_uri: str, state: str = "") -> str:
+        """Legacy method - Generate DocuSign OAuth authorization URL"""
+        if not state:
+            state = secrets.token_urlsafe(32)
+        
+        auth_params = {
+            "response_type": "code",
+            "scope": "signature impersonation",
+            "client_id": self.integration_key,
+            "redirect_uri": redirect_uri,
+            "state": state,
+        }
+        
+        return f"https://{self.oauth_base_url}/oauth/auth?{urlencode(auth_params)}"
+    
+    async def exchange_code_for_tokens(self, code: str, redirect_uri: str) -> Dict[str, Any]:
+        """Exchange authorization code for access and refresh tokens (OAuth 2.0 flow)"""
+        if not self.client_secret:
+            raise DocuSignError("DocuSign client secret not configured. Required for OAuth code exchange.")
+        
+        token_params = {
+            "grant_type": "authorization_code",
+            "code": code,
+            "redirect_uri": redirect_uri,
+        }
+        
+        # Create Basic auth header
+        credentials = f"{self.integration_key}:{self.client_secret}"
+        auth_header = base64.b64encode(credentials.encode()).decode()
+        
+        headers = {
+            "Authorization": f"Basic {auth_header}",
+            "Content-Type": "application/x-www-form-urlencoded",
+        }
+        
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    f"https://{self.oauth_base_url}/oauth/token",
+                    data=token_params,
+                    headers=headers,
+                    timeout=30.0
+                )
+                
+                if response.status_code != 200:
+                    logger.error(f"DocuSign token exchange failed: {response.text}")
+                    raise DocuSignError(f"Token exchange failed: {response.text}")
+                
+                token_data = response.json()
+                logger.info("Successfully obtained DocuSign tokens")
+                return token_data
+                
+        except httpx.HTTPError as e:
+            logger.error(f"DocuSign HTTP error: {str(e)}")
+            raise DocuSignError(f"Token exchange failed: {str(e)}")
+    
+    async def refresh_access_token(self, refresh_token: str) -> Dict[str, Any]:
+        """Use refresh token to get new access token"""
+        if not self.client_secret:
+            raise DocuSignError("DocuSign client secret not configured")
+        
+        token_params = {
+            "grant_type": "refresh_token",
+            "refresh_token": refresh_token,
+        }
+        
+        credentials = f"{self.integration_key}:{self.client_secret}"
+        auth_header = base64.b64encode(credentials.encode()).decode()
+        
+        headers = {
+            "Authorization": f"Basic {auth_header}",
+            "Content-Type": "application/x-www-form-urlencoded",
+        }
+        
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    f"https://{self.oauth_base_url}/oauth/token",
+                    data=token_params,
+                    headers=headers,
+                    timeout=30.0
+                )
+                
+                if response.status_code != 200:
+                    raise DocuSignError(f"Token refresh failed: {response.text}")
+                
+                return response.json()
+                
+        except httpx.HTTPError as e:
+            raise DocuSignError(f"Token refresh failed: {str(e)}")
+    
+    async def get_user_info(self, access_token: str) -> Dict[str, Any]:
+        """Get user info including account ID from DocuSign"""
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Accept": "application/json",
+        }
+        
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                    f"https://{self.oauth_base_url}/oauth/userinfo",
+                    headers=headers,
+                    timeout=30.0
+                )
+                
+                if response.status_code != 200:
+                    raise DocuSignError(f"Failed to get user info: {response.text}")
+                
+                data = response.json()
+                
+                # Extract primary account
+                account = data.get("accounts", [{}])[0]
+                
+                return {
+                    "account_id": account.get("account_id"),
+                    "account_name": account.get("account_name"),
+                    "base_uri": account.get("base_uri"),
+                    "is_default": account.get("is_default"),
+                    "email": data.get("email"),
+                    "name": data.get("name"),
+                    "sub": data.get("sub"),
+                }
+                
+        except httpx.HTTPError as e:
+            raise DocuSignError(f"Failed to get user info: {str(e)}")
     
     def create_api_client(self, access_token: str) -> ApiClient:
         """Create DocuSign API client with access token"""
