@@ -56,6 +56,7 @@ const DashboardLayout = ({ children }) => {
       { icon: DollarSign, label: 'Offers', path: '/offers' },
       { icon: Calendar, label: 'My Calendar', path: '/calendar' },
       { icon: BarChart2, label: 'Nova Insights', path: '/nova-insights' },
+      { icon: BarChart3, label: 'Analytics', path: '/analytics' },
       { icon: Users2, label: 'Find Tenants', path: '/roommates' },
       { icon: Wrench, label: 'Find Contractors', path: '/contractors' },
       { icon: MessageSquare, label: 'Messages', path: '/messages' },
