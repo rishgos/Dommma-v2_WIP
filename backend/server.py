@@ -1660,6 +1660,98 @@ async def get_lease_assignment(assignment_id: str):
         raise HTTPException(status_code=404, detail="Assignment not found")
     return assignment
 
+# ========== LEASE ASSIGNMENT PAYMENTS (Stripe) ==========
+
+@api_router.post("/lease-assignments/{assignment_id}/payment")
+async def create_assignment_payment(request: Request, assignment_id: str, buyer_id: str):
+    """Create a Stripe checkout session for a lease assignment fee"""
+    
+    # Get the assignment
+    assignment = await db.lease_assignments.find_one({"id": assignment_id})
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Lease assignment not found")
+    
+    if assignment.get("status") != "active":
+        raise HTTPException(status_code=400, detail="This lease assignment is no longer available")
+    
+    # Get assignment fee from backend (security - don't trust frontend)
+    amount = float(assignment.get("assignment_fee", 0))
+    if amount <= 0:
+        raise HTTPException(status_code=400, detail="Invalid assignment fee")
+    
+    try:
+        api_key = os.environ.get('STRIPE_API_KEY')
+        host_url = str(request.base_url).rstrip('/')
+        webhook_url = f"{host_url}/api/webhook/stripe"
+        
+        stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
+        
+        # Get origin from request headers for dynamic URLs
+        origin = request.headers.get('origin', host_url)
+        success_url = f"{origin}/lease-assignments?payment=success&session_id={{CHECKOUT_SESSION_ID}}"
+        cancel_url = f"{origin}/lease-assignments?payment=cancelled"
+        
+        checkout_request = CheckoutSessionRequest(
+            amount=amount,
+            currency="cad",
+            success_url=success_url,
+            cancel_url=cancel_url,
+            metadata={
+                "type": "lease_assignment",
+                "assignment_id": assignment_id,
+                "buyer_id": buyer_id,
+                "seller_id": assignment.get("owner_id", ""),
+                "title": assignment.get("title", "Lease Assignment"),
+            }
+        )
+        
+        session = await stripe_checkout.create_checkout_session(checkout_request)
+        
+        # Create transaction record BEFORE redirecting
+        transaction = PaymentTransaction(
+            session_id=session.session_id,
+            user_id=buyer_id,
+            amount=amount,
+            currency="cad",
+            description=f"Lease Assignment: {assignment.get('title', 'Unknown')}",
+            property_id=assignment_id,
+            recipient_id=assignment.get("owner_id"),
+            payment_status="pending",
+            status="initiated"
+        )
+        await db.payment_transactions.insert_one(transaction.model_dump())
+        
+        return {"url": session.url, "session_id": session.session_id}
+        
+    except Exception as e:
+        logger.error(f"Lease assignment payment error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/lease-assignments/{assignment_id}/payment-complete")
+async def complete_assignment_payment(assignment_id: str, session_id: str):
+    """Mark a lease assignment as paid and update status"""
+    
+    # Verify the payment was successful
+    transaction = await db.payment_transactions.find_one({"session_id": session_id})
+    if not transaction:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    
+    if transaction.get("payment_status") != "paid":
+        raise HTTPException(status_code=400, detail="Payment not yet confirmed")
+    
+    # Update assignment status
+    await db.lease_assignments.update_one(
+        {"id": assignment_id},
+        {"$set": {
+            "status": "paid",
+            "buyer_id": transaction.get("user_id"),
+            "payment_session_id": session_id,
+            "paid_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"success": True, "message": "Assignment payment completed"}
+
 # ========== E-SIGN DOCUMENTS ==========
 
 class ESignDocumentInput(BaseModel):
