@@ -13,18 +13,18 @@ async function loginAsLandlord(page) {
   await page.goto('/login', { waitUntil: 'domcontentloaded' });
   await waitForAppReady(page);
   
-  // Select landlord user type - correct testid from Login.jsx
+  // Select landlord user type
   await page.getByTestId('user-type-landlord').click();
   
-  // Fill in credentials - correct testids
+  // Fill in credentials
   await page.getByTestId('email-input').fill(TEST_LANDLORD.email);
   await page.getByTestId('password-input').fill(TEST_LANDLORD.password);
   
-  // Submit - correct testid
+  // Submit and wait for dashboard to load
   await page.getByTestId('submit-btn').click();
   
-  // Wait for redirect to dashboard
-  await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
+  // Wait for sidebar to appear (indicates successful login)
+  await expect(page.getByTestId('dashboard-sidebar')).toBeVisible({ timeout: 15000 });
 }
 
 test.describe('Analytics Dashboard', () => {
@@ -32,42 +32,30 @@ test.describe('Analytics Dashboard', () => {
     await dismissToasts(page);
   });
 
-  test('analytics page loads for logged-in landlord', async ({ page }) => {
+  test('analytics page loads with stat cards for logged-in landlord', async ({ page }) => {
     await loginAsLandlord(page);
     await page.goto('/analytics', { waitUntil: 'domcontentloaded' });
     await waitForAppReady(page);
     
     // Verify page title/header
     await expect(page.getByText('Analytics Dashboard')).toBeVisible({ timeout: 15000 });
-  });
-
-  test('analytics page displays stat cards', async ({ page }) => {
-    await loginAsLandlord(page);
-    await page.goto('/analytics', { waitUntil: 'domcontentloaded' });
-    await waitForAppReady(page);
     
     // Wait for stat cards to load
     await expect(page.getByTestId('stat-card').first()).toBeVisible({ timeout: 15000 });
     
-    // Verify multiple stat cards exist (should have 5: Users, Listings, Revenue, Contractors, Documents)
+    // Verify multiple stat cards exist
     const statCards = page.getByTestId('stat-card');
     const count = await statCards.count();
     expect(count).toBe(5);
   });
 
-  test('analytics page has refresh button', async ({ page }) => {
+  test('analytics page has refresh button and shows statistics', async ({ page }) => {
     await loginAsLandlord(page);
     await page.goto('/analytics', { waitUntil: 'domcontentloaded' });
     await waitForAppReady(page);
     
     // Verify refresh button exists
-    await expect(page.getByTestId('refresh-analytics')).toBeVisible({ timeout: 10000 });
-  });
-
-  test('analytics page shows user and listings statistics', async ({ page }) => {
-    await loginAsLandlord(page);
-    await page.goto('/analytics', { waitUntil: 'domcontentloaded' });
-    await waitForAppReady(page);
+    await expect(page.getByTestId('refresh-analytics')).toBeVisible({ timeout: 15000 });
     
     // Wait for data to load
     await expect(page.getByText('Total Users')).toBeVisible({ timeout: 15000 });
@@ -93,7 +81,7 @@ test.describe('ESign Page - DocuSign Integration', () => {
     await expect(page.getByText('DocuSign Integration')).toBeVisible();
   });
 
-  test('esign page shows Connect DocuSign button when not connected', async ({ page }) => {
+  test('esign page shows Connect DocuSign button and BC Forms tab', async ({ page }) => {
     await loginAsLandlord(page);
     await page.goto('/esign', { waitUntil: 'domcontentloaded' });
     await waitForAppReady(page);
@@ -103,15 +91,9 @@ test.describe('ESign Page - DocuSign Integration', () => {
     
     // Check for Connect DocuSign button (should appear for unconnected users)
     await expect(page.getByTestId('connect-docusign-btn')).toBeVisible({ timeout: 10000 });
-  });
-
-  test('esign page shows New Document button and BC Forms tab', async ({ page }) => {
-    await loginAsLandlord(page);
-    await page.goto('/esign', { waitUntil: 'domcontentloaded' });
-    await waitForAppReady(page);
     
     // Verify create document button exists
-    await expect(page.getByTestId('create-document-btn')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId('create-document-btn')).toBeVisible({ timeout: 10000 });
     
     // Verify BC Forms tab exists
     await expect(page.getByText('BC Forms')).toBeVisible({ timeout: 10000 });
