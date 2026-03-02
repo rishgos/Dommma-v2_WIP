@@ -41,6 +41,11 @@ Build a complete real estate marketplace called "DOMMMA" for Renters, Landlords,
   - Create new assignment listings
   - Savings calculations (current vs market rent)
   - Accessible from main navigation
+- [x] **E-Sign Documents** (`/esign`) - Digital document signing for landlords
+  - BC Government rental forms (RTB-1, RTB-7, RTB-26, RTB-30)
+  - Create, send, and sign documents digitally
+  - Track document status (pending/signed)
+  - Signature capture with legal agreement
 
 ### Bug Fixes
 - [x] **Homepage Chat Search** - Fixed search bar to open chat modal
