@@ -7,9 +7,9 @@ const TEST_LANDLORD = {
 };
 
 /**
- * Helper to login as landlord
+ * Helper to login as landlord and navigate to a protected page via sidebar
  */
-async function loginAsLandlord(page) {
+async function loginAsLandlordAndNavigate(page, targetLink: string) {
   await page.goto('/login', { waitUntil: 'domcontentloaded' });
   await waitForAppReady(page);
   
@@ -25,6 +25,10 @@ async function loginAsLandlord(page) {
   
   // Wait for sidebar to appear (indicates successful login)
   await expect(page.getByTestId('dashboard-sidebar')).toBeVisible({ timeout: 15000 });
+  
+  // Navigate via sidebar link
+  await page.getByText(targetLink, { exact: true }).click();
+  await page.waitForLoadState('domcontentloaded');
 }
 
 test.describe('Analytics Dashboard', () => {
@@ -33,9 +37,7 @@ test.describe('Analytics Dashboard', () => {
   });
 
   test('analytics page loads with stat cards for logged-in landlord', async ({ page }) => {
-    await loginAsLandlord(page);
-    await page.goto('/analytics', { waitUntil: 'domcontentloaded' });
-    await waitForAppReady(page);
+    await loginAsLandlordAndNavigate(page, 'Analytics');
     
     // Verify page title/header
     await expect(page.getByText('Analytics Dashboard')).toBeVisible({ timeout: 15000 });
@@ -50,9 +52,7 @@ test.describe('Analytics Dashboard', () => {
   });
 
   test('analytics page has refresh button and shows statistics', async ({ page }) => {
-    await loginAsLandlord(page);
-    await page.goto('/analytics', { waitUntil: 'domcontentloaded' });
-    await waitForAppReady(page);
+    await loginAsLandlordAndNavigate(page, 'Analytics');
     
     // Verify refresh button exists
     await expect(page.getByTestId('refresh-analytics')).toBeVisible({ timeout: 15000 });
@@ -69,9 +69,7 @@ test.describe('ESign Page - DocuSign Integration', () => {
   });
 
   test('esign page loads and shows DocuSign integration card', async ({ page }) => {
-    await loginAsLandlord(page);
-    await page.goto('/esign', { waitUntil: 'domcontentloaded' });
-    await waitForAppReady(page);
+    await loginAsLandlordAndNavigate(page, 'E-Sign');
     
     // Verify page title
     await expect(page.getByText('E-Sign Documents')).toBeVisible({ timeout: 15000 });
@@ -82,9 +80,7 @@ test.describe('ESign Page - DocuSign Integration', () => {
   });
 
   test('esign page shows Connect DocuSign button and BC Forms tab', async ({ page }) => {
-    await loginAsLandlord(page);
-    await page.goto('/esign', { waitUntil: 'domcontentloaded' });
-    await waitForAppReady(page);
+    await loginAsLandlordAndNavigate(page, 'E-Sign');
     
     // The DocuSign status is fetched, so we wait for the card to load
     await expect(page.getByTestId('docusign-integration-card')).toBeVisible({ timeout: 15000 });
@@ -125,7 +121,15 @@ test.describe('Lease Assignments Page', () => {
   });
 
   test('logged in user can see create assignment button', async ({ page }) => {
-    await loginAsLandlord(page);
+    // First login
+    await page.goto('/login', { waitUntil: 'domcontentloaded' });
+    await page.getByTestId('user-type-landlord').click();
+    await page.getByTestId('email-input').fill(TEST_LANDLORD.email);
+    await page.getByTestId('password-input').fill(TEST_LANDLORD.password);
+    await page.getByTestId('submit-btn').click();
+    await expect(page.getByTestId('dashboard-sidebar')).toBeVisible({ timeout: 15000 });
+    
+    // Navigate to lease assignments using header nav link
     await page.goto('/lease-assignments', { waitUntil: 'domcontentloaded' });
     await waitForAppReady(page);
     
