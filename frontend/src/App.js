@@ -121,6 +121,9 @@ function App() {
           <Route path="/contractors" element={<ContractorMarketplace />} />
           <Route path="/portfolio/:contractorId" element={<ContractorPortfolio />} />
           
+          {/* Lease Assignment Marketplace - Public */}
+          <Route path="/lease-assignments" element={<LeaseAssignments />} />
+          
           {/* Dashboard Routes - All with persistent sidebar */}
           <Route path="/dashboard" element={<DashboardLayout><Dashboard /></DashboardLayout>} />
           <Route path="/payments" element={<DashboardLayout><Payments /></DashboardLayout>} />
