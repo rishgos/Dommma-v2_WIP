@@ -33,6 +33,7 @@ const DashboardLayout = ({ children }) => {
       { icon: Home, label: 'Dashboard', path: '/dashboard' },
       { icon: Search, label: 'Browse Properties', path: '/browse' },
       { icon: Heart, label: 'Saved Properties', path: '/favorites' },
+      { icon: ClipboardList, label: 'My Resume', path: '/my-resume' },
       { icon: Users2, label: 'Roommate Finder', path: '/roommates' },
       { icon: Calendar, label: 'My Calendar', path: '/calendar' },
       { icon: BarChart2, label: 'Nova Insights', path: '/nova-insights' },
