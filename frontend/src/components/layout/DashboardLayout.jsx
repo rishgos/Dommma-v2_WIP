@@ -49,6 +49,7 @@ const DashboardLayout = ({ children }) => {
     landlord: [
       { icon: Home, label: 'Dashboard', path: '/dashboard' },
       { icon: Building2, label: 'My Properties', path: '/my-properties' },
+      { icon: Share2, label: 'Syndication', path: '/syndication' },
       { icon: Users, label: 'Applications', path: '/applications' },
       { icon: Sparkles, label: 'AI Ranking', path: '/applicant-ranking' },
       { icon: FileText, label: 'E-Sign', path: '/esign' },
