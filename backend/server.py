@@ -1818,6 +1818,121 @@ async def get_syndication_stats(user_id: str):
         "by_platform": {s["_id"]: s["count"] for s in stats}
     }
 
+# ========== VIDEO TOURS (Cloudinary) ==========
+
+import time
+import cloudinary
+import cloudinary.utils
+import cloudinary.uploader
+
+# Initialize Cloudinary (if credentials are set)
+cloudinary_configured = False
+if os.environ.get('CLOUDINARY_CLOUD_NAME'):
+    cloudinary.config(
+        cloud_name=os.environ.get("CLOUDINARY_CLOUD_NAME"),
+        api_key=os.environ.get("CLOUDINARY_API_KEY"),
+        api_secret=os.environ.get("CLOUDINARY_API_SECRET"),
+        secure=True
+    )
+    cloudinary_configured = True
+
+@api_router.get("/cloudinary/signature")
+async def generate_cloudinary_signature(
+    resource_type: str = "video",
+    folder: str = "dommma/tours"
+):
+    """Generate a signed upload signature for Cloudinary"""
+    if not cloudinary_configured:
+        raise HTTPException(status_code=503, detail="Cloudinary not configured. Please set CLOUDINARY credentials.")
+    
+    # Validate folder
+    allowed_folders = ("dommma/", "users/", "listings/")
+    if not folder.startswith(allowed_folders):
+        raise HTTPException(status_code=400, detail="Invalid folder path")
+    
+    timestamp = int(time.time())
+    params = {
+        "timestamp": timestamp,
+        "folder": folder,
+        "resource_type": resource_type
+    }
+    
+    signature = cloudinary.utils.api_sign_request(
+        params,
+        os.environ.get("CLOUDINARY_API_SECRET")
+    )
+    
+    return {
+        "signature": signature,
+        "timestamp": timestamp,
+        "cloud_name": os.environ.get("CLOUDINARY_CLOUD_NAME"),
+        "api_key": os.environ.get("CLOUDINARY_API_KEY"),
+        "folder": folder,
+        "resource_type": resource_type
+    }
+
+@api_router.get("/cloudinary/status")
+async def cloudinary_status():
+    """Check if Cloudinary is configured"""
+    return {
+        "configured": cloudinary_configured,
+        "cloud_name": os.environ.get("CLOUDINARY_CLOUD_NAME") if cloudinary_configured else None
+    }
+
+class VideoTourInput(BaseModel):
+    listing_id: str
+    video_url: str
+    public_id: str
+    duration: Optional[float] = None
+    title: Optional[str] = None
+
+@api_router.post("/listings/{listing_id}/video-tour")
+async def add_video_tour(listing_id: str, data: VideoTourInput):
+    """Add a video tour to a listing"""
+    listing = await db.listings.find_one({"id": listing_id})
+    if not listing:
+        raise HTTPException(status_code=404, detail="Listing not found")
+    
+    video_tour = {
+        "video_url": data.video_url,
+        "public_id": data.public_id,
+        "duration": data.duration,
+        "title": data.title or "Property Tour",
+        "uploaded_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.listings.update_one(
+        {"id": listing_id},
+        {"$set": {"video_tour": video_tour, "has_video_tour": True}}
+    )
+    
+    return {"status": "success", "video_tour": video_tour}
+
+@api_router.delete("/listings/{listing_id}/video-tour")
+async def remove_video_tour(listing_id: str):
+    """Remove a video tour from a listing"""
+    listing = await db.listings.find_one({"id": listing_id})
+    if not listing:
+        raise HTTPException(status_code=404, detail="Listing not found")
+    
+    # Delete from Cloudinary if configured
+    if cloudinary_configured and listing.get("video_tour", {}).get("public_id"):
+        try:
+            cloudinary.uploader.destroy(
+                listing["video_tour"]["public_id"],
+                resource_type="video",
+                invalidate=True
+            )
+        except Exception as e:
+            logger.error(f"Failed to delete video from Cloudinary: {e}")
+    
+    await db.listings.update_one(
+        {"id": listing_id},
+        {"$unset": {"video_tour": 1}, "$set": {"has_video_tour": False}}
+    )
+    
+    return {"status": "deleted"}
+
 # ========== AI-POWERED FEATURES ==========
 
 class IssueAnalysisRequest(BaseModel):
