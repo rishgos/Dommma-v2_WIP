@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   FileText, Upload, Send, Check, Clock, Download, 
   Trash2, Eye, PenTool, Users, AlertCircle, Plus,
-  ChevronRight, Calendar, Mail, Building, User
+  ChevronRight, Calendar, Mail, Building, User,
+  Link2, Unlink, ExternalLink, Loader2
 } from 'lucide-react';
 import { useAuth } from '../App';
 import MainLayout from '../components/layout/MainLayout';
