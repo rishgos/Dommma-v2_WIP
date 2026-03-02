@@ -1560,6 +1560,96 @@ async def get_user_preferences(user_id: str):
         raise HTTPException(status_code=404, detail="User not found")
     return user.get("preferences", {})
 
+# ========== LEASE ASSIGNMENT MARKETPLACE ==========
+
+class LeaseAssignmentInput(BaseModel):
+    title: Optional[str] = None
+    address: str
+    city: str = "Vancouver"
+    current_rent: float
+    market_rent: Optional[float] = None
+    assignment_fee: float
+    remaining_months: int
+    available_date: Optional[str] = None
+    bedrooms: int = 1
+    bathrooms: float = 1
+    sqft: Optional[int] = None
+    amenities: List[str] = []
+    pet_friendly: bool = False
+    description: Optional[str] = None
+    reason: Optional[str] = None
+    owner_id: Optional[str] = None
+    owner_name: Optional[str] = None
+    images: List[str] = []
+
+@api_router.get("/lease-assignments")
+async def get_lease_assignments(city: Optional[str] = None, min_savings: Optional[int] = None):
+    """Get all active lease assignments"""
+    query = {"status": "active"}
+    
+    if city:
+        query["city"] = {"$regex": city, "$options": "i"}
+    
+    assignments = await db.lease_assignments.find(query, {"_id": 0}).sort("created_at", -1).to_list(50)
+    
+    # Calculate savings for each
+    for assignment in assignments:
+        if assignment.get("market_rent") and assignment.get("current_rent"):
+            assignment["savings_per_month"] = assignment["market_rent"] - assignment["current_rent"]
+        else:
+            assignment["market_rent"] = assignment.get("current_rent", 0) * 1.05
+            assignment["savings_per_month"] = assignment.get("current_rent", 0) * 0.05
+    
+    if min_savings:
+        assignments = [a for a in assignments if a.get("savings_per_month", 0) >= min_savings]
+    
+    return assignments
+
+@api_router.post("/lease-assignments")
+async def create_lease_assignment(data: LeaseAssignmentInput):
+    """Create a new lease assignment listing"""
+    assignment_id = str(uuid.uuid4())
+    
+    market_rent = data.market_rent or (data.current_rent * 1.05)
+    
+    assignment = {
+        "id": assignment_id,
+        "title": data.title or f"{data.bedrooms}BR in {data.city}",
+        "address": data.address,
+        "city": data.city,
+        "current_rent": data.current_rent,
+        "market_rent": market_rent,
+        "assignment_fee": data.assignment_fee,
+        "remaining_months": data.remaining_months,
+        "available_date": data.available_date or "Immediately",
+        "bedrooms": data.bedrooms,
+        "bathrooms": data.bathrooms,
+        "sqft": data.sqft,
+        "amenities": data.amenities,
+        "pet_friendly": data.pet_friendly,
+        "description": data.description,
+        "reason": data.reason,
+        "owner_id": data.owner_id,
+        "owner": {"name": data.owner_name or "Anonymous", "avatar": (data.owner_name or "A")[0]},
+        "images": data.images,
+        "savings_per_month": market_rent - data.current_rent,
+        "status": "active",
+        "verified": False,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.lease_assignments.insert_one(assignment)
+    
+    return assignment
+
+@api_router.get("/lease-assignments/{assignment_id}")
+async def get_lease_assignment(assignment_id: str):
+    """Get a specific lease assignment"""
+    assignment = await db.lease_assignments.find_one({"id": assignment_id}, {"_id": 0})
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    return assignment
+
 # ========== AI-POWERED FEATURES ==========
 
 class IssueAnalysisRequest(BaseModel):
