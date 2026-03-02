@@ -682,3 +682,221 @@ class AIToolsService:
                 "requested_time": input.get("preferred_time", "Flexible")
             }
         }
+
+    async def _price_lease_assignment(self, input: Dict[str, Any]) -> Dict[str, Any]:
+        """Calculate fair pricing for a lease assignment"""
+        current_rent = input.get("current_rent", 0)
+        market_rent = input.get("market_rent")
+        remaining_months = input.get("remaining_months", 0)
+        city = input.get("city", "Vancouver")
+        amenities = input.get("amenities_included", [])
+        
+        # If no market rent provided, estimate it (typically 3-5% above current rent in Vancouver)
+        if not market_rent:
+            market_rent = current_rent * 1.04  # 4% estimated increase
+        
+        # Calculate monthly savings for the new tenant
+        monthly_savings = max(0, market_rent - current_rent)
+        
+        # Base assignment fee calculation
+        # Industry standard: 50-70% of total savings over remaining lease
+        total_savings = monthly_savings * remaining_months
+        base_fee = total_savings * 0.6  # 60% of total savings
+        
+        # Amenity premiums
+        amenity_premium = 0
+        for amenity in amenities:
+            amenity_lower = amenity.lower()
+            if 'parking' in amenity_lower:
+                amenity_premium += 100 * remaining_months * 0.3
+            if 'storage' in amenity_lower:
+                amenity_premium += 50 * remaining_months * 0.3
+            if 'gym' in amenity_lower or 'fitness' in amenity_lower:
+                amenity_premium += 30 * remaining_months * 0.3
+        
+        # Market condition adjustments for Vancouver area
+        market_multiplier = 1.0
+        if city.lower() in ['vancouver', 'burnaby', 'richmond']:
+            market_multiplier = 1.15  # Hot market premium
+        elif city.lower() in ['surrey', 'coquitlam', 'new westminster']:
+            market_multiplier = 1.0
+        
+        # Calculate final fee ranges
+        suggested_fee = (base_fee + amenity_premium) * market_multiplier
+        low_fee = suggested_fee * 0.7
+        high_fee = suggested_fee * 1.3
+        
+        # Minimum fee logic
+        min_fee = 200  # Minimum reasonable fee
+        suggested_fee = max(min_fee, suggested_fee)
+        low_fee = max(min_fee, low_fee)
+        
+        return {
+            "success": True,
+            "pricing_analysis": {
+                "current_rent": current_rent,
+                "estimated_market_rent": round(market_rent, 2),
+                "monthly_savings_for_new_tenant": round(monthly_savings, 2),
+                "remaining_months": remaining_months,
+                "total_potential_savings": round(total_savings, 2)
+            },
+            "recommended_assignment_fee": {
+                "low": round(low_fee, 0),
+                "suggested": round(suggested_fee, 0),
+                "high": round(high_fee, 0)
+            },
+            "factors_considered": [
+                f"Current rent: ${current_rent}/month",
+                f"Market rent estimate: ${round(market_rent, 0)}/month",
+                f"Remaining lease: {remaining_months} months",
+                f"Location: {city}" + (" (hot market)" if market_multiplier > 1 else ""),
+                f"Amenities: {', '.join(amenities) if amenities else 'None specified'}"
+            ],
+            "tips": [
+                "List your assignment on DOMMMA's marketplace for maximum visibility",
+                "Take quality photos of the unit to attract serious inquiries",
+                "Be prepared to negotiate - your final fee may land between low and high",
+                "Ensure your landlord approves the assignment before accepting payment"
+            ]
+        }
+    
+    async def _build_renter_resume(self, input: Dict[str, Any], user_id: Optional[str]) -> Dict[str, Any]:
+        """Build or update a renter resume/profile"""
+        resume_id = str(uuid.uuid4())
+        
+        # Create resume document
+        resume = {
+            "id": resume_id,
+            "user_id": user_id,
+            "full_name": input.get("full_name", ""),
+            "email": input.get("email", ""),
+            "phone": input.get("phone", ""),
+            "employment": {
+                "status": input.get("employment_status", ""),
+                "employer": input.get("employer_name", ""),
+                "job_title": input.get("job_title", ""),
+                "annual_income": input.get("annual_income", 0)
+            },
+            "rental_history": {
+                "current_address": input.get("current_address", ""),
+                "years_at_current": input.get("years_at_current", 0),
+                "previous_landlord": {
+                    "name": input.get("previous_landlord_name", ""),
+                    "phone": input.get("previous_landlord_phone", "")
+                }
+            },
+            "household": {
+                "num_occupants": input.get("num_occupants", 1),
+                "has_pets": input.get("has_pets", False),
+                "pet_details": input.get("pet_details", "")
+            },
+            "preferences": {
+                "move_in_date": input.get("move_in_date", ""),
+                "additional_info": input.get("additional_info", "")
+            },
+            "completeness_score": 0,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        # Calculate completeness score
+        fields_filled = 0
+        total_fields = 12
+        if resume["full_name"]: fields_filled += 1
+        if resume["email"]: fields_filled += 1
+        if resume["phone"]: fields_filled += 1
+        if resume["employment"]["status"]: fields_filled += 1
+        if resume["employment"]["employer"]: fields_filled += 1
+        if resume["employment"]["annual_income"]: fields_filled += 1
+        if resume["rental_history"]["current_address"]: fields_filled += 1
+        if resume["rental_history"]["previous_landlord"]["name"]: fields_filled += 1
+        if resume["household"]["num_occupants"]: fields_filled += 1
+        if resume["preferences"]["move_in_date"]: fields_filled += 1
+        
+        resume["completeness_score"] = round((fields_filled / total_fields) * 100)
+        
+        # Upsert - update if user already has a resume
+        if user_id:
+            existing = await self.db.renter_resumes.find_one({"user_id": user_id})
+            if existing:
+                # Merge with existing data
+                for key, value in resume.items():
+                    if isinstance(value, dict):
+                        for sub_key, sub_value in value.items():
+                            if sub_value:  # Only update non-empty values
+                                await self.db.renter_resumes.update_one(
+                                    {"user_id": user_id},
+                                    {"$set": {f"{key}.{sub_key}": sub_value, "updated_at": datetime.now(timezone.utc).isoformat()}}
+                                )
+                    elif value:
+                        await self.db.renter_resumes.update_one(
+                            {"user_id": user_id},
+                            {"$set": {key: value, "updated_at": datetime.now(timezone.utc).isoformat()}}
+                        )
+                resume_id = existing["id"]
+            else:
+                await self.db.renter_resumes.insert_one(resume)
+        else:
+            await self.db.renter_resumes.insert_one(resume)
+        
+        return {
+            "success": True,
+            "resume_id": resume_id,
+            "completeness_score": resume["completeness_score"],
+            "message": f"Renter resume {'updated' if user_id else 'created'} successfully!",
+            "summary": {
+                "name": resume["full_name"],
+                "employment": f"{resume['employment']['job_title']} at {resume['employment']['employer']}" if resume['employment']['job_title'] else "Not specified",
+                "income": f"${resume['employment']['annual_income']:,.0f}/year" if resume['employment']['annual_income'] else "Not specified",
+                "current_address": resume["rental_history"]["current_address"] or "Not specified",
+                "pets": resume["household"]["pet_details"] if resume["household"]["has_pets"] else "No pets"
+            },
+            "missing_fields": [
+                field for field, filled in [
+                    ("Full name", resume["full_name"]),
+                    ("Email", resume["email"]),
+                    ("Phone", resume["phone"]),
+                    ("Employment status", resume["employment"]["status"]),
+                    ("Employer name", resume["employment"]["employer"]),
+                    ("Annual income", resume["employment"]["annual_income"]),
+                    ("Current address", resume["rental_history"]["current_address"]),
+                    ("Previous landlord", resume["rental_history"]["previous_landlord"]["name"]),
+                ] if not filled
+            ]
+        }
+    
+    async def _get_renter_resume(self, input: Dict[str, Any], user_id: Optional[str]) -> Dict[str, Any]:
+        """Retrieve a renter's resume"""
+        target_user_id = input.get("user_id") or user_id
+        
+        if not target_user_id:
+            return {"error": "No user ID provided to retrieve resume"}
+        
+        resume = await self.db.renter_resumes.find_one({"user_id": target_user_id}, {"_id": 0})
+        
+        if not resume:
+            return {
+                "success": False,
+                "message": "No renter resume found. Would you like to create one? Just tell me about yourself - your name, job, income, and rental history.",
+                "has_resume": False
+            }
+        
+        return {
+            "success": True,
+            "has_resume": True,
+            "resume": {
+                "full_name": resume.get("full_name"),
+                "email": resume.get("email"),
+                "phone": resume.get("phone"),
+                "employment": resume.get("employment", {}),
+                "rental_history": resume.get("rental_history", {}),
+                "household": resume.get("household", {}),
+                "preferences": resume.get("preferences", {}),
+                "completeness_score": resume.get("completeness_score", 0)
+            },
+            "tips": [
+                "Keep your resume updated for faster applications",
+                "A complete profile increases landlord trust",
+                "You can share your resume when applying to any listing"
+            ]
+        }
