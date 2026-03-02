@@ -1,0 +1,108 @@
+{
+  "summary": "Tested Analytics Dashboard, DocuSign OAuth integration, and Lease Assignment Payment features. All 35 backend tests pass, all 13 frontend E2E tests pass. Fixed 2 bugs during testing: 1) POST /api/lease-assignments was returning MongoDB ObjectId causing serialization error, 2) Lease assignment payment metadata was failing when owner_id was null.",
+  "mode": "generate",
+  "baseline_commit": "0c9d95d08e2f49a9d0c2ab7dc320c80d24da8254",
+  "head_commit": "2a58f384c03da80c4c29baf99ad6cb0c946d2e56",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "regression_results": {
+    "total_specs": 3,
+    "passed": 13,
+    "failed": 0,
+    "skipped": 0
+  },
+  "backend_test_results": {
+    "total_tests": 35,
+    "passed": 35,
+    "failed": 0
+  },
+  "specs_created": [
+    "/app/tests/e2e/analytics-docusign-lease.spec.ts",
+    "/app/backend/tests/test_analytics_docusign_lease.py"
+  ],
+  "specs_updated": [],
+  "quarantined_tests": [],
+  "test_report_links": [
+    "/app/backend/tests/test_analytics_docusign_lease.py",
+    "/app/test_reports/pytest/pytest_analytics_docusign.xml",
+    "/app/tests/e2e/analytics-docusign-lease.spec.ts",
+    "/app/tests/e2e/core-flows.spec.ts"
+  ],
+  "action_items": [],
+  "updated_files": [
+    "/app/backend/server.py"
+  ],
+  "success_rate": {
+    "backend": "100% (35/35 tests passed)",
+    "frontend": "100% (13/13 tests passed)"
+  },
+  "seed_data_creation": "Created test lease assignments for payment testing (auto-cleaned)",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Analytics Dashboard, DocuSign OAuth integration, and Lease Assignment Payment features are fully working. Backend APIs: GET /api/analytics/overview, /api/analytics/activity, /api/analytics/revenue, /api/analytics/listings-performance, GET /api/docusign/status, /api/docusign/auth-url, GET/POST /api/lease-assignments, POST /api/lease-assignments/{id}/payment all verified. Frontend pages at /analytics, /esign, /lease-assignments render correctly with proper data-testid attributes.",
+  "bugs_fixed": [
+    {
+      "file": "/app/backend/server.py",
+      "issue": "POST /api/lease-assignments endpoint was returning MongoDB _id field causing JSON serialization error",
+      "fix": "Added assignment.pop('_id', None) before returning the response"
+    },
+    {
+      "file": "/app/backend/server.py",
+      "issue": "Lease assignment payment metadata.seller_id was None causing Pydantic validation error",
+      "fix": "Changed assignment.get('owner_id', '') to assignment.get('owner_id') or 'unknown'"
+    }
+  ],
+  "features_tested": {
+    "Analytics_Overview_API": {
+      "status": "WORKING",
+      "notes": "Returns user, listings, transactions, contractors, documents stats"
+    },
+    "Analytics_Activity_API": {
+      "status": "WORKING",
+      "notes": "Returns recent platform activity feed"
+    },
+    "Analytics_Revenue_API": {
+      "status": "WORKING",
+      "notes": "Returns revenue breakdown by period (7d, 30d, 90d)"
+    },
+    "Analytics_Listings_Performance_API": {
+      "status": "WORKING",
+      "notes": "Returns price distribution, property types, avg prices by city"
+    },
+    "DocuSign_Status_API": {
+      "status": "WORKING",
+      "notes": "Returns connection status and integration key status"
+    },
+    "DocuSign_AuthURL_API": {
+      "status": "WORKING",
+      "notes": "Generates DocuSign OAuth authorization URL"
+    },
+    "Lease_Assignments_CRUD": {
+      "status": "WORKING",
+      "notes": "GET list, POST create, GET single all working"
+    },
+    "Lease_Assignment_Payment": {
+      "status": "WORKING",
+      "notes": "Creates Stripe checkout session for assignment fee"
+    },
+    "Analytics_Dashboard_UI": {
+      "status": "WORKING",
+      "notes": "Shows 5 stat cards, refresh button, user/listing stats"
+    },
+    "ESign_DocuSign_Card": {
+      "status": "WORKING",
+      "notes": "Shows DocuSign integration card with Connect button"
+    },
+    "Lease_Assignments_Page": {
+      "status": "WORKING",
+      "notes": "Hero section, search input, create button visible"
+    }
+  }
+}
