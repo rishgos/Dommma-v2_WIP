@@ -3842,6 +3842,247 @@ async def seed_data():
     
     return {"message": f"Successfully seeded {len(sample_listings)} listings and contractor data"}
 
+# ========== ANALYTICS DASHBOARD ==========
+
+@api_router.get("/analytics/overview")
+async def get_analytics_overview():
+    """Get platform-wide analytics overview for admin dashboard"""
+    
+    # User stats
+    total_users = await db.users.count_documents({})
+    users_by_type = await db.users.aggregate([
+        {"$group": {"_id": "$user_type", "count": {"$sum": 1}}}
+    ]).to_list(10)
+    
+    # Listing stats
+    total_listings = await db.listings.count_documents({"status": "active"})
+    listings_by_type = await db.listings.aggregate([
+        {"$match": {"status": "active"}},
+        {"$group": {"_id": "$listing_type", "count": {"$sum": 1}}}
+    ]).to_list(10)
+    listings_by_city = await db.listings.aggregate([
+        {"$match": {"status": "active"}},
+        {"$group": {"_id": "$city", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 5}
+    ]).to_list(5)
+    
+    # Transaction stats
+    total_transactions = await db.payment_transactions.count_documents({})
+    successful_transactions = await db.payment_transactions.count_documents({"payment_status": "paid"})
+    
+    # Calculate total revenue
+    revenue_pipeline = [
+        {"$match": {"payment_status": "paid"}},
+        {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+    ]
+    revenue_result = await db.payment_transactions.aggregate(revenue_pipeline).to_list(1)
+    total_revenue = revenue_result[0]["total"] if revenue_result else 0
+    
+    # Contractor stats
+    total_contractors = await db.contractor_profiles.count_documents({"status": "active"})
+    verified_contractors = await db.contractor_profiles.count_documents({"status": "active", "verified": True})
+    
+    # Lease assignment stats  
+    active_assignments = await db.lease_assignments.count_documents({"status": "active"})
+    
+    # Document stats
+    total_documents = await db.esign_documents.count_documents({})
+    signed_documents = await db.esign_documents.count_documents({"status": "signed"})
+    
+    # Recent activity (last 7 days)
+    from datetime import timedelta
+    seven_days_ago = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+    
+    new_users_7d = await db.users.count_documents({"created_at": {"$gte": seven_days_ago}})
+    new_listings_7d = await db.listings.count_documents({"created_at": {"$gte": seven_days_ago}})
+    
+    return {
+        "users": {
+            "total": total_users,
+            "by_type": {item["_id"]: item["count"] for item in users_by_type if item["_id"]},
+            "new_last_7_days": new_users_7d
+        },
+        "listings": {
+            "total_active": total_listings,
+            "by_type": {item["_id"]: item["count"] for item in listings_by_type if item["_id"]},
+            "by_city": {item["_id"]: item["count"] for item in listings_by_city if item["_id"]},
+            "new_last_7_days": new_listings_7d
+        },
+        "transactions": {
+            "total": total_transactions,
+            "successful": successful_transactions,
+            "total_revenue": round(total_revenue, 2),
+            "success_rate": round((successful_transactions / total_transactions * 100) if total_transactions > 0 else 0, 1)
+        },
+        "contractors": {
+            "total": total_contractors,
+            "verified": verified_contractors,
+            "verification_rate": round((verified_contractors / total_contractors * 100) if total_contractors > 0 else 0, 1)
+        },
+        "lease_assignments": {
+            "active": active_assignments
+        },
+        "documents": {
+            "total": total_documents,
+            "signed": signed_documents,
+            "completion_rate": round((signed_documents / total_documents * 100) if total_documents > 0 else 0, 1)
+        },
+        "generated_at": datetime.now(timezone.utc).isoformat()
+    }
+
+@api_router.get("/analytics/activity")
+async def get_recent_activity(limit: int = 20):
+    """Get recent platform activity feed"""
+    
+    activities = []
+    
+    # Recent users
+    recent_users = await db.users.find(
+        {}, {"_id": 0, "email": 1, "user_type": 1, "created_at": 1, "name": 1}
+    ).sort("created_at", -1).limit(5).to_list(5)
+    
+    for user in recent_users:
+        activities.append({
+            "type": "user_signup",
+            "title": f"New {user.get('user_type', 'user')} registered",
+            "description": user.get("name", user.get("email", "Unknown")),
+            "timestamp": user.get("created_at"),
+            "icon": "user"
+        })
+    
+    # Recent listings
+    recent_listings = await db.listings.find(
+        {"status": "active"}, {"_id": 0, "title": 1, "city": 1, "price": 1, "created_at": 1}
+    ).sort("created_at", -1).limit(5).to_list(5)
+    
+    for listing in recent_listings:
+        activities.append({
+            "type": "new_listing",
+            "title": "New listing created",
+            "description": f"{listing.get('title')} in {listing.get('city')} - ${listing.get('price')}/mo",
+            "timestamp": listing.get("created_at"),
+            "icon": "home"
+        })
+    
+    # Recent transactions
+    recent_payments = await db.payment_transactions.find(
+        {"payment_status": "paid"}, {"_id": 0, "amount": 1, "description": 1, "created_at": 1}
+    ).sort("created_at", -1).limit(5).to_list(5)
+    
+    for payment in recent_payments:
+        activities.append({
+            "type": "payment",
+            "title": "Payment completed",
+            "description": f"${payment.get('amount', 0):.2f} - {payment.get('description', 'N/A')}",
+            "timestamp": payment.get("created_at"),
+            "icon": "dollar"
+        })
+    
+    # Sort all activities by timestamp
+    activities.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+    
+    return activities[:limit]
+
+@api_router.get("/analytics/revenue")
+async def get_revenue_analytics(period: str = "30d"):
+    """Get revenue analytics over time"""
+    
+    from datetime import timedelta
+    
+    # Calculate date range
+    if period == "7d":
+        days = 7
+    elif period == "30d":
+        days = 30
+    elif period == "90d":
+        days = 90
+    else:
+        days = 30
+    
+    start_date = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    
+    # Daily revenue breakdown
+    pipeline = [
+        {"$match": {"payment_status": "paid", "created_at": {"$gte": start_date}}},
+        {"$addFields": {
+            "date": {"$substr": ["$created_at", 0, 10]}
+        }},
+        {"$group": {
+            "_id": "$date",
+            "revenue": {"$sum": "$amount"},
+            "count": {"$sum": 1}
+        }},
+        {"$sort": {"_id": 1}}
+    ]
+    
+    daily_revenue = await db.payment_transactions.aggregate(pipeline).to_list(100)
+    
+    # Total for period
+    total_revenue = sum(day["revenue"] for day in daily_revenue)
+    total_transactions = sum(day["count"] for day in daily_revenue)
+    
+    return {
+        "period": period,
+        "total_revenue": round(total_revenue, 2),
+        "total_transactions": total_transactions,
+        "average_transaction": round(total_revenue / total_transactions, 2) if total_transactions > 0 else 0,
+        "daily_breakdown": [
+            {"date": day["_id"], "revenue": round(day["revenue"], 2), "count": day["count"]}
+            for day in daily_revenue
+        ]
+    }
+
+@api_router.get("/analytics/listings-performance")
+async def get_listings_performance():
+    """Get listing performance metrics"""
+    
+    # Price distribution
+    price_ranges = [
+        {"label": "Under $1,500", "min": 0, "max": 1499},
+        {"label": "$1,500 - $2,000", "min": 1500, "max": 1999},
+        {"label": "$2,000 - $2,500", "min": 2000, "max": 2499},
+        {"label": "$2,500 - $3,000", "min": 2500, "max": 2999},
+        {"label": "$3,000+", "min": 3000, "max": 999999},
+    ]
+    
+    price_distribution = []
+    for range_item in price_ranges:
+        count = await db.listings.count_documents({
+            "status": "active",
+            "listing_type": "rent",
+            "price": {"$gte": range_item["min"], "$lte": range_item["max"]}
+        })
+        price_distribution.append({
+            "range": range_item["label"],
+            "count": count
+        })
+    
+    # Property type distribution
+    property_types = await db.listings.aggregate([
+        {"$match": {"status": "active"}},
+        {"$group": {"_id": "$property_type", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}}
+    ]).to_list(10)
+    
+    # Average prices by city
+    avg_prices_by_city = await db.listings.aggregate([
+        {"$match": {"status": "active", "listing_type": "rent"}},
+        {"$group": {"_id": "$city", "avg_price": {"$avg": "$price"}, "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 10}
+    ]).to_list(10)
+    
+    return {
+        "price_distribution": price_distribution,
+        "property_types": [{"type": p["_id"] or "Unknown", "count": p["count"]} for p in property_types],
+        "avg_prices_by_city": [
+            {"city": c["_id"] or "Unknown", "avg_price": round(c["avg_price"], 0), "count": c["count"]}
+            for c in avg_prices_by_city
+        ]
+    }
+
+
 # Include the router
 app.include_router(api_router)
 
