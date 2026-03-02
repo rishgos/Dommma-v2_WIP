@@ -396,4 +396,49 @@ Build a complete real estate marketplace called "DOMMMA" for Renters, Landlords,
 - **OpenAI API Key**: Direct access for Whisper & TTS
 
 ## Last Updated
-December 22, 2025 - V15 Migrated from Emergent LLM Key to Direct Claude/OpenAI APIs
+March 2, 2026 - V16 DocuSign OAuth, Stripe Payments, Analytics Dashboard
+
+## V16 - DocuSign OAuth, Stripe Payments & Analytics Dashboard (Mar 2026) - LATEST
+- [x] **DocuSign OAuth 2.0 Integration** - Full OAuth flow for e-signing:
+  - GET /api/docusign/status - Check connection status
+  - GET /api/docusign/auth-url - Generate OAuth URL
+  - POST /api/docusign/callback - Token exchange
+  - POST /api/docusign/disconnect - Disconnect account
+  - POST /api/docusign/send-envelope - Send document for signature
+  - GET /api/docusign/envelope-status/{id} - Track envelope status
+  - DocuSign integration card on E-Sign page
+  - "Connect DocuSign" button with OAuth redirect
+  - "Send via DocuSign" button on pending documents
+  - Integration Key: 8442b058-47ce-4aa6-8842-ef31ef49c5c2
+  
+- [x] **Stripe Payment Processing** - Lease assignment payments:
+  - POST /api/lease-assignments/{id}/payment - Create checkout session
+  - POST /api/lease-assignments/{id}/payment-complete - Confirm payment
+  - "Pay $X" button on lease assignment cards
+  - Redirect to Stripe Checkout
+  - Payment success/cancel URL handling
+  - Transaction record creation
+
+- [x] **Advanced Analytics Dashboard** - Platform metrics at /analytics:
+  - GET /api/analytics/overview - User, listing, revenue, contractor stats
+  - GET /api/analytics/activity - Recent platform activity feed
+  - GET /api/analytics/revenue - Revenue by period (7d, 30d, 90d)
+  - GET /api/analytics/listings-performance - Price distribution, property types
+  - 5 stat cards: Users, Listings, Revenue, Contractors, Documents
+  - Users by Type bar chart
+  - Listings by City bar chart
+  - Price Distribution chart
+  - Property Types chart
+  - Recent Activity feed
+  - Quick Stats footer (success rates)
+  - Refresh button
+  - Added to landlord sidebar navigation
+
+- [x] **Additional Bug Fixes**:
+  - MongoDB _id serialization error in POST /api/lease-assignments
+  - Pydantic validation error when owner_id was null in payment metadata
+
+## Test Reports (Continued)
+- iteration_18.json — Previous test run
+- iteration_19.json — V16 DocuSign OAuth, Stripe Payments, Analytics (100% backend - 35/35, 100% frontend - 13/13)
+
