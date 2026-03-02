@@ -1515,16 +1515,26 @@ async def save_renter_resume(data: RenterResumeInput):
     # Calculate completeness score
     fields_filled = 0
     total_fields = 10
-    if data.full_name: fields_filled += 1
-    if data.email: fields_filled += 1
-    if data.phone: fields_filled += 1
-    if data.employment and data.employment.get('status'): fields_filled += 1
-    if data.employment and data.employment.get('employer'): fields_filled += 1
-    if data.employment and data.employment.get('annual_income'): fields_filled += 1
-    if data.rental_history and data.rental_history.get('current_address'): fields_filled += 1
-    if data.rental_history and data.rental_history.get('previous_landlord', {}).get('name'): fields_filled += 1
-    if data.household and data.household.get('num_occupants'): fields_filled += 1
-    if data.preferences and data.preferences.get('move_in_date'): fields_filled += 1
+    if data.full_name:
+        fields_filled += 1
+    if data.email:
+        fields_filled += 1
+    if data.phone:
+        fields_filled += 1
+    if data.employment and data.employment.get('status'):
+        fields_filled += 1
+    if data.employment and data.employment.get('employer'):
+        fields_filled += 1
+    if data.employment and data.employment.get('annual_income'):
+        fields_filled += 1
+    if data.rental_history and data.rental_history.get('current_address'):
+        fields_filled += 1
+    if data.rental_history and data.rental_history.get('previous_landlord', {}).get('name'):
+        fields_filled += 1
+    if data.household and data.household.get('num_occupants'):
+        fields_filled += 1
+    if data.preferences and data.preferences.get('move_in_date'):
+        fields_filled += 1
     
     completeness_score = round((fields_filled / total_fields) * 100)
     
