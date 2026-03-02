@@ -1473,6 +1473,86 @@ async def save_user_preferences(user_id: str, preferences: Dict[str, Any]):
     )
     return {"status": "saved"}
 
+# ========== RENTER RESUME ENDPOINTS ==========
+
+class RenterResumeInput(BaseModel):
+    user_id: Optional[str] = None
+    full_name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    employment: Optional[Dict[str, Any]] = None
+    rental_history: Optional[Dict[str, Any]] = None
+    household: Optional[Dict[str, Any]] = None
+    preferences: Optional[Dict[str, Any]] = None
+
+@api_router.get("/renter-resume/{user_id}")
+async def get_renter_resume(user_id: str):
+    """Get a renter's resume/profile"""
+    resume = await db.renter_resumes.find_one({"user_id": user_id}, {"_id": 0})
+    
+    if not resume:
+        return {
+            "has_resume": False,
+            "message": "No renter resume found"
+        }
+    
+    return {
+        "has_resume": True,
+        "resume": resume
+    }
+
+@api_router.post("/renter-resume")
+async def save_renter_resume(data: RenterResumeInput):
+    """Create or update a renter resume"""
+    user_id = data.user_id
+    
+    if not user_id:
+        raise HTTPException(status_code=400, detail="User ID required")
+    
+    # Check if resume exists
+    existing = await db.renter_resumes.find_one({"user_id": user_id})
+    
+    # Calculate completeness score
+    fields_filled = 0
+    total_fields = 10
+    if data.full_name: fields_filled += 1
+    if data.email: fields_filled += 1
+    if data.phone: fields_filled += 1
+    if data.employment and data.employment.get('status'): fields_filled += 1
+    if data.employment and data.employment.get('employer'): fields_filled += 1
+    if data.employment and data.employment.get('annual_income'): fields_filled += 1
+    if data.rental_history and data.rental_history.get('current_address'): fields_filled += 1
+    if data.rental_history and data.rental_history.get('previous_landlord', {}).get('name'): fields_filled += 1
+    if data.household and data.household.get('num_occupants'): fields_filled += 1
+    if data.preferences and data.preferences.get('move_in_date'): fields_filled += 1
+    
+    completeness_score = round((fields_filled / total_fields) * 100)
+    
+    resume_data = {
+        "user_id": user_id,
+        "full_name": data.full_name or "",
+        "email": data.email or "",
+        "phone": data.phone or "",
+        "employment": data.employment or {},
+        "rental_history": data.rental_history or {},
+        "household": data.household or {"num_occupants": 1},
+        "preferences": data.preferences or {},
+        "completeness_score": completeness_score,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    if existing:
+        await db.renter_resumes.update_one(
+            {"user_id": user_id},
+            {"$set": resume_data}
+        )
+    else:
+        resume_data["id"] = str(uuid.uuid4())
+        resume_data["created_at"] = datetime.now(timezone.utc).isoformat()
+        await db.renter_resumes.insert_one(resume_data)
+    
+    return {"status": "saved", "completeness_score": completeness_score}
+
 @api_router.get("/user/preferences/{user_id}")
 async def get_user_preferences(user_id: str):
     user = await db.users.find_one({"id": user_id}, {"_id": 0})
