@@ -36,6 +36,7 @@ import NovaInsights from "@/pages/NovaInsights";
 import MyResume from "@/pages/MyResume";
 import ApplicantRanking from "@/pages/ApplicantRanking";
 import LeaseAssignments from "@/pages/LeaseAssignments";
+import ESign from "@/pages/ESign";
 
 // Layout
 import DashboardLayout from "@/components/layout/DashboardLayout";
