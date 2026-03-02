@@ -1660,6 +1660,105 @@ async def get_lease_assignment(assignment_id: str):
         raise HTTPException(status_code=404, detail="Assignment not found")
     return assignment
 
+# ========== E-SIGN DOCUMENTS ==========
+
+class ESignDocumentInput(BaseModel):
+    title: str
+    form_type: Optional[str] = None
+    recipient_email: str
+    recipient_name: str
+    property_address: Optional[str] = None
+    notes: Optional[str] = None
+    creator_id: str
+    creator_name: str
+    creator_email: str
+
+class SignatureInput(BaseModel):
+    signature_data: str
+    signer_id: str
+    signer_name: str
+
+@api_router.get("/esign/documents")
+async def get_esign_documents(user_id: str):
+    """Get all e-sign documents for a user"""
+    # Get documents where user is creator or recipient
+    documents = await db.esign_documents.find(
+        {"$or": [{"creator_id": user_id}, {"recipient_id": user_id}]},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    return documents
+
+@api_router.post("/esign/documents")
+async def create_esign_document(data: ESignDocumentInput):
+    """Create a new document for e-signature"""
+    doc_id = str(uuid.uuid4())
+    
+    document = {
+        "id": doc_id,
+        "title": data.title,
+        "form_type": data.form_type,
+        "recipient_email": data.recipient_email,
+        "recipient_name": data.recipient_name,
+        "property_address": data.property_address,
+        "notes": data.notes,
+        "creator_id": data.creator_id,
+        "creator_name": data.creator_name,
+        "creator_email": data.creator_email,
+        "status": "pending",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "signed_at": None,
+        "signature_data": None,
+        "signer_name": None
+    }
+    
+    await db.esign_documents.insert_one(document)
+    
+    # TODO: Send email notification to recipient
+    
+    return document
+
+@api_router.post("/esign/documents/{doc_id}/sign")
+async def sign_document(doc_id: str, data: SignatureInput):
+    """Sign a document"""
+    document = await db.esign_documents.find_one({"id": doc_id})
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    if document["status"] == "signed":
+        raise HTTPException(status_code=400, detail="Document already signed")
+    
+    await db.esign_documents.update_one(
+        {"id": doc_id},
+        {"$set": {
+            "status": "signed",
+            "signed_at": datetime.now(timezone.utc).isoformat(),
+            "signature_data": data.signature_data,
+            "signer_id": data.signer_id,
+            "signer_name": data.signer_name
+        }}
+    )
+    
+    return {"status": "signed", "message": "Document signed successfully"}
+
+@api_router.post("/esign/documents/{doc_id}/remind")
+async def send_reminder(doc_id: str):
+    """Send a reminder to sign the document"""
+    document = await db.esign_documents.find_one({"id": doc_id})
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    # TODO: Implement email sending via Resend
+    
+    return {"status": "sent", "message": "Reminder sent successfully"}
+
+@api_router.get("/esign/documents/{doc_id}")
+async def get_esign_document(doc_id: str):
+    """Get a specific e-sign document"""
+    document = await db.esign_documents.find_one({"id": doc_id}, {"_id": 0})
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    return document
+
 # ========== AI-POWERED FEATURES ==========
 
 class IssueAnalysisRequest(BaseModel):
