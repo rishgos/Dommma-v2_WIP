@@ -34,6 +34,7 @@ import CalendarPage from "@/pages/CalendarPage";
 import ContractorPortfolio from "@/pages/ContractorPortfolio";
 import NovaInsights from "@/pages/NovaInsights";
 import MyResume from "@/pages/MyResume";
+import ApplicantRanking from "@/pages/ApplicantRanking";
 
 // Layout
 import DashboardLayout from "@/components/layout/DashboardLayout";
