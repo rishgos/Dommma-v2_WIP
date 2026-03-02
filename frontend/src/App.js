@@ -150,6 +150,7 @@ function App() {
           <Route path="/my-resume" element={<DashboardLayout><MyResume /></DashboardLayout>} />
           <Route path="/applicant-ranking" element={<DashboardLayout><ApplicantRanking /></DashboardLayout>} />
           <Route path="/esign" element={<DashboardLayout><ESign /></DashboardLayout>} />
+          <Route path="/syndication" element={<DashboardLayout><ListingSyndication /></DashboardLayout>} />
           <Route path="/settings" element={<DashboardLayout><div className="p-6"><h1 className="text-2xl font-semibold">Settings</h1><p className="text-gray-500 mt-2">Settings page coming soon...</p></div></DashboardLayout>} />
           
           {/* Legacy routes - redirect to new paths */}
