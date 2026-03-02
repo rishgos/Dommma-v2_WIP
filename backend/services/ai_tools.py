@@ -256,6 +256,129 @@ NOVA_TOOLS = [
             },
             "required": ["listing_id", "preferred_date"]
         }
+    },
+    {
+        "name": "price_lease_assignment",
+        "description": "Help a tenant price their lease assignment. Calculates a fair takeover fee based on remaining lease months, market conditions, and lease terms. Use when a tenant wants to transfer/sell their lease to someone else.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "current_rent": {
+                    "type": "number",
+                    "description": "Current monthly rent amount"
+                },
+                "market_rent": {
+                    "type": "number",
+                    "description": "Estimated market rent for similar units (if known)"
+                },
+                "remaining_months": {
+                    "type": "integer",
+                    "description": "Number of months remaining on the lease"
+                },
+                "city": {
+                    "type": "string",
+                    "description": "City/area of the property"
+                },
+                "amenities_included": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Amenities included in the lease (parking, storage, gym)"
+                },
+                "reason_for_assignment": {
+                    "type": "string",
+                    "description": "Why the tenant needs to assign (moving, job change, etc.)"
+                }
+            },
+            "required": ["current_rent", "remaining_months"]
+        }
+    },
+    {
+        "name": "build_renter_resume",
+        "description": "Build or update a renter resume/profile from conversation. Collects employment, income, rental history, and references to create a reusable tenant profile for applications.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "full_name": {
+                    "type": "string",
+                    "description": "Renter's full name"
+                },
+                "email": {
+                    "type": "string",
+                    "description": "Email address"
+                },
+                "phone": {
+                    "type": "string",
+                    "description": "Phone number"
+                },
+                "employment_status": {
+                    "type": "string",
+                    "enum": ["employed", "self-employed", "student", "retired", "other"],
+                    "description": "Current employment status"
+                },
+                "employer_name": {
+                    "type": "string",
+                    "description": "Name of employer or business"
+                },
+                "job_title": {
+                    "type": "string",
+                    "description": "Current job title"
+                },
+                "annual_income": {
+                    "type": "number",
+                    "description": "Annual gross income"
+                },
+                "current_address": {
+                    "type": "string",
+                    "description": "Current living address"
+                },
+                "years_at_current": {
+                    "type": "number",
+                    "description": "Years at current address"
+                },
+                "previous_landlord_name": {
+                    "type": "string",
+                    "description": "Previous landlord's name"
+                },
+                "previous_landlord_phone": {
+                    "type": "string",
+                    "description": "Previous landlord's phone for reference"
+                },
+                "has_pets": {
+                    "type": "boolean",
+                    "description": "Whether they have pets"
+                },
+                "pet_details": {
+                    "type": "string",
+                    "description": "Type/breed of pet if applicable"
+                },
+                "num_occupants": {
+                    "type": "integer",
+                    "description": "Total number of people who will live in the unit"
+                },
+                "move_in_date": {
+                    "type": "string",
+                    "description": "Desired move-in date"
+                },
+                "additional_info": {
+                    "type": "string",
+                    "description": "Any additional information about the renter"
+                }
+            },
+            "required": ["full_name"]
+        }
+    },
+    {
+        "name": "get_renter_resume",
+        "description": "Retrieve an existing renter resume/profile for a user. Use this to show a renter their saved profile.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "user_id": {
+                    "type": "string",
+                    "description": "User ID to retrieve resume for"
+                }
+            }
+        }
     }
 ]
 
