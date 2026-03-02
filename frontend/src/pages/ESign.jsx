@@ -305,6 +305,67 @@ export default function ESign() {
             </button>
           </div>
 
+          {/* DocuSign Integration Card */}
+          <div className="bg-white rounded-2xl p-6 shadow-sm mb-8" data-testid="docusign-integration-card">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${docusignStatus.connected ? 'bg-green-100' : 'bg-gray-100'}`}>
+                  {docusignStatus.loading || connectingDocusign ? (
+                    <Loader2 size={24} className="text-gray-600 animate-spin" />
+                  ) : docusignStatus.connected ? (
+                    <Check size={24} className="text-green-600" />
+                  ) : (
+                    <Link2 size={24} className="text-gray-500" />
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-semibold text-[#1A2F3A] flex items-center gap-2">
+                    DocuSign Integration
+                    {docusignStatus.connected && (
+                      <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Connected</span>
+                    )}
+                  </h3>
+                  {docusignStatus.connected ? (
+                    <p className="text-sm text-gray-500">
+                      Connected as {docusignStatus.email} ({docusignStatus.account_name})
+                    </p>
+                  ) : (
+                    <p className="text-sm text-gray-500">
+                      Connect your DocuSign account to send documents for legally binding signatures
+                    </p>
+                  )}
+                </div>
+              </div>
+              
+              {docusignStatus.loading ? null : docusignStatus.connected ? (
+                <button
+                  onClick={handleDisconnectDocuSign}
+                  className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg flex items-center gap-2 transition-colors"
+                  data-testid="disconnect-docusign-btn"
+                >
+                  <Unlink size={16} /> Disconnect
+                </button>
+              ) : (
+                <button
+                  onClick={handleConnectDocuSign}
+                  disabled={connectingDocusign}
+                  className="px-6 py-3 bg-[#0072CE] text-white rounded-lg font-medium hover:bg-[#005BA1] transition-colors flex items-center gap-2 disabled:opacity-50"
+                  data-testid="connect-docusign-btn"
+                >
+                  {connectingDocusign ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" /> Connecting...
+                    </>
+                  ) : (
+                    <>
+                      <ExternalLink size={16} /> Connect DocuSign
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+
           {/* Stats */}
           <div className="grid md:grid-cols-3 gap-4 mb-8">
             <div className="bg-white rounded-2xl p-6 shadow-sm">
