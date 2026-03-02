@@ -175,135 +175,180 @@ class DocuSignService:
         except httpx.HTTPError as e:
             raise DocuSignError(f"Failed to get user info: {str(e)}")
     
-    def create_api_client(self, access_token: str) -> ApiClient:
-        """Create DocuSign API client with access token"""
-        api_client = ApiClient()
-        api_client.host = self.base_url
-        api_client.set_default_header("Authorization", f"Bearer {access_token}")
-        return api_client
-    
-    def create_envelope(
+    async def create_and_send_envelope(
         self,
         access_token: str,
-        signer_email: str,
-        signer_name: str,
+        account_id: str,
+        base_uri: str,
+        subject: str,
         document_content: bytes,
         document_name: str,
-        subject: str,
-        anchor_string: str = "/sig1/",
-        email_body: str = "Please sign this document"
+        signer_email: str,
+        signer_name: str,
+        sign_anchor: str = "/sig1/",
+        email_body: str = "Please review and sign this document"
     ) -> Dict[str, Any]:
-        """Create and send an envelope for signature"""
+        """Create and send an envelope with a document for signature (async)"""
+        document_b64 = base64.b64encode(document_content).decode("utf-8")
+        file_extension = document_name.split(".")[-1] if "." in document_name else "pdf"
         
-        api_client = self.create_api_client(access_token)
-        envelopes_api = EnvelopesApi(api_client)
+        envelope_def = {
+            "emailSubject": subject,
+            "emailBlurb": email_body,
+            "documents": [
+                {
+                    "documentBase64": document_b64,
+                    "name": document_name,
+                    "fileExtension": file_extension,
+                    "documentId": "1",
+                }
+            ],
+            "recipients": {
+                "signers": [
+                    {
+                        "email": signer_email,
+                        "name": signer_name,
+                        "recipientId": "1",
+                        "routingOrder": "1",
+                        "tabs": {
+                            "signHereTabs": [
+                                {
+                                    "anchorString": sign_anchor,
+                                    "anchorUnits": "pixels",
+                                    "anchorXOffset": "0",
+                                    "anchorYOffset": "0",
+                                }
+                            ],
+                        },
+                    }
+                ]
+            },
+            "status": "sent",
+        }
         
-        # Create document
-        doc_b64 = base64.b64encode(document_content).decode("ascii")
-        document = Document(
-            document_base64=doc_b64,
-            name=document_name,
-            file_extension="pdf",
-            document_id="1"
-        )
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
         
-        # Create signer with signature placement
-        signer = Signer(
-            email=signer_email,
-            name=signer_name,
-            recipient_id="1",
-            routing_order="1"
-        )
-        
-        # Create signature tab (using anchor or fixed position)
-        sign_here = SignHere(
-            anchor_string=anchor_string,
-            anchor_units="pixels",
-            anchor_y_offset="10",
-            anchor_x_offset="20"
-        )
-        
-        signer.tabs = Tabs(sign_here_tabs=[sign_here])
-        
-        # Create envelope definition
-        envelope_definition = EnvelopeDefinition(
-            email_subject=subject,
-            email_blurb=email_body,
-            documents=[document],
-            recipients=Recipients(signers=[signer]),
-            status="sent"  # "sent" to send immediately, "created" for draft
-        )
-        
-        try:
-            results = envelopes_api.create_envelope(
-                account_id=self.account_id,
-                envelope_definition=envelope_definition
-            )
-            
-            return {
-                "envelope_id": results.envelope_id,
-                "status": results.status,
-                "status_date_time": results.status_date_time,
-                "uri": results.uri
-            }
-        except Exception as e:
-            logger.error(f"DocuSign envelope creation failed: {e}")
-            raise
-    
-    def get_envelope_status(self, access_token: str, envelope_id: str) -> Dict[str, Any]:
-        """Get the status of an envelope"""
-        api_client = self.create_api_client(access_token)
-        envelopes_api = EnvelopesApi(api_client)
+        # Use the account's base URI
+        api_url = f"{base_uri}/restapi/v2.1/accounts/{account_id}/envelopes"
         
         try:
-            envelope = envelopes_api.get_envelope(
-                account_id=self.account_id,
-                envelope_id=envelope_id
-            )
-            
-            return {
-                "envelope_id": envelope.envelope_id,
-                "status": envelope.status,
-                "status_date_time": envelope.status_date_time,
-                "sent_date_time": envelope.sent_date_time,
-                "completed_date_time": envelope.completed_date_time
-            }
-        except Exception as e:
-            logger.error(f"Failed to get envelope status: {e}")
-            raise
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    api_url,
+                    json=envelope_def,
+                    headers=headers,
+                    timeout=60.0
+                )
+                
+                if response.status_code not in [200, 201]:
+                    logger.error(f"DocuSign envelope creation failed: {response.text}")
+                    raise DocuSignError(f"Envelope creation failed: {response.text}")
+                
+                result = response.json()
+                envelope_id = result.get("envelopeId")
+                
+                logger.info(f"Created envelope {envelope_id} for {signer_email}")
+                
+                return {
+                    "success": True,
+                    "envelope_id": envelope_id,
+                    "status": result.get("status"),
+                    "message": f"Document sent to {signer_email} for signature",
+                }
+                
+        except httpx.HTTPError as e:
+            raise DocuSignError(f"Envelope creation failed: {str(e)}")
     
-    def get_embedded_signing_url(
+    async def get_envelope_status_async(
         self,
         access_token: str,
+        account_id: str,
+        base_uri: str,
+        envelope_id: str
+    ) -> Dict[str, Any]:
+        """Get the status of an envelope (async)"""
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Accept": "application/json",
+        }
+        
+        api_url = f"{base_uri}/restapi/v2.1/accounts/{account_id}/envelopes/{envelope_id}"
+        
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                    api_url,
+                    headers=headers,
+                    timeout=30.0
+                )
+                
+                if response.status_code != 200:
+                    raise DocuSignError(f"Failed to get envelope status: {response.text}")
+                
+                result = response.json()
+                
+                return {
+                    "envelope_id": envelope_id,
+                    "status": result.get("status"),
+                    "created_date": result.get("createdDateTime"),
+                    "sent_date": result.get("sentDateTime"),
+                    "completed_date": result.get("completedDateTime"),
+                    "voided_date": result.get("voidedDateTime"),
+                }
+                
+        except httpx.HTTPError as e:
+            raise DocuSignError(f"Failed to get envelope status: {str(e)}")
+    
+    async def create_embedded_signing_url_async(
+        self,
+        access_token: str,
+        account_id: str,
+        base_uri: str,
         envelope_id: str,
         signer_email: str,
         signer_name: str,
         return_url: str,
         client_user_id: str = "1000"
     ) -> str:
-        """Generate embedded signing URL for in-app signing"""
-        api_client = self.create_api_client(access_token)
-        envelopes_api = EnvelopesApi(api_client)
+        """Generate embedded signing URL for in-app signing (async)"""
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
         
-        recipient_view_request = docusign.RecipientViewRequest(
-            authentication_method="none",
-            client_user_id=client_user_id,
-            recipient_id="1",
-            return_url=return_url,
-            user_name=signer_name,
-            email=signer_email
-        )
+        recipient_view_request = {
+            "authenticationMethod": "none",
+            "clientUserId": client_user_id,
+            "recipientId": "1",
+            "returnUrl": return_url,
+            "userName": signer_name,
+            "email": signer_email
+        }
+        
+        api_url = f"{base_uri}/restapi/v2.1/accounts/{account_id}/envelopes/{envelope_id}/views/recipient"
         
         try:
-            results = envelopes_api.create_recipient_view(
-                account_id=self.account_id,
-                envelope_id=envelope_id,
-                recipient_view_request=recipient_view_request
-            )
-            return results.url
-        except Exception as e:
-            logger.error(f"Failed to create signing URL: {e}")
-            raise
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    api_url,
+                    json=recipient_view_request,
+                    headers=headers,
+                    timeout=30.0
+                )
+                
+                if response.status_code != 201:
+                    raise DocuSignError(f"Failed to create signing URL: {response.text}")
+                
+                result = response.json()
+                return result.get("url")
+                
+        except httpx.HTTPError as e:
+            raise DocuSignError(f"Failed to create signing URL: {str(e)}")
 
 
 # BC Rental Form Templates
