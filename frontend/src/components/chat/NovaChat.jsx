@@ -667,9 +667,10 @@ const NovaChat = ({ isOpenProp = false, onClose = null, initialQuery = '' }) => 
   return (
     <>
       {/* Chat Button */}
+      {/* Floating Chat Button - Always Visible */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-8 right-8 z-50 flex items-center gap-3 px-6 py-4 rounded-full text-white font-medium shadow-2xl transition-all duration-300 hover:scale-105 hover:shadow-[0_15px_50px_rgba(26,47,58,0.5)]"
+        className="fixed bottom-8 right-8 z-50 flex items-center gap-3 px-6 py-4 rounded-full text-white font-medium shadow-2xl transition-all duration-300 hover:scale-105 hover:shadow-[0_15px_50px_rgba(26,47,58,0.5)] group"
         style={{ 
           background: 'linear-gradient(135deg, #1A2F3A 0%, #2C4A52 100%)',
         }}
@@ -677,10 +678,25 @@ const NovaChat = ({ isOpenProp = false, onClose = null, initialQuery = '' }) => 
       >
         <div className="relative">
           <Bot size={22} />
-          <Sparkles size={10} className="absolute -top-1 -right-1 text-yellow-300" />
+          <Sparkles size={10} className="absolute -top-1 -right-1 text-yellow-300 animate-pulse" />
         </div>
         <span className="text-sm tracking-wide">Ask Nova AI</span>
+        {/* Pulse ring animation */}
+        <span className="absolute -inset-1 rounded-full bg-gradient-to-r from-[#1A2F3A] to-[#2C4A52] opacity-30 animate-ping group-hover:opacity-0" />
       </button>
+
+      {/* Action hint tooltip - shows on hover */}
+      <div className="fixed bottom-24 right-8 z-40 opacity-0 hover:opacity-100 transition-opacity pointer-events-none">
+        <div className="bg-white rounded-xl shadow-lg px-4 py-3 text-xs text-gray-600 max-w-[200px]">
+          <p className="font-medium text-[#1A2F3A] mb-1">I can help you:</p>
+          <ul className="space-y-0.5">
+            <li>🏠 Search & list properties</li>
+            <li>🔧 Find contractors</li>
+            <li>📋 Submit maintenance</li>
+            <li>💰 Calculate budget</li>
+          </ul>
+        </div>
+      </div>
 
       {/* Chat Modal */}
       {isOpen && (
