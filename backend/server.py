@@ -4021,15 +4021,16 @@ async def change_password(data: Dict[str, str]):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Verify current password
-    if not verify_password(current_password, user.get("password", "")):
+    # Verify current password (supports both password_hash and legacy password fields)
+    stored_password = user.get("password_hash") or user.get("password", "")
+    if not verify_password(current_password, stored_password):
         raise HTTPException(status_code=400, detail="Invalid current password")
     
     # Hash and update new password
     hashed = hash_password(new_password)
     await db.users.update_one(
         {"id": user_id},
-        {"$set": {"password": hashed, "updated_at": datetime.now(timezone.utc).isoformat()}}
+        {"$set": {"password_hash": hashed, "updated_at": datetime.now(timezone.utc).isoformat()}, "$unset": {"password": ""}}
     )
     
     return {"status": "password_changed"}

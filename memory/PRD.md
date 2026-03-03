@@ -12,6 +12,43 @@ Build a complete real estate marketplace called "DOMMMA" for Renters, Landlords,
 
 ---
 
+## V19 Security & Feature Updates (March 3, 2026) - LATEST
+
+### Critical Security Fix - Email Verification ✅
+- **FIXED:** Login endpoint was creating new accounts for any email/password combination
+- **Implemented:** Proper email verification flow:
+  - POST /api/auth/register - Now sends verification email, returns `requires_verification: true`
+  - GET /api/auth/verify-email?token=X - Verifies email and enables login
+  - POST /api/auth/resend-verification - Resend verification email
+  - POST /api/auth/login - Now properly rejects:
+    - Non-existent emails → "Invalid email or password"
+    - Unverified emails → "Please verify your email..."
+    - Wrong passwords → "Invalid email or password"
+- **Legacy user support:** Users created before verification system can still log in
+- **Frontend:** New `/verify-email` page, updated Login.jsx with verification messaging
+
+### Address Autocomplete ✅
+- Created reusable `AddressAutocomplete` component using Google Places API
+- Integrated across 8 pages: CommuteOptimizer, MovingQuote, LeaseAssignments, ContractorMarketplace, Applications, SmartIssueReporter, MyResume, ESign
+- Features: Auto-fill, city/province extraction, Canadian address restriction
+
+### Chatbot Audio Stop Button ✅
+- Added "Stop Speaking" button in chat header when TTS is active
+- Added floating "Stop Speaking" button in messages area
+
+### Settings Page Backend ✅
+- All API endpoints working:
+  - GET/PUT /api/users/{user_id}/preferences
+  - PUT /api/users/{user_id}
+  - POST /api/auth/change-password (now supports password_hash field)
+  - DELETE /api/users/{user_id}
+
+### Properties Page Grid Update ✅ (Code Complete)
+- Updated to 5-column grid with 20 properties
+- **Note:** CDN caching may delay visibility
+
+---
+
 ## V18 Updates (March 3, 2026) - LATEST
 
 ### Listing Syndication ✅
