@@ -728,19 +728,27 @@ const NovaChat = ({ isOpenProp = false, onClose = null, initialQuery = '' }) => 
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                {/* Stop Speaking Button - appears when TTS is active */}
+                {isSpeaking && (
+                  <button 
+                    onClick={stopSpeaking}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-500 hover:bg-red-600 text-white text-xs font-medium animate-pulse transition-colors"
+                    title="Stop speaking"
+                    data-testid="nova-stop-speaking-button"
+                  >
+                    <VolumeX size={14} />
+                    Stop
+                  </button>
+                )}
                 <button 
                   onClick={toggleVoice}
                   className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
                     voiceEnabled ? 'bg-green-500 hover:bg-green-600' : 'bg-white/10 hover:bg-white/20'
                   }`}
-                  title={voiceEnabled ? 'Voice enabled' : 'Enable voice responses'}
+                  title={voiceEnabled ? 'Voice enabled - click to disable' : 'Enable voice responses'}
                   data-testid="nova-voice-toggle"
                 >
-                  {isSpeaking ? (
-                    <VolumeX size={16} onClick={(e) => { e.stopPropagation(); stopSpeaking(); }} />
-                  ) : (
-                    <Volume2 size={16} />
-                  )}
+                  {voiceEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
                 </button>
                 <button 
                   onClick={() => setShowPreferences(!showPreferences)}
@@ -948,6 +956,20 @@ const NovaChat = ({ isOpenProp = false, onClose = null, initialQuery = '' }) => 
                       <span className="text-sm text-gray-500">Nova is thinking...</span>
                     </div>
                   </div>
+                </div>
+              )}
+              
+              {/* Floating Stop Speaking Button */}
+              {isSpeaking && (
+                <div className="sticky bottom-2 flex justify-center">
+                  <button 
+                    onClick={stopSpeaking}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-red-500 hover:bg-red-600 text-white text-sm font-medium shadow-lg animate-pulse transition-all hover:scale-105"
+                    data-testid="nova-stop-speaking-floating"
+                  >
+                    <VolumeX size={18} />
+                    Stop Speaking
+                  </button>
                 </div>
               )}
               <div ref={messagesEndRef} />
