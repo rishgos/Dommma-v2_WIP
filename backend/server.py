@@ -2632,6 +2632,151 @@ async def get_landlord_applications(landlord_id: str, status: Optional[str] = No
     
     return applications
 
+@api_router.get("/applications")
+async def get_applications_by_listing(listing_id: str):
+    """Get all applications for a specific listing with AI scoring"""
+    applications = await db.applications.find({"listing_id": listing_id}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    
+    # Get listing details for scoring
+    listing = await db.listings.find_one({"id": listing_id}, {"_id": 0})
+    property_price = listing.get("price", 2000) if listing else 2000
+    
+    for app in applications:
+        # Fetch user resume if available
+        resume = await db.renter_resumes.find_one({"user_id": app.get("user_id")}, {"_id": 0})
+        if resume:
+            app["annual_income"] = resume.get("employment", {}).get("annual_income", app.get("annual_income", 0))
+            app["employment_status"] = resume.get("employment", {}).get("status", app.get("employment_status"))
+            app["employer_name"] = resume.get("employment", {}).get("employer", app.get("employer_name"))
+            app["job_title"] = resume.get("employment", {}).get("job_title", app.get("job_title"))
+            app["years_at_current"] = resume.get("rental_history", {}).get("years_at_current", 0)
+            app["has_pets"] = resume.get("household", {}).get("has_pets", False)
+            app["previous_landlord_reference"] = bool(resume.get("rental_history", {}).get("previous_landlord", {}).get("name"))
+        
+        # Calculate AI score
+        app["ai_score"] = calculate_applicant_score(app, property_price)
+        app["ai_analysis"] = generate_applicant_analysis(app, property_price, listing)
+    
+    # Sort by AI score
+    applications.sort(key=lambda x: x.get("ai_score", 0), reverse=True)
+    
+    return applications
+
+def calculate_applicant_score(applicant: dict, property_price: float) -> int:
+    """Calculate AI score for an applicant (0-100)"""
+    score = 0
+    
+    # Income to rent ratio (max 35 points)
+    monthly_income = (applicant.get("annual_income") or 0) / 12
+    rent_ratio = monthly_income / property_price if property_price > 0 else 0
+    if rent_ratio >= 3:
+        score += 35
+    elif rent_ratio >= 2.5:
+        score += 28
+    elif rent_ratio >= 2:
+        score += 20
+    else:
+        score += max(0, int(rent_ratio * 10))
+    
+    # Employment stability (max 25 points)
+    emp_status = applicant.get("employment_status", "")
+    if emp_status == "employed":
+        score += 20
+    elif emp_status == "self-employed":
+        score += 15
+    elif emp_status == "student":
+        score += 10
+    if applicant.get("employer_name"):
+        score += 5
+    
+    # Rental history (max 25 points)
+    years = applicant.get("years_at_current") or 0
+    if years >= 2:
+        score += 20
+    elif years >= 1:
+        score += 15
+    else:
+        score += 5
+    if applicant.get("previous_landlord_reference"):
+        score += 5
+    
+    # Completeness (max 15 points)
+    completeness = 0
+    if applicant.get("full_name"):
+        completeness += 2
+    if applicant.get("email"):
+        completeness += 2
+    if applicant.get("phone"):
+        completeness += 2
+    if applicant.get("annual_income"):
+        completeness += 3
+    if applicant.get("employment_status"):
+        completeness += 3
+    if applicant.get("move_in_date"):
+        completeness += 3
+    score += completeness
+    
+    return min(100, score)
+
+def generate_applicant_analysis(applicant: dict, property_price: float, listing: dict = None) -> dict:
+    """Generate AI analysis strengths and concerns"""
+    monthly_income = (applicant.get("annual_income") or 0) / 12
+    rent_ratio = monthly_income / property_price if property_price > 0 else 0
+    
+    strengths = []
+    concerns = []
+    
+    # Income analysis
+    if rent_ratio >= 3:
+        strengths.append("Strong income-to-rent ratio (3x+)")
+    elif rent_ratio >= 2:
+        strengths.append("Acceptable income-to-rent ratio")
+    else:
+        concerns.append("Income may be tight for this rent level")
+    
+    # Employment
+    if applicant.get("employment_status") == "employed" and applicant.get("employer_name"):
+        strengths.append(f"Stable employment at {applicant.get('employer_name')}")
+    elif applicant.get("employment_status") == "self-employed":
+        strengths.append("Self-employed - may need income verification")
+    elif applicant.get("employment_status") == "student":
+        concerns.append("Student income - may need co-signer")
+    
+    # Rental history
+    years = applicant.get("years_at_current") or 0
+    if years >= 2:
+        strengths.append("Long-term rental history shows stability")
+    elif years < 1:
+        concerns.append("Limited rental history")
+    
+    # References
+    if applicant.get("previous_landlord_reference"):
+        strengths.append("Provided landlord reference")
+    else:
+        concerns.append("No landlord reference provided")
+    
+    # Pets
+    if applicant.get("has_pets") and listing and not listing.get("pet_friendly"):
+        concerns.append("Has pets but property may not be pet-friendly")
+    
+    return {"strengths": strengths, "concerns": concerns}
+
+@api_router.patch("/applications/{application_id}")
+async def patch_application_status(application_id: str, status: str):
+    """Quick update application status"""
+    if status not in ["pending", "under_review", "approved", "rejected"]:
+        raise HTTPException(status_code=400, detail="Invalid status")
+    
+    result = await db.applications.update_one(
+        {"id": application_id},
+        {"$set": {"status": status, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Application not found")
+    
+    return {"success": True, "status": status}
+
 @api_router.put("/applications/{application_id}/status")
 async def update_application_status(application_id: str, status: str, landlord_id: str):
     """Update application status (landlord only)"""
