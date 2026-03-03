@@ -785,6 +785,105 @@ async def resend_verification(request: Request, email: str = Body(..., embed=Tru
     
     return {"message": "Verification email sent! Please check your inbox."}
 
+# ========== CLAIM LISTING ROUTES ==========
+
+@api_router.get("/listings/claim")
+async def claim_listing(token: str):
+    """Claim a pending listing with token - returns listing info for verification"""
+    listing = await db.listings.find_one({"claim_token": token}, {"_id": 0})
+    if not listing:
+        raise HTTPException(status_code=404, detail="Invalid or expired claim token")
+    
+    if listing.get("status") != "pending_claim":
+        raise HTTPException(status_code=400, detail="This listing has already been claimed")
+    
+    return {
+        "listing_id": listing["id"],
+        "title": listing["title"],
+        "address": listing["address"],
+        "city": listing["city"],
+        "price": listing["price"],
+        "bedrooms": listing["bedrooms"],
+        "bathrooms": listing["bathrooms"],
+        "claim_email": listing.get("claim_email")
+    }
+
+@api_router.post("/listings/claim")
+async def complete_listing_claim(request: Request, data: Dict[str, Any]):
+    """Complete the claim process - create account and link listing"""
+    token = data.get("token")
+    password = data.get("password")
+    name = data.get("name")
+    
+    if not token or not password:
+        raise HTTPException(status_code=400, detail="Token and password are required")
+    
+    # Find the listing
+    listing = await db.listings.find_one({"claim_token": token})
+    if not listing:
+        raise HTTPException(status_code=404, detail="Invalid or expired claim token")
+    
+    if listing.get("status") != "pending_claim":
+        raise HTTPException(status_code=400, detail="This listing has already been claimed")
+    
+    claim_email = listing.get("claim_email")
+    if not claim_email:
+        raise HTTPException(status_code=400, detail="No email associated with this listing")
+    
+    # Check if user already exists
+    existing_user = await db.users.find_one({"email": claim_email})
+    
+    if existing_user:
+        # User exists - just link the listing to their account
+        user_id = existing_user["id"]
+    else:
+        # Create new user account
+        user_id = str(uuid.uuid4())
+        user = {
+            "id": user_id,
+            "email": claim_email,
+            "name": name or claim_email.split('@')[0],
+            "user_type": "landlord",
+            "email_verified": True,  # Verified via claim token
+            "password_hash": hash_password(password),
+            "preferences": {},
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.users.insert_one(user)
+        
+        # Send welcome email
+        asyncio.create_task(send_email(
+            claim_email,
+            "Welcome to DOMMMA!",
+            email_welcome(user["name"], "landlord")
+        ))
+    
+    # Update listing - activate it and link to user
+    await db.listings.update_one(
+        {"claim_token": token},
+        {
+            "$set": {
+                "status": "active",
+                "owner_id": user_id,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            },
+            "$unset": {
+                "claim_token": "",
+                "claim_email": ""
+            }
+        }
+    )
+    
+    # Get updated user data for login
+    user_data = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
+    
+    return {
+        "success": True,
+        "message": "Listing claimed and published successfully!",
+        "user": user_data,
+        "listing_id": listing["id"]
+    }
+
 # ========== STRIPE PAYMENT ROUTES ==========
 
 RENT_PACKAGES = {
@@ -1386,6 +1485,21 @@ WHEN TO USE TOOLS:
 - User says "What can I afford on $80k" → Use calculate_budget
 - User says "I want to see this property" → Use schedule_viewing
 
+CREATING LISTINGS WORKFLOW:
+When a user wants to create a listing, collect these details conversationally:
+1. Property type (apartment, condo, house, townhouse, etc.)
+2. Address and city
+3. Monthly rent/price
+4. Number of bedrooms and bathrooms
+5. When available for move-in
+Optional: square footage, pet policy, amenities, description
+
+IMPORTANT FOR UNAUTHENTICATED USERS (when user_id is empty):
+- After gathering listing details, you MUST ask for their email address
+- Include the email in the create_listing tool call as "claim_email"
+- Explain that they'll receive an email to verify and publish the listing
+- Say something like: "Great details! To publish your listing, I'll need your email address to create your landlord account. What email should I use?"
+
 RESPONSE FORMAT:
 - After using create_listing, format the result as: [Listing Title](property:LISTING_ID)
 - After using find_contractors, format each as: [Contractor Name](contractor:CONTRACTOR_ID)
@@ -1395,6 +1509,8 @@ RESPONSE FORMAT:
 {user_info}
 {listings_summary}
 {contractors_summary}
+
+Current user status: {"Logged in as " + user_info if user_id else "Not logged in - will need email for listing creation"}
 
 Keep responses concise and action-oriented. You're a helpful concierge that gets things done!"""
 

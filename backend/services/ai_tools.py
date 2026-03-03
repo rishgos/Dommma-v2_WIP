@@ -88,6 +88,10 @@ NOVA_TOOLS = [
                 "available_date": {
                     "type": "string",
                     "description": "When the property is available (ISO date or 'immediately')"
+                },
+                "claim_email": {
+                    "type": "string",
+                    "description": "Email address to claim this listing (required if user is not logged in). Ask for this if the user hasn't provided account info."
                 }
             },
             "required": ["address", "price", "bedrooms", "bathrooms"]
@@ -446,11 +450,32 @@ class AIToolsService:
     
     async def _create_listing(self, input: Dict[str, Any], user_id: Optional[str]) -> Dict[str, Any]:
         """Create a new property listing"""
+        import secrets
+        
         listing_id = str(uuid.uuid4())
+        claim_email = input.get("claim_email")
+        
+        # Check if user is authenticated or provided claim email
+        if not user_id and not claim_email:
+            return {
+                "success": False,
+                "needs_email": True,
+                "message": "To publish your listing, I'll need your email address to create your landlord account. What email should I use?"
+            }
         
         # Default Vancouver coordinates if not provided
         default_lat = 49.2827
         default_lng = -123.1207
+        
+        # Determine listing status based on authentication
+        if user_id:
+            # Authenticated user - listing is active immediately
+            status = "active"
+            claim_token = None
+        else:
+            # Unauthenticated user - listing pending claim
+            status = "pending_claim"
+            claim_token = secrets.token_urlsafe(32)
         
         # Build listing document
         listing = {
@@ -473,8 +498,10 @@ class AIToolsService:
             "offers": input.get("special_offers", []),
             "available_date": input.get("available_date", "immediately"),
             "images": [],
-            "status": "active",
+            "status": status,
             "owner_id": user_id,
+            "claim_token": claim_token,
+            "claim_email": claim_email if not user_id else None,
             "lat": default_lat,
             "lng": default_lng,
             "created_at": datetime.now(timezone.utc).isoformat(),
@@ -484,11 +511,50 @@ class AIToolsService:
         # Insert into database
         await self.db.listings.insert_one(listing)
         
+        # If unauthenticated, send claim email
+        if not user_id and claim_email:
+            try:
+                from services.email import send_email
+                import asyncio
+                
+                # Build claim link
+                claim_link = f"https://property-nova.preview.emergentagent.com/claim-listing?token={claim_token}"
+                
+                email_html = f"""
+                <div style="font-family:'Georgia',serif;max-width:600px;margin:0 auto;background:#F5F5F0;padding:40px;">
+                  <div style="background:#1A2F3A;padding:30px;border-radius:16px 16px 0 0;text-align:center;">
+                    <h1 style="color:white;font-family:'Georgia',serif;margin:0;font-size:28px;">DOMMMA</h1>
+                    <p style="color:rgba(255,255,255,0.7);margin:8px 0 0;font-size:14px;">Claim Your Listing</p>
+                  </div>
+                  <div style="background:white;padding:30px;border-radius:0 0 16px 16px;">
+                    <h2 style="color:#1A2F3A;margin:0 0 16px;">Your Listing is Ready!</h2>
+                    <p style="color:#555;line-height:1.6;">You've created a new property listing through Nova:</p>
+                    <div style="background:#F5F5F0;padding:20px;border-radius:12px;margin:20px 0;">
+                      <p style="margin:0;color:#1A2F3A;font-weight:bold;">{listing['title']}</p>
+                      <p style="margin:8px 0 0;color:#666;">{listing['address']}, {listing['city']}</p>
+                      <p style="margin:8px 0 0;color:#1A2F3A;font-size:18px;font-weight:bold;">${listing['price']:,}/month</p>
+                    </div>
+                    <p style="color:#555;line-height:1.6;">Click below to verify your email and publish your listing:</p>
+                    <div style="text-align:center;margin:30px 0;">
+                      <a href="{claim_link}" style="background:#1A2F3A;color:white;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;">Claim & Publish Listing</a>
+                    </div>
+                    <p style="color:#888;font-size:12px;text-align:center;">This link expires in 7 days. Your listing will remain private until claimed.</p>
+                  </div>
+                </div>
+                """
+                
+                asyncio.create_task(send_email(
+                    claim_email,
+                    f"Claim Your DOMMMA Listing: {listing['title']}",
+                    email_html
+                ))
+            except Exception as e:
+                logger.error(f"Error sending claim email: {e}")
+        
         # Return success with listing details
-        return {
+        response = {
             "success": True,
             "listing_id": listing_id,
-            "message": "Listing created successfully",
             "listing": {
                 "id": listing_id,
                 "title": listing["title"],
@@ -501,6 +567,15 @@ class AIToolsService:
                 "special_offers": listing["offers"]
             }
         }
+        
+        if user_id:
+            response["message"] = "Listing created and published successfully!"
+        else:
+            response["message"] = f"Great! I've created your listing. I've sent a verification email to {claim_email}. Click the link in the email to publish your listing and create your landlord account."
+            response["pending_claim"] = True
+            response["claim_email"] = claim_email
+        
+        return response
     
     async def _search_listings(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Search for listings based on criteria"""

@@ -42,6 +42,7 @@ import AnalyticsDashboard from "@/pages/AnalyticsDashboard";
 import ListingOptimizer from "@/pages/ListingOptimizer";
 import SettingsPage from "@/pages/SettingsPage";
 import VerifyEmail from "@/pages/VerifyEmail";
+import ClaimListing from "@/pages/ClaimListing";
 
 // Layout
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -132,6 +133,9 @@ function App() {
           
           {/* Email Verification - Public */}
           <Route path="/verify-email" element={<VerifyEmail />} />
+          
+          {/* Claim Listing - Public */}
+          <Route path="/claim-listing" element={<ClaimListing />} />
           
           {/* Dashboard Routes - All with persistent sidebar */}
           <Route path="/dashboard" element={<DashboardLayout><Dashboard /></DashboardLayout>} />
