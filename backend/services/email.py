@@ -2,9 +2,14 @@ import os
 import asyncio
 import logging
 import resend
+import secrets
 
 resend.api_key = os.environ.get('RESEND_API_KEY')
 SENDER_EMAIL = os.environ.get('SENDER_EMAIL', 'onboarding@resend.dev')
+
+def generate_verification_token():
+    """Generate a secure verification token"""
+    return secrets.token_urlsafe(32)
 
 async def send_email(to: str, subject: str, html: str):
     try:
@@ -15,6 +20,24 @@ async def send_email(to: str, subject: str, html: str):
     except Exception as e:
         logging.error(f"Email failed to {to}: {e}")
         return None
+
+def email_verification(name: str, verification_link: str) -> str:
+    return f"""
+    <div style="font-family:'Georgia',serif;max-width:600px;margin:0 auto;background:#F5F5F0;padding:40px;">
+      <div style="background:#1A2F3A;padding:30px;border-radius:16px 16px 0 0;text-align:center;">
+        <h1 style="color:white;font-family:'Georgia',serif;margin:0;font-size:28px;">DOMMMA</h1>
+        <p style="color:rgba(255,255,255,0.7);margin:8px 0 0;font-size:14px;">Verify Your Email</p>
+      </div>
+      <div style="background:white;padding:30px;border-radius:0 0 16px 16px;">
+        <h2 style="color:#1A2F3A;margin:0 0 16px;">Welcome, {name}!</h2>
+        <p style="color:#555;line-height:1.6;">Thank you for registering with DOMMMA. Please verify your email address to complete your registration.</p>
+        <div style="text-align:center;margin:30px 0;">
+          <a href="{verification_link}" style="background:#1A2F3A;color:white;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;">Verify Email</a>
+        </div>
+        <p style="color:#888;font-size:12px;text-align:center;">This link expires in 24 hours. If you didn't create an account, please ignore this email.</p>
+        <p style="color:#888;font-size:11px;text-align:center;margin-top:20px;">Or copy this link: {verification_link}</p>
+      </div>
+    </div>"""
 
 def email_welcome(name: str, role: str) -> str:
     return f"""

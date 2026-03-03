@@ -41,6 +41,7 @@ import ListingSyndication from "@/pages/ListingSyndication";
 import AnalyticsDashboard from "@/pages/AnalyticsDashboard";
 import ListingOptimizer from "@/pages/ListingOptimizer";
 import SettingsPage from "@/pages/SettingsPage";
+import VerifyEmail from "@/pages/VerifyEmail";
 
 // Layout
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -128,6 +129,9 @@ function App() {
           
           {/* Lease Assignment Marketplace - Public */}
           <Route path="/lease-assignments" element={<LeaseAssignments />} />
+          
+          {/* Email Verification - Public */}
+          <Route path="/verify-email" element={<VerifyEmail />} />
           
           {/* Dashboard Routes - All with persistent sidebar */}
           <Route path="/dashboard" element={<DashboardLayout><Dashboard /></DashboardLayout>} />

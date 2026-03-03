@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Building2, Users, Wrench, ArrowRight, Check } from 'lucide-react';
+import { Building2, Users, Wrench, ArrowRight, Check, Mail, Loader2 } from 'lucide-react';
 import { useAuth } from '../App';
 import axios from 'axios';
 
@@ -45,6 +45,9 @@ const Login = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [showResendVerification, setShowResendVerification] = useState(false);
+  const [resending, setResending] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -57,40 +60,61 @@ const Login = () => {
 
     setLoading(true);
     setError('');
+    setSuccessMessage('');
+    setShowResendVerification(false);
 
     try {
-      // Create or login user
       const endpoint = isLogin ? '/auth/login' : '/auth/register';
       const response = await axios.post(`${API}${endpoint}`, {
         ...formData,
         user_type: selectedType
       });
 
-      // For demo, simulate successful login
-      const userData = {
-        id: response.data?.id || 'demo-user-' + Date.now(),
-        email: formData.email,
-        name: formData.name || formData.email.split('@')[0],
-        user_type: selectedType,
-        created_at: new Date().toISOString()
-      };
-
-      login(userData);
-      navigate('/dashboard');
+      if (isLogin) {
+        // Login successful
+        const userData = {
+          id: response.data.id,
+          email: response.data.email,
+          name: response.data.name,
+          user_type: response.data.user_type,
+          created_at: new Date().toISOString()
+        };
+        login(userData);
+        navigate('/dashboard');
+      } else {
+        // Registration successful - show verification message
+        setSuccessMessage(response.data.message || 'Registration successful! Please check your email to verify your account.');
+        setFormData({ email: '', password: '', name: '', phone: '' });
+      }
     } catch (err) {
-      // Demo mode - create user locally
-      const userData = {
-        id: 'demo-user-' + Date.now(),
-        email: formData.email,
-        name: formData.name || formData.email.split('@')[0],
-        user_type: selectedType,
-        created_at: new Date().toISOString()
-      };
-
-      login(userData);
-      navigate('/dashboard');
+      const errorMessage = err.response?.data?.detail || 'An error occurred. Please try again.';
+      setError(errorMessage);
+      
+      // Check if it's a verification error
+      if (err.response?.status === 403 && errorMessage.includes('verify')) {
+        setShowResendVerification(true);
+      }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!formData.email) {
+      setError('Please enter your email address');
+      return;
+    }
+    
+    setResending(true);
+    try {
+      await axios.post(`${API}/auth/resend-verification`, { email: formData.email });
+      setSuccessMessage('Verification email sent! Please check your inbox.');
+      setError('');
+      setShowResendVerification(false);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to resend verification email');
+    } finally {
+      setResending(false);
     }
   };
 
@@ -143,6 +167,32 @@ const Login = () => {
           {error && (
             <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm">
               {error}
+              {showResendVerification && (
+                <button
+                  onClick={handleResendVerification}
+                  disabled={resending}
+                  className="mt-2 w-full flex items-center justify-center gap-2 px-3 py-2 bg-red-100 hover:bg-red-200 rounded-lg text-red-700 transition-colors"
+                >
+                  {resending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Mail size={16} />
+                  )}
+                  Resend Verification Email
+                </button>
+              )}
+            </div>
+          )}
+
+          {successMessage && (
+            <div className="mb-4 p-4 bg-green-50 text-green-700 rounded-lg">
+              <div className="flex items-start gap-3">
+                <Mail className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium">Check your email!</p>
+                  <p className="text-sm mt-1">{successMessage}</p>
+                </div>
+              </div>
             </div>
           )}
 

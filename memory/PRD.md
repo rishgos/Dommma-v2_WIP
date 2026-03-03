@@ -157,8 +157,8 @@ Build a complete real estate marketplace called "DOMMMA" for Renters, Landlords,
 ## Tech Stack
 - **Frontend**: React.js with Tailwind CSS, Shadcn UI
 - **Backend**: Python FastAPI (modular structure)
-- **Database**: MongoDB (Motor async driver)
-- **Auth**: JWT + passlib bcrypt
+- **Database**: MongoDB Atlas (Motor async driver)
+- **Auth**: JWT + passlib bcrypt + **Email Verification (NEW)**
 - **Payments**: Stripe (test key)
 - **AI/LLM**: Claude Sonnet 4.5 (Direct Anthropic API)
 - **Voice STT**: OpenAI Whisper (Direct OpenAI API)
@@ -558,7 +558,35 @@ March 2, 2026 - V16 DocuSign OAuth, Stripe Payments, Analytics Dashboard
 - Database: MongoDB Atlas (dommma)
 
 ### Immediate Action Items
-1. Get DocuSign Client Secret from user
-2. Build out My Resume page functionality
-3. Implement AI Applicant Ranking logic
-4. Integrate Cloudinary for video tours
+1. ~~Get DocuSign Client Secret from user~~ ✅ DONE
+2. ~~Build out My Resume page functionality~~ ✅ DONE
+3. ~~Implement AI Applicant Ranking logic~~ ✅ DONE
+4. Integrate Cloudinary for video tours (DE-PRIORITIZED)
+
+---
+
+## V19 Security Updates (March 3, 2026) - LATEST
+
+### Critical Security Fix - Email Verification ✅
+- **FIXED:** Login endpoint was creating new accounts for any email/password combination
+- **Implemented:** Proper email verification flow:
+  - POST /api/auth/register - Now sends verification email, returns `requires_verification: true`
+  - GET /api/auth/verify-email?token=X - Verifies email and enables login
+  - POST /api/auth/resend-verification - Resend verification email
+  - POST /api/auth/login - Now properly rejects:
+    - Non-existent emails → "Invalid email or password"
+    - Unverified emails → "Please verify your email..."
+    - Wrong passwords → "Invalid email or password"
+- **Legacy user support:** Users created before verification system can still log in
+- **Frontend updates:**
+  - New `/verify-email` page with success/error states
+  - Updated Login.jsx to show verification messages
+  - "Resend Verification Email" button on login error
+- **Email templates:**
+  - `email_verification()` - Verification email with CTA button
+  - `generate_verification_token()` - Secure token generation
+
+### Chatbot Audio Stop Button ✅
+- Added "Stop Speaking" button in chat header when TTS is active
+- Added floating "Stop Speaking" button in messages area
+- Red pulsing button provides clear visual feedback
