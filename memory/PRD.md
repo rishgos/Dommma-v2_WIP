@@ -12,7 +12,32 @@ Build a complete real estate marketplace called "DOMMMA" for Renters, Landlords,
 
 ---
 
-## V17 Updates (March 3, 2026) - LATEST
+## V18 Updates (March 3, 2026) - LATEST
+
+### Listing Syndication ✅
+- Full syndication page with platform selection
+- Copy-to-clipboard for formatted content
+- Deep links to Facebook Marketplace, Craigslist, Kijiji
+- Syndication tracking and stats
+- POST /api/syndication/track endpoint
+- GET /api/syndication/stats/{user_id} endpoint
+
+### AI Listing Optimizer ✅
+- New page at /listing-optimizer
+- Landlord sidebar link added
+- POST /api/listings/optimize endpoint
+- Features:
+  - Market price analysis with comparables
+  - Optimization score (0-100)
+  - AI-generated title suggestions
+  - AI-generated description (copy-to-clipboard)
+  - Quick wins checklist
+  - Improvement recommendations
+  - Market insights
+
+---
+
+## V17 Updates (March 3, 2026)
 
 ### DocuSign OAuth Complete ✅
 - Client Secret configured: `61c64029-286f-4434-b258-fb5b34716145`

@@ -4,7 +4,7 @@ import {
   Home, Building2, Users, Wrench, FileText, DollarSign, MessageSquare, 
   Settings, LogOut, Search, Menu, X, Calendar,
   Heart, Sparkles, Scale, Navigation, Users2, 
-  Truck, Briefcase, Image, BarChart2, ClipboardList, Share2, BarChart3
+  Truck, Briefcase, Image, BarChart2, ClipboardList, Share2, BarChart3, Zap
 } from 'lucide-react';
 import { useAuth } from '../../App';
 import NotificationBell from '../notifications/NotificationBell';
@@ -50,6 +50,7 @@ const DashboardLayout = ({ children }) => {
       { icon: Home, label: 'Dashboard', path: '/dashboard' },
       { icon: Building2, label: 'My Properties', path: '/my-properties' },
       { icon: Share2, label: 'Syndication', path: '/syndication' },
+      { icon: Zap, label: 'AI Optimizer', path: '/listing-optimizer' },
       { icon: Users, label: 'Applications', path: '/applications' },
       { icon: Sparkles, label: 'AI Ranking', path: '/applicant-ranking' },
       { icon: FileText, label: 'E-Sign', path: '/esign' },
