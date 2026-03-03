@@ -12,7 +12,38 @@ Build a complete real estate marketplace called "DOMMMA" for Renters, Landlords,
 
 ---
 
-## V16 Updates (March 2, 2026) - LATEST
+## V17 Updates (March 3, 2026) - LATEST
+
+### DocuSign OAuth Complete ✅
+- Client Secret configured: `61c64029-286f-4434-b258-fb5b34716145`
+- Full OAuth flow now working end-to-end
+
+### My Resume Page ✅
+- Full renter profile with employment, rental history, references
+- Completeness score calculation (0-100%)
+- Edit/Save functionality
+- Tips for improving profile
+
+### AI Applicant Ranking ✅
+- Property selector for landlord's listings
+- AI scoring algorithm (income ratio, employment, rental history)
+- Strengths/concerns analysis
+- Approve/Reject actions
+- Filter by qualification level
+
+### Backend Enhancements ✅
+- GET /api/applications?listing_id=X with AI scoring
+- PATCH /api/applications/{id} for status updates
+- calculate_applicant_score() function
+- generate_applicant_analysis() function
+
+### Test Results
+- Backend: 54/54 tests pass (100%)
+- Frontend: 18/18 E2E tests pass (100%)
+
+---
+
+## V16 Updates (March 2, 2026)
 
 ### DocuSign OAuth 2.0 Integration ✅
 - [x] Full OAuth authorization code grant flow
