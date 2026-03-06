@@ -5,6 +5,12 @@ All notable changes to the DOMMMA platform are documented in this file.
 ## [V21] - 2025-12-XX (Current)
 
 ### Added
+- **Universal Pay & Invoices System** - Comprehensive payment management for all roles
+  - Role-specific payment types (Renter: rent, utilities, movers; Landlord: property expenses, taxes; Contractor: supplies, equipment)
+  - Stripe payment processing with checkout or saved cards
+  - Automatic invoice generation with PDF download
+  - Invoice history with status tracking
+  - "Pay & Invoices" added to sidebar for all user types
 - **Credit Card Management UI** - Payment Methods tab in Settings
   - Save and manage cards via Stripe
   - Set default payment method

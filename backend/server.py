@@ -1,4 +1,5 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Request, UploadFile, File, WebSocket, WebSocketDisconnect, Body
+from fastapi.responses import Response
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 import os
@@ -1303,6 +1304,366 @@ async def get_featured_status(listing_id: str):
         "fee_pending": listing.get("featured_fee_pending", False),
         "fee_amount": FEATURED_FEE / 100 if listing.get("featured_fee_pending") else 0
     }
+
+# ========== UNIVERSAL PAYMENTS & INVOICES ==========
+
+class PaymentRequest(BaseModel):
+    amount: float
+    description: str
+    payment_type: str  # rent, contractor, moving, supplies, equipment, property_expense, etc.
+    recipient_id: Optional[str] = None
+    recipient_name: Optional[str] = None
+    property_id: Optional[str] = None
+    property_address: Optional[str] = None
+    notes: Optional[str] = None
+
+@api_router.post("/payments/create")
+async def create_payment(user_id: str, payment: PaymentRequest):
+    """Create a payment and generate an invoice"""
+    import stripe
+    stripe.api_key = os.environ.get('STRIPE_API_KEY')
+    
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Create or get Stripe customer
+    customer_id = user.get("stripe_customer_id")
+    if not customer_id:
+        customer = stripe.Customer.create(
+            email=user.get("email"),
+            name=user.get("name"),
+            metadata={"user_id": user_id}
+        )
+        customer_id = customer.id
+        await db.users.update_one({"id": user_id}, {"$set": {"stripe_customer_id": customer_id}})
+    
+    # Create payment intent
+    amount_cents = int(payment.amount * 100)
+    
+    try:
+        # Get default payment method
+        customer = stripe.Customer.retrieve(customer_id)
+        default_pm = customer.invoice_settings.default_payment_method if customer.invoice_settings else None
+        
+        if not default_pm:
+            # Create a checkout session instead
+            host_url = os.environ.get('FRONTEND_URL', 'https://rent-connect-25.preview.emergentagent.com')
+            session = stripe.checkout.Session.create(
+                customer=customer_id,
+                payment_method_types=['card'],
+                line_items=[{
+                    'price_data': {
+                        'currency': 'cad',
+                        'product_data': {'name': payment.description},
+                        'unit_amount': amount_cents,
+                    },
+                    'quantity': 1,
+                }],
+                mode='payment',
+                success_url=f"{host_url}/payments?success=true",
+                cancel_url=f"{host_url}/payments?canceled=true",
+                metadata={
+                    "user_id": user_id,
+                    "payment_type": payment.payment_type,
+                    "recipient_id": payment.recipient_id or "",
+                }
+            )
+            
+            # Create pending invoice
+            invoice_id = str(uuid.uuid4())
+            invoice = {
+                "id": invoice_id,
+                "invoice_number": f"INV-{datetime.now().strftime('%Y%m%d')}-{invoice_id[:8].upper()}",
+                "user_id": user_id,
+                "user_name": user.get("name"),
+                "user_email": user.get("email"),
+                "user_type": user.get("user_type"),
+                "amount": payment.amount,
+                "currency": "CAD",
+                "description": payment.description,
+                "payment_type": payment.payment_type,
+                "recipient_id": payment.recipient_id,
+                "recipient_name": payment.recipient_name,
+                "property_id": payment.property_id,
+                "property_address": payment.property_address,
+                "notes": payment.notes,
+                "status": "pending",
+                "stripe_session_id": session.id,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "paid_at": None
+            }
+            await db.invoices.insert_one(invoice)
+            
+            return {
+                "success": True,
+                "requires_redirect": True,
+                "checkout_url": session.url,
+                "invoice_id": invoice_id
+            }
+        
+        # Charge with saved payment method
+        payment_intent = stripe.PaymentIntent.create(
+            amount=amount_cents,
+            currency="cad",
+            customer=customer_id,
+            payment_method=default_pm,
+            off_session=True,
+            confirm=True,
+            description=payment.description,
+            metadata={
+                "user_id": user_id,
+                "payment_type": payment.payment_type,
+                "recipient_id": payment.recipient_id or "",
+            }
+        )
+        
+        # Create paid invoice
+        invoice_id = str(uuid.uuid4())
+        invoice = {
+            "id": invoice_id,
+            "invoice_number": f"INV-{datetime.now().strftime('%Y%m%d')}-{invoice_id[:8].upper()}",
+            "user_id": user_id,
+            "user_name": user.get("name"),
+            "user_email": user.get("email"),
+            "user_type": user.get("user_type"),
+            "amount": payment.amount,
+            "currency": "CAD",
+            "description": payment.description,
+            "payment_type": payment.payment_type,
+            "recipient_id": payment.recipient_id,
+            "recipient_name": payment.recipient_name,
+            "property_id": payment.property_id,
+            "property_address": payment.property_address,
+            "notes": payment.notes,
+            "status": "paid",
+            "stripe_payment_id": payment_intent.id,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "paid_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.invoices.insert_one(invoice)
+        
+        return {
+            "success": True,
+            "requires_redirect": False,
+            "invoice_id": invoice_id,
+            "invoice_number": invoice["invoice_number"],
+            "payment_id": payment_intent.id
+        }
+        
+    except stripe.error.CardError as e:
+        raise HTTPException(status_code=400, detail=f"Payment failed: {e.error.message}")
+    except Exception as e:
+        logger.error(f"Payment error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/invoices/{user_id}")
+async def get_user_invoices(user_id: str, status: Optional[str] = None, limit: int = 50):
+    """Get all invoices for a user"""
+    query = {"user_id": user_id}
+    if status:
+        query["status"] = status
+    
+    invoices = await db.invoices.find(query, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
+    return invoices
+
+@api_router.get("/invoices/detail/{invoice_id}")
+async def get_invoice_detail(invoice_id: str):
+    """Get detailed invoice information"""
+    invoice = await db.invoices.find_one({"id": invoice_id}, {"_id": 0})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    return invoice
+
+@api_router.get("/invoices/{invoice_id}/pdf")
+async def download_invoice_pdf(invoice_id: str):
+    """Generate and download invoice as PDF"""
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib import colors
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch
+    import io
+    
+    invoice = await db.invoices.find_one({"id": invoice_id}, {"_id": 0})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    
+    # Create PDF in memory
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.5*inch, bottomMargin=0.5*inch)
+    styles = getSampleStyleSheet()
+    elements = []
+    
+    # Header style
+    header_style = ParagraphStyle('Header', parent=styles['Heading1'], fontSize=24, textColor=colors.HexColor('#1A2F3A'))
+    subheader_style = ParagraphStyle('SubHeader', parent=styles['Normal'], fontSize=10, textColor=colors.gray)
+    
+    # Company Header
+    elements.append(Paragraph("DOMMMA", header_style))
+    elements.append(Paragraph("Real Estate Marketplace", subheader_style))
+    elements.append(Spacer(1, 0.3*inch))
+    
+    # Invoice Title
+    title_style = ParagraphStyle('Title', parent=styles['Heading2'], fontSize=18, textColor=colors.HexColor('#1A2F3A'))
+    elements.append(Paragraph(f"INVOICE", title_style))
+    elements.append(Paragraph(f"#{invoice.get('invoice_number', invoice_id[:8].upper())}", subheader_style))
+    elements.append(Spacer(1, 0.2*inch))
+    
+    # Invoice Details Table
+    status_color = colors.green if invoice.get('status') == 'paid' else colors.orange
+    details_data = [
+        ['Date:', invoice.get('created_at', '')[:10]],
+        ['Status:', invoice.get('status', 'pending').upper()],
+        ['Payment Type:', invoice.get('payment_type', 'N/A').replace('_', ' ').title()],
+    ]
+    
+    if invoice.get('paid_at'):
+        details_data.append(['Paid On:', invoice.get('paid_at', '')[:10]])
+    
+    details_table = Table(details_data, colWidths=[1.5*inch, 3*inch])
+    details_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('TEXTCOLOR', (0, 0), (-1, -1), colors.HexColor('#333333')),
+        ('ALIGN', (0, 0), (0, -1), 'LEFT'),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+    ]))
+    elements.append(details_table)
+    elements.append(Spacer(1, 0.3*inch))
+    
+    # Bill To Section
+    elements.append(Paragraph("Bill To:", ParagraphStyle('BillTo', parent=styles['Heading3'], fontSize=12)))
+    elements.append(Paragraph(invoice.get('user_name', 'N/A'), styles['Normal']))
+    elements.append(Paragraph(invoice.get('user_email', ''), subheader_style))
+    elements.append(Spacer(1, 0.3*inch))
+    
+    # Line Items
+    items_data = [
+        ['Description', 'Amount'],
+        [invoice.get('description', 'Payment'), f"${invoice.get('amount', 0):,.2f} CAD"],
+    ]
+    
+    if invoice.get('property_address'):
+        items_data.insert(1, [f"Property: {invoice.get('property_address')}", ''])
+    
+    if invoice.get('recipient_name'):
+        items_data.insert(1, [f"Recipient: {invoice.get('recipient_name')}", ''])
+    
+    if invoice.get('notes'):
+        items_data.append([f"Notes: {invoice.get('notes')}", ''])
+    
+    items_table = Table(items_data, colWidths=[4.5*inch, 2*inch])
+    items_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1A2F3A')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#DDDDDD')),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+        ('TOPPADDING', (0, 0), (-1, -1), 12),
+    ]))
+    elements.append(items_table)
+    elements.append(Spacer(1, 0.2*inch))
+    
+    # Total
+    total_data = [
+        ['', 'Total:', f"${invoice.get('amount', 0):,.2f} CAD"],
+    ]
+    total_table = Table(total_data, colWidths=[3.5*inch, 1.5*inch, 1.5*inch])
+    total_table.setStyle(TableStyle([
+        ('FONTNAME', (1, 0), (-1, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (1, 0), (-1, -1), 12),
+        ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
+        ('TEXTCOLOR', (1, 0), (-1, -1), colors.HexColor('#1A2F3A')),
+    ]))
+    elements.append(total_table)
+    elements.append(Spacer(1, 0.5*inch))
+    
+    # Footer
+    footer_style = ParagraphStyle('Footer', parent=styles['Normal'], fontSize=8, textColor=colors.gray, alignment=1)
+    elements.append(Paragraph("Thank you for your business!", footer_style))
+    elements.append(Paragraph("DOMMMA Real Estate Marketplace | Vancouver, BC", footer_style))
+    
+    # Build PDF
+    doc.build(elements)
+    buffer.seek(0)
+    
+    return Response(
+        content=buffer.read(),
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f"attachment; filename=invoice_{invoice.get('invoice_number', invoice_id[:8])}.pdf"
+        }
+    )
+
+@api_router.post("/payments/webhook/complete")
+async def complete_payment_webhook(session_id: str):
+    """Complete a pending payment (called after successful checkout)"""
+    import stripe
+    stripe.api_key = os.environ.get('STRIPE_API_KEY')
+    
+    # Find the pending invoice
+    invoice = await db.invoices.find_one({"stripe_session_id": session_id}, {"_id": 0})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    
+    if invoice.get("status") == "paid":
+        return {"success": True, "message": "Already paid"}
+    
+    # Verify with Stripe
+    try:
+        session = stripe.checkout.Session.retrieve(session_id)
+        if session.payment_status == "paid":
+            await db.invoices.update_one(
+                {"stripe_session_id": session_id},
+                {"$set": {
+                    "status": "paid",
+                    "paid_at": datetime.now(timezone.utc).isoformat(),
+                    "stripe_payment_id": session.payment_intent
+                }}
+            )
+            return {"success": True, "message": "Payment completed"}
+    except Exception as e:
+        logger.error(f"Webhook error: {e}")
+    
+    return {"success": False, "message": "Payment not verified"}
+
+# Payment types by role
+PAYMENT_TYPES = {
+    "renter": [
+        {"type": "rent", "label": "Pay Rent", "icon": "Home", "description": "Monthly rent payment to landlord"},
+        {"type": "security_deposit", "label": "Security Deposit", "icon": "Shield", "description": "Rental security deposit"},
+        {"type": "utilities", "label": "Utilities", "icon": "Zap", "description": "Electricity, gas, water bills"},
+        {"type": "contractor", "label": "Pay Contractor", "icon": "Wrench", "description": "Pay for repairs or services"},
+        {"type": "moving", "label": "Moving Costs", "icon": "Truck", "description": "Moving company or supplies"},
+        {"type": "other", "label": "Other Payment", "icon": "DollarSign", "description": "Miscellaneous payment"},
+    ],
+    "landlord": [
+        {"type": "property_expense", "label": "Property Expense", "icon": "Building2", "description": "Maintenance, repairs, upgrades"},
+        {"type": "contractor", "label": "Pay Contractor", "icon": "Wrench", "description": "Pay for property services"},
+        {"type": "insurance", "label": "Insurance", "icon": "Shield", "description": "Property insurance payment"},
+        {"type": "mortgage", "label": "Mortgage", "icon": "Home", "description": "Mortgage payment"},
+        {"type": "taxes", "label": "Property Taxes", "icon": "FileText", "description": "Municipal property taxes"},
+        {"type": "utilities", "label": "Utilities", "icon": "Zap", "description": "Property utility bills"},
+        {"type": "other", "label": "Other Payment", "icon": "DollarSign", "description": "Miscellaneous payment"},
+    ],
+    "contractor": [
+        {"type": "supplies", "label": "Supplies", "icon": "Package", "description": "Materials and supplies"},
+        {"type": "equipment", "label": "Equipment", "icon": "Tool", "description": "Tools and equipment"},
+        {"type": "subcontractor", "label": "Pay Subcontractor", "icon": "Users", "description": "Pay other contractors"},
+        {"type": "insurance", "label": "Insurance", "icon": "Shield", "description": "Business insurance"},
+        {"type": "license", "label": "Licenses/Permits", "icon": "FileText", "description": "Professional licenses"},
+        {"type": "vehicle", "label": "Vehicle Expense", "icon": "Truck", "description": "Work vehicle costs"},
+        {"type": "other", "label": "Other Payment", "icon": "DollarSign", "description": "Miscellaneous payment"},
+    ]
+}
+
+@api_router.get("/payments/types/{user_type}")
+async def get_payment_types(user_type: str):
+    """Get available payment types for a user role"""
+    return PAYMENT_TYPES.get(user_type, PAYMENT_TYPES["renter"])
 
 # ========== DOCUMENT MANAGEMENT ROUTES ==========
 
