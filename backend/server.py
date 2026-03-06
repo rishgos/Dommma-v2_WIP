@@ -1000,6 +1000,310 @@ async def stripe_webhook(request: Request):
         logger.error(f"Webhook error: {e}")
         return {"status": "error", "message": str(e)}
 
+# ========== STRIPE CUSTOMER & PAYMENT METHODS ==========
+
+@api_router.post("/stripe/customer")
+async def create_or_get_stripe_customer(user_id: str):
+    """Create or retrieve Stripe customer for a user"""
+    import stripe
+    stripe.api_key = os.environ.get('STRIPE_API_KEY')
+    
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Check if user already has a Stripe customer ID
+    if user.get("stripe_customer_id"):
+        try:
+            customer = stripe.Customer.retrieve(user["stripe_customer_id"])
+            return {"customer_id": customer.id, "email": customer.email}
+        except stripe.error.InvalidRequestError:
+            pass  # Customer doesn't exist, create new one
+    
+    # Create new Stripe customer
+    try:
+        customer = stripe.Customer.create(
+            email=user.get("email"),
+            name=user.get("name"),
+            metadata={"user_id": user_id}
+        )
+        
+        # Save Stripe customer ID to user record
+        await db.users.update_one(
+            {"id": user_id},
+            {"$set": {"stripe_customer_id": customer.id}}
+        )
+        
+        return {"customer_id": customer.id, "email": customer.email}
+    except Exception as e:
+        logger.error(f"Stripe customer creation error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/stripe/setup-intent")
+async def create_setup_intent(user_id: str):
+    """Create a SetupIntent to save a payment method"""
+    import stripe
+    stripe.api_key = os.environ.get('STRIPE_API_KEY')
+    
+    # Get or create customer
+    customer_response = await create_or_get_stripe_customer(user_id)
+    customer_id = customer_response["customer_id"]
+    
+    try:
+        setup_intent = stripe.SetupIntent.create(
+            customer=customer_id,
+            payment_method_types=["card"],
+            metadata={"user_id": user_id}
+        )
+        
+        return {
+            "client_secret": setup_intent.client_secret,
+            "setup_intent_id": setup_intent.id
+        }
+    except Exception as e:
+        logger.error(f"SetupIntent creation error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/stripe/payment-methods/{user_id}")
+async def get_payment_methods(user_id: str):
+    """Get all saved payment methods for a user"""
+    import stripe
+    stripe.api_key = os.environ.get('STRIPE_API_KEY')
+    
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user or not user.get("stripe_customer_id"):
+        return {"payment_methods": [], "default_payment_method": None}
+    
+    try:
+        # Get payment methods
+        payment_methods = stripe.PaymentMethod.list(
+            customer=user["stripe_customer_id"],
+            type="card"
+        )
+        
+        # Get customer to find default payment method
+        customer = stripe.Customer.retrieve(user["stripe_customer_id"])
+        default_pm = customer.invoice_settings.default_payment_method if customer.invoice_settings else None
+        
+        methods = []
+        for pm in payment_methods.data:
+            methods.append({
+                "id": pm.id,
+                "brand": pm.card.brand,
+                "last4": pm.card.last4,
+                "exp_month": pm.card.exp_month,
+                "exp_year": pm.card.exp_year,
+                "is_default": pm.id == default_pm
+            })
+        
+        return {"payment_methods": methods, "default_payment_method": default_pm}
+    except Exception as e:
+        logger.error(f"Get payment methods error: {e}")
+        return {"payment_methods": [], "default_payment_method": None}
+
+@api_router.post("/stripe/payment-methods/{user_id}/default")
+async def set_default_payment_method(user_id: str, payment_method_id: str):
+    """Set a payment method as default"""
+    import stripe
+    stripe.api_key = os.environ.get('STRIPE_API_KEY')
+    
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user or not user.get("stripe_customer_id"):
+        raise HTTPException(status_code=404, detail="No Stripe customer found")
+    
+    try:
+        stripe.Customer.modify(
+            user["stripe_customer_id"],
+            invoice_settings={"default_payment_method": payment_method_id}
+        )
+        return {"success": True, "default_payment_method": payment_method_id}
+    except Exception as e:
+        logger.error(f"Set default payment method error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.delete("/stripe/payment-methods/{payment_method_id}")
+async def delete_payment_method(payment_method_id: str):
+    """Delete a saved payment method"""
+    import stripe
+    stripe.api_key = os.environ.get('STRIPE_API_KEY')
+    
+    try:
+        stripe.PaymentMethod.detach(payment_method_id)
+        return {"success": True, "message": "Payment method removed"}
+    except Exception as e:
+        logger.error(f"Delete payment method error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ========== FEATURED LISTINGS (PAY-PER-SUCCESS) ==========
+
+FEATURED_FEE = 4999  # $49.99 fee charged when property is successfully rented
+
+@api_router.post("/listings/{listing_id}/featured")
+async def enable_featured_listing(listing_id: str, landlord_id: str):
+    """Enable featured status for a listing (pay-per-success model)"""
+    listing = await db.listings.find_one({"id": listing_id}, {"_id": 0})
+    if not listing:
+        raise HTTPException(status_code=404, detail="Listing not found")
+    
+    if listing.get("landlord_id") != landlord_id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    if listing.get("featured"):
+        return {"success": True, "message": "Listing is already featured", "featured": True}
+    
+    # Enable featured with pay-per-success (fee collected when rented)
+    now = datetime.now(timezone.utc)
+    expires = now + timedelta(days=30)  # Featured for 30 days
+    
+    await db.listings.update_one(
+        {"id": listing_id},
+        {"$set": {
+            "featured": True,
+            "featured_enabled_at": now.isoformat(),
+            "featured_expires_at": expires.isoformat(),
+            "featured_fee_pending": True,
+            "boost_score": 100
+        }}
+    )
+    
+    return {
+        "success": True,
+        "message": "Listing is now featured! A $49.99 fee will be charged when the property is rented.",
+        "featured": True,
+        "expires_at": expires.isoformat(),
+        "fee_pending": True,
+        "fee_amount": FEATURED_FEE / 100
+    }
+
+@api_router.delete("/listings/{listing_id}/featured")
+async def disable_featured_listing(listing_id: str, landlord_id: str):
+    """Disable featured status for a listing"""
+    listing = await db.listings.find_one({"id": listing_id}, {"_id": 0})
+    if not listing:
+        raise HTTPException(status_code=404, detail="Listing not found")
+    
+    if listing.get("landlord_id") != landlord_id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    await db.listings.update_one(
+        {"id": listing_id},
+        {"$set": {
+            "featured": False,
+            "featured_fee_pending": False,
+            "boost_score": 0
+        }}
+    )
+    
+    return {"success": True, "message": "Featured status disabled", "featured": False}
+
+@api_router.post("/listings/{listing_id}/mark-rented")
+async def mark_listing_rented(listing_id: str, landlord_id: str):
+    """Mark a listing as rented and process featured fee if applicable"""
+    import stripe
+    stripe.api_key = os.environ.get('STRIPE_API_KEY')
+    
+    listing = await db.listings.find_one({"id": listing_id}, {"_id": 0})
+    if not listing:
+        raise HTTPException(status_code=404, detail="Listing not found")
+    
+    if listing.get("landlord_id") != landlord_id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    result = {"success": True, "status": "rented"}
+    
+    # If featured with pending fee, charge the landlord
+    if listing.get("featured") and listing.get("featured_fee_pending"):
+        landlord = await db.users.find_one({"id": landlord_id}, {"_id": 0})
+        
+        if landlord and landlord.get("stripe_customer_id"):
+            try:
+                # Get default payment method
+                customer = stripe.Customer.retrieve(landlord["stripe_customer_id"])
+                default_pm = customer.invoice_settings.default_payment_method if customer.invoice_settings else None
+                
+                if default_pm:
+                    # Charge the featured fee
+                    payment_intent = stripe.PaymentIntent.create(
+                        amount=FEATURED_FEE,
+                        currency="cad",
+                        customer=landlord["stripe_customer_id"],
+                        payment_method=default_pm,
+                        off_session=True,
+                        confirm=True,
+                        description=f"Featured listing fee - {listing.get('title', 'Property')}",
+                        metadata={
+                            "listing_id": listing_id,
+                            "landlord_id": landlord_id,
+                            "type": "featured_fee"
+                        }
+                    )
+                    
+                    # Record the transaction
+                    await db.payment_transactions.insert_one({
+                        "id": str(uuid.uuid4()),
+                        "user_id": landlord_id,
+                        "session_id": payment_intent.id,
+                        "amount": FEATURED_FEE / 100,
+                        "currency": "cad",
+                        "description": f"Featured listing fee - {listing.get('title', 'Property')}",
+                        "property_id": listing_id,
+                        "payment_status": "paid",
+                        "status": "complete",
+                        "created_at": datetime.now(timezone.utc).isoformat()
+                    })
+                    
+                    result["featured_fee_charged"] = True
+                    result["fee_amount"] = FEATURED_FEE / 100
+                else:
+                    result["featured_fee_charged"] = False
+                    result["fee_message"] = "No default payment method found"
+            except stripe.error.CardError as e:
+                result["featured_fee_charged"] = False
+                result["fee_message"] = f"Payment failed: {e.error.message}"
+            except Exception as e:
+                result["featured_fee_charged"] = False
+                result["fee_message"] = str(e)
+        else:
+            result["featured_fee_charged"] = False
+            result["fee_message"] = "No payment method on file"
+    
+    # Update listing status
+    await db.listings.update_one(
+        {"id": listing_id},
+        {"$set": {
+            "status": "rented",
+            "featured_fee_pending": False
+        }}
+    )
+    
+    return result
+
+@api_router.get("/listings/{listing_id}/featured-status")
+async def get_featured_status(listing_id: str):
+    """Get the featured status of a listing"""
+    listing = await db.listings.find_one({"id": listing_id}, {"_id": 0, "featured": 1, "featured_enabled_at": 1, "featured_expires_at": 1, "featured_fee_pending": 1, "boost_score": 1})
+    if not listing:
+        raise HTTPException(status_code=404, detail="Listing not found")
+    
+    # Check if featured has expired
+    if listing.get("featured") and listing.get("featured_expires_at"):
+        expires = datetime.fromisoformat(listing["featured_expires_at"].replace("Z", "+00:00"))
+        if datetime.now(timezone.utc) > expires:
+            # Expired - disable featured
+            await db.listings.update_one(
+                {"id": listing_id},
+                {"$set": {"featured": False, "featured_fee_pending": False, "boost_score": 0}}
+            )
+            return {"featured": False, "expired": True}
+    
+    return {
+        "featured": listing.get("featured", False),
+        "enabled_at": listing.get("featured_enabled_at"),
+        "expires_at": listing.get("featured_expires_at"),
+        "fee_pending": listing.get("featured_fee_pending", False),
+        "fee_amount": FEATURED_FEE / 100 if listing.get("featured_fee_pending") else 0
+    }
+
 # ========== DOCUMENT MANAGEMENT ROUTES ==========
 
 @api_router.post("/documents/upload")
@@ -5200,6 +5504,219 @@ async def get_listings_performance():
             {"city": c["_id"] or "Unknown", "avg_price": round(c["avg_price"], 0), "count": c["count"]}
             for c in avg_prices_by_city
         ]
+    }
+
+# ========== ROLE-SPECIFIC ANALYTICS ==========
+
+@api_router.get("/analytics/renter/{user_id}")
+async def get_renter_analytics(user_id: str):
+    """Get renter-specific analytics"""
+    
+    # Saved/favorite properties count
+    favorites_count = await db.favorites.count_documents({"user_id": user_id})
+    favorites = await db.favorites.find({"user_id": user_id}, {"_id": 0}).sort("created_at", -1).to_list(10)
+    
+    # Application statistics
+    applications = await db.applications.find({"user_id": user_id}, {"_id": 0}).to_list(100)
+    app_stats = {
+        "total": len(applications),
+        "pending": len([a for a in applications if a.get("status") == "pending"]),
+        "approved": len([a for a in applications if a.get("status") == "approved"]),
+        "rejected": len([a for a in applications if a.get("status") == "rejected"]),
+    }
+    
+    # Recent applications with listing details
+    recent_apps = applications[:5]
+    for app in recent_apps:
+        listing = await db.listings.find_one({"id": app.get("listing_id")}, {"_id": 0, "title": 1, "address": 1, "city": 1, "price": 1})
+        app["listing"] = listing
+    
+    # Viewing history (from chat sessions or favorites)
+    recent_favorites = []
+    for fav in favorites[:5]:
+        listing = await db.listings.find_one({"id": fav.get("listing_id")}, {"_id": 0, "title": 1, "address": 1, "city": 1, "price": 1, "images": 1})
+        if listing:
+            listing["favorited_at"] = fav.get("created_at")
+            recent_favorites.append(listing)
+    
+    # Messages sent/received
+    messages_sent = await db.messages.count_documents({"sender_id": user_id})
+    messages_received = await db.messages.count_documents({"receiver_id": user_id})
+    
+    # Renter resume completion
+    resume = await db.renter_resumes.find_one({"user_id": user_id}, {"_id": 0})
+    resume_score = 0
+    if resume:
+        fields = ["employment_status", "employer", "income", "rental_history", "references"]
+        filled = sum(1 for f in fields if resume.get(f))
+        resume_score = int((filled / len(fields)) * 100)
+    
+    return {
+        "favorites_count": favorites_count,
+        "recent_favorites": recent_favorites,
+        "applications": app_stats,
+        "recent_applications": recent_apps,
+        "messages": {"sent": messages_sent, "received": messages_received},
+        "resume_completion": resume_score,
+        "generated_at": datetime.now(timezone.utc).isoformat()
+    }
+
+@api_router.get("/analytics/landlord/{user_id}")
+async def get_landlord_analytics(user_id: str):
+    """Get landlord-specific analytics"""
+    
+    # Properties owned
+    listings = await db.listings.find({"landlord_id": user_id}, {"_id": 0}).to_list(100)
+    active_listings = [l for l in listings if l.get("status") == "active"]
+    
+    # Total potential monthly revenue
+    monthly_revenue = sum(l.get("price", 0) for l in active_listings if l.get("listing_type") == "rent")
+    
+    # Applications received
+    listing_ids = [l["id"] for l in listings]
+    applications = await db.applications.find({"listing_id": {"$in": listing_ids}}, {"_id": 0}).to_list(500)
+    
+    app_stats = {
+        "total": len(applications),
+        "pending": len([a for a in applications if a.get("status") == "pending"]),
+        "approved": len([a for a in applications if a.get("status") == "approved"]),
+        "rejected": len([a for a in applications if a.get("status") == "rejected"]),
+    }
+    
+    # Applications by listing
+    apps_by_listing = {}
+    for app in applications:
+        lid = app.get("listing_id")
+        if lid not in apps_by_listing:
+            apps_by_listing[lid] = 0
+        apps_by_listing[lid] += 1
+    
+    # Top performing listings (by application count)
+    listing_performance = []
+    for listing in listings[:10]:
+        listing_performance.append({
+            "id": listing["id"],
+            "title": listing.get("title"),
+            "price": listing.get("price"),
+            "applications": apps_by_listing.get(listing["id"], 0),
+            "status": listing.get("status")
+        })
+    listing_performance.sort(key=lambda x: x["applications"], reverse=True)
+    
+    # Messages/inquiries
+    messages_received = await db.messages.count_documents({"receiver_id": user_id})
+    
+    # Maintenance requests for their properties
+    maintenance = await db.maintenance_requests.find({"landlord_id": user_id}, {"_id": 0}).to_list(100)
+    maintenance_stats = {
+        "total": len(maintenance),
+        "open": len([m for m in maintenance if m.get("status") in ["pending", "in_progress"]]),
+        "resolved": len([m for m in maintenance if m.get("status") == "resolved"]),
+    }
+    
+    # Revenue from payments
+    payments = await db.payment_transactions.find(
+        {"recipient_id": user_id, "payment_status": "paid"},
+        {"_id": 0}
+    ).to_list(100)
+    total_collected = sum(p.get("amount", 0) for p in payments)
+    
+    return {
+        "properties": {
+            "total": len(listings),
+            "active": len(active_listings),
+            "inactive": len(listings) - len(active_listings)
+        },
+        "monthly_potential_revenue": monthly_revenue,
+        "total_collected": total_collected,
+        "applications": app_stats,
+        "listing_performance": listing_performance[:5],
+        "inquiries": messages_received,
+        "maintenance": maintenance_stats,
+        "generated_at": datetime.now(timezone.utc).isoformat()
+    }
+
+@api_router.get("/analytics/contractor/{user_id}")
+async def get_contractor_analytics(user_id: str):
+    """Get contractor-specific analytics"""
+    
+    # Profile info
+    profile = await db.contractor_profiles.find_one({"user_id": user_id}, {"_id": 0})
+    
+    # Jobs completed
+    bookings = await db.bookings.find({"contractor_id": user_id}, {"_id": 0}).to_list(500)
+    completed_jobs = [b for b in bookings if b.get("status") == "completed"]
+    pending_jobs = [b for b in bookings if b.get("status") in ["pending", "confirmed"]]
+    
+    # Earnings
+    total_earnings = sum(b.get("price", 0) for b in completed_jobs)
+    
+    # Monthly earnings breakdown
+    monthly_earnings = {}
+    for booking in completed_jobs:
+        created = booking.get("created_at", "")
+        if created:
+            month_key = created[:7]  # YYYY-MM
+            if month_key not in monthly_earnings:
+                monthly_earnings[month_key] = 0
+            monthly_earnings[month_key] += booking.get("price", 0)
+    
+    # Reviews and ratings
+    reviews = await db.reviews.find({"contractor_id": user_id}, {"_id": 0}).to_list(100)
+    avg_rating = sum(r.get("rating", 0) for r in reviews) / len(reviews) if reviews else 0
+    rating_distribution = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+    for r in reviews:
+        rating = r.get("rating", 0)
+        if 1 <= rating <= 5:
+            rating_distribution[rating] += 1
+    
+    # Job bids
+    bids = await db.job_bids.find({"contractor_id": user_id}, {"_id": 0}).to_list(100)
+    bid_stats = {
+        "total": len(bids),
+        "won": len([b for b in bids if b.get("status") == "accepted"]),
+        "pending": len([b for b in bids if b.get("status") == "pending"]),
+    }
+    bid_stats["win_rate"] = round((bid_stats["won"] / bid_stats["total"] * 100) if bid_stats["total"] > 0 else 0, 1)
+    
+    # Lead sources (from bookings)
+    lead_sources = {}
+    for b in bookings:
+        source = b.get("source", "direct")
+        if source not in lead_sources:
+            lead_sources[source] = 0
+        lead_sources[source] += 1
+    
+    # Recent reviews
+    recent_reviews = sorted(reviews, key=lambda x: x.get("created_at", ""), reverse=True)[:5]
+    for review in recent_reviews:
+        customer = await db.users.find_one({"id": review.get("customer_id")}, {"_id": 0, "name": 1})
+        review["customer_name"] = customer.get("name") if customer else "Anonymous"
+    
+    return {
+        "profile": {
+            "business_name": profile.get("business_name") if profile else None,
+            "verified": profile.get("verified", False) if profile else False,
+            "specialties": profile.get("specialties", []) if profile else []
+        },
+        "jobs": {
+            "completed": len(completed_jobs),
+            "pending": len(pending_jobs),
+            "total": len(bookings)
+        },
+        "earnings": {
+            "total": total_earnings,
+            "monthly": monthly_earnings
+        },
+        "ratings": {
+            "average": round(avg_rating, 1),
+            "total_reviews": len(reviews),
+            "distribution": rating_distribution
+        },
+        "bids": bid_stats,
+        "lead_sources": lead_sources,
+        "recent_reviews": recent_reviews,
+        "generated_at": datetime.now(timezone.utc).isoformat()
     }
 
 

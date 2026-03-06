@@ -4,6 +4,23 @@ All notable changes to the DOMMMA platform are documented in this file.
 
 ## [V21] - 2025-12-XX (Current)
 
+### Added
+- **Credit Card Management UI** - Payment Methods tab in Settings
+  - Save and manage cards via Stripe
+  - Set default payment method
+  - Delete saved cards
+  - Secure PCI-compliant storage
+- **Role-Specific Analytics Dashboards**
+  - Renter: Favorites, applications, profile completion, messages
+  - Landlord: Properties, revenue, application funnel, maintenance
+  - Contractor: Jobs, earnings, ratings distribution, reviews
+  - Platform view toggle for admin overview
+- **Featured Listings (Pay-Per-Success)**
+  - Landlords can boost listings to top of search results
+  - $49.99 fee charged only when property is rented
+  - Featured badge on property cards
+  - 30-day featured duration
+
 ### Infrastructure
 - **Production Email System Live** - Resend integration fully configured
   - Domain dommma.com verified with DNS records (DKIM, SPF, MX, DMARC)

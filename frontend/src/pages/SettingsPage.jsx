@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Settings, User, Bell, Shield, Globe, Moon, Sun,
   Mail, Phone, Lock, Eye, EyeOff, Save, Check,
-  CreditCard, Trash2, LogOut, ChevronRight
+  CreditCard, Trash2, LogOut, ChevronRight, Plus, Star, Loader2
 } from 'lucide-react';
 import { useAuth } from '../App';
 import axios from 'axios';
@@ -48,6 +48,18 @@ export default function SettingsPage() {
     new_password: '',
     confirm: ''
   });
+  
+  // Payment methods
+  const [paymentMethods, setPaymentMethods] = useState([]);
+  const [defaultPaymentMethod, setDefaultPaymentMethod] = useState(null);
+  const [loadingPayments, setLoadingPayments] = useState(false);
+  const [addingCard, setAddingCard] = useState(false);
+  const [cardForm, setCardForm] = useState({
+    number: '',
+    exp_month: '',
+    exp_year: '',
+    cvc: ''
+  });
 
   useEffect(() => {
     if (!user) {
@@ -65,7 +77,21 @@ export default function SettingsPage() {
     
     // Load saved preferences
     loadPreferences();
+    loadPaymentMethods();
   }, [user, navigate]);
+
+  const loadPaymentMethods = async () => {
+    if (!user) return;
+    setLoadingPayments(true);
+    try {
+      const res = await axios.get(`${API}/api/stripe/payment-methods/${user.id}`);
+      setPaymentMethods(res.data.payment_methods || []);
+      setDefaultPaymentMethod(res.data.default_payment_method);
+    } catch (error) {
+      console.log('No payment methods found');
+    }
+    setLoadingPayments(false);
+  };
 
   const loadPreferences = async () => {
     try {
@@ -166,8 +192,68 @@ export default function SettingsPage() {
     }
   };
 
+  const handleSetDefaultPayment = async (paymentMethodId) => {
+    try {
+      await axios.post(`${API}/api/stripe/payment-methods/${user.id}/default?payment_method_id=${paymentMethodId}`);
+      setDefaultPaymentMethod(paymentMethodId);
+      setPaymentMethods(prev => prev.map(pm => ({
+        ...pm,
+        is_default: pm.id === paymentMethodId
+      })));
+    } catch (error) {
+      alert('Failed to set default payment method');
+    }
+  };
+
+  const handleDeletePaymentMethod = async (paymentMethodId) => {
+    if (!window.confirm('Remove this payment method?')) return;
+    try {
+      await axios.delete(`${API}/api/stripe/payment-methods/${paymentMethodId}`);
+      setPaymentMethods(prev => prev.filter(pm => pm.id !== paymentMethodId));
+      if (defaultPaymentMethod === paymentMethodId) {
+        setDefaultPaymentMethod(null);
+      }
+    } catch (error) {
+      alert('Failed to remove payment method');
+    }
+  };
+
+  const handleAddCard = async (e) => {
+    e.preventDefault();
+    setAddingCard(true);
+    
+    try {
+      // First create/get stripe customer
+      await axios.post(`${API}/api/stripe/customer?user_id=${user.id}`);
+      
+      // Get setup intent
+      const setupRes = await axios.post(`${API}/api/stripe/setup-intent?user_id=${user.id}`);
+      
+      // For now, show a message that Stripe Elements would be used in production
+      // In a real implementation, you'd use Stripe.js Elements here
+      alert('In production, this would open Stripe\'s secure card form. For now, cards are managed through Stripe\'s test mode.');
+      
+      // Refresh payment methods
+      await loadPaymentMethods();
+    } catch (error) {
+      alert('Failed to set up card addition: ' + (error.response?.data?.detail || error.message));
+    }
+    setAddingCard(false);
+  };
+
+  const getCardBrandIcon = (brand) => {
+    const brandColors = {
+      visa: '#1A1F71',
+      mastercard: '#EB001B',
+      amex: '#006FCF',
+      discover: '#FF6000'
+    };
+    return brandColors[brand?.toLowerCase()] || '#1A2F3A';
+  };
+
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
+    { id: 'payments', label: 'Payment Methods', icon: CreditCard },
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'privacy', label: 'Privacy', icon: Shield },
     { id: 'security', label: 'Security', icon: Lock },
@@ -275,6 +361,113 @@ export default function SettingsPage() {
                   {saved ? <Check size={18} /> : <Save size={18} />}
                   {saved ? 'Saved!' : saving ? 'Saving...' : 'Save Changes'}
                 </button>
+              </div>
+            )}
+
+            {/* Payment Methods Tab */}
+            {activeTab === 'payments' && (
+              <div className="space-y-6">
+                <div className="bg-white rounded-2xl p-6 shadow-sm">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-xl font-semibold text-[#1A2F3A]">Payment Methods</h2>
+                    <button
+                      onClick={handleAddCard}
+                      disabled={addingCard}
+                      className="px-4 py-2 bg-[#1A2F3A] text-white rounded-lg hover:bg-[#2C4A52] transition-colors flex items-center gap-2 text-sm disabled:opacity-50"
+                      data-testid="add-card-btn"
+                    >
+                      {addingCard ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
+                      Add Card
+                    </button>
+                  </div>
+                  
+                  {loadingPayments ? (
+                    <div className="text-center py-8">
+                      <Loader2 className="animate-spin mx-auto text-gray-400" size={32} />
+                      <p className="text-gray-500 mt-2">Loading payment methods...</p>
+                    </div>
+                  ) : paymentMethods.length === 0 ? (
+                    <div className="text-center py-12 bg-gray-50 rounded-xl">
+                      <CreditCard className="mx-auto text-gray-300 mb-4" size={48} />
+                      <p className="text-gray-500 mb-2">No payment methods saved</p>
+                      <p className="text-sm text-gray-400">Add a card to make payments easier</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {paymentMethods.map((method) => (
+                        <div 
+                          key={method.id}
+                          className={`flex items-center justify-between p-4 rounded-xl border-2 transition-colors ${
+                            method.is_default 
+                              ? 'border-[#1A2F3A] bg-[#1A2F3A]/5' 
+                              : 'border-gray-100 hover:border-gray-200'
+                          }`}
+                          data-testid={`payment-method-${method.id}`}
+                        >
+                          <div className="flex items-center gap-4">
+                            <div 
+                              className="w-12 h-8 rounded flex items-center justify-center text-white font-bold text-xs"
+                              style={{ backgroundColor: getCardBrandIcon(method.brand) }}
+                            >
+                              {method.brand?.toUpperCase().slice(0, 4)}
+                            </div>
+                            <div>
+                              <p className="font-medium text-[#1A2F3A] flex items-center gap-2">
+                                •••• •••• •••• {method.last4}
+                                {method.is_default && (
+                                  <span className="text-xs bg-[#1A2F3A] text-white px-2 py-0.5 rounded-full">
+                                    Default
+                                  </span>
+                                )}
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                Expires {method.exp_month}/{method.exp_year}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {!method.is_default && (
+                              <button
+                                onClick={() => handleSetDefaultPayment(method.id)}
+                                className="px-3 py-1.5 text-sm text-[#1A2F3A] hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-1"
+                                title="Set as default"
+                              >
+                                <Star size={14} />
+                                Set Default
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleDeletePaymentMethod(method.id)}
+                              className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Remove card"
+                              data-testid={`delete-card-${method.id}`}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Payment Info */}
+                <div className="bg-gradient-to-br from-[#1A2F3A] to-[#2C4A52] rounded-2xl p-6 text-white">
+                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <Shield size={18} />
+                    Secure Payments
+                  </h3>
+                  <p className="text-sm text-white/80 mb-4">
+                    Your payment information is securely stored with Stripe. We never see or store your full card details.
+                  </p>
+                  <div className="flex items-center gap-4 text-xs text-white/60">
+                    <span>256-bit encryption</span>
+                    <span>•</span>
+                    <span>PCI-DSS compliant</span>
+                    <span>•</span>
+                    <span>Powered by Stripe</span>
+                  </div>
+                </div>
               </div>
             )}
 

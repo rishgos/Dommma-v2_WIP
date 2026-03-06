@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { Search, Bed, Bath, MapPin, Heart, X, SlidersHorizontal, ArrowLeft, Grid, List, Bot, FileText, MessageSquare, DollarSign, Home, Building2, CalendarCheck } from 'lucide-react';
+import { Search, Bed, Bath, MapPin, Heart, X, SlidersHorizontal, ArrowLeft, Grid, List, Bot, FileText, MessageSquare, DollarSign, Home, Building2, CalendarCheck, Star } from 'lucide-react';
 import { GoogleMap, useJsApiLoader, MarkerF, InfoWindowF } from '@react-google-maps/api';
 import axios from 'axios';
 import NovaChat from '../components/chat/NovaChat';
@@ -267,7 +267,7 @@ const Browse = () => {
                     onClick={() => setSelectedListing(listing)}
                     onMouseEnter={() => { setHoveredListing(listing); setActiveMarker(listing.id); }}
                     onMouseLeave={() => { setHoveredListing(null); setActiveMarker(null); }}
-                    className={`bg-white rounded-2xl overflow-hidden cursor-pointer transition-all border-2 hover:shadow-lg ${hoveredListing?.id === listing.id ? 'border-[#1A2F3A]' : 'border-transparent'}`}
+                    className={`bg-white rounded-2xl overflow-hidden cursor-pointer transition-all border-2 hover:shadow-lg ${hoveredListing?.id === listing.id ? 'border-[#1A2F3A]' : listing.featured ? 'border-yellow-400' : 'border-transparent'}`}
                     data-testid={`listing-card-${listing.id}`}
                   >
                     <div className="flex flex-col">
@@ -280,7 +280,14 @@ const Browse = () => {
                         >
                           <Heart size={16} fill={favoriteIds.includes(listing.id) ? 'currentColor' : 'none'} />
                         </button>
-                        <span className="absolute top-2 left-2 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium text-[#1A2F3A]">{listing.property_type}</span>
+                        <div className="absolute top-2 left-2 flex gap-1">
+                          {listing.featured && (
+                            <span className="px-2 py-1 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full text-xs font-bold text-white flex items-center gap-1">
+                              <Star size={10} className="fill-white" /> Featured
+                            </span>
+                          )}
+                          <span className="px-2 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium text-[#1A2F3A]">{listing.property_type}</span>
+                        </div>
                       </div>
                       <div className="p-4">
                         <h3 className="font-semibold text-[#1A2F3A] mb-1 truncate" style={{ fontFamily: 'Cormorant Garamond, serif' }}>{listing.title}</h3>

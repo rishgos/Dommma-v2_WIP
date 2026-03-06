@@ -32,6 +32,12 @@ class Listing(BaseModel):
     mls_number: Optional[str] = None
     open_house_dates: List[str] = []
     status: str = "active"
+    # Featured listing fields
+    featured: bool = False
+    featured_enabled_at: Optional[str] = None
+    featured_expires_at: Optional[str] = None
+    featured_fee_pending: bool = False  # True if fee will be charged when rented
+    boost_score: int = 0  # Higher = more visibility
     created_at: str = Field(default_factory=utc_now)
 
 class ListingCreate(BaseModel):

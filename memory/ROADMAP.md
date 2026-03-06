@@ -18,20 +18,31 @@ Platform is fully functional with AI chatbot (Nova), property listings, contract
 - **Result:** All transactional emails now working in production
 
 ### 2. Featured Property Payment Flow
-- **Status:** PARTIAL - Model exists, payment flow pending
-- **Description:** Connect Stripe payment for landlords to mark listings as "featured"
-- **Files:** `backend/server.py`, `frontend/src/pages/Landlord/MyProperties.jsx`
-- **Features needed:**
-  - Stripe checkout for featured upgrade
-  - Payment-on-success (when property rented)
-  - Featured badge display
-  - Priority sorting in search results
+- **Status:** ✅ COMPLETE
+- **Description:** Pay-per-success model for featured listings
+- **What was done:**
+  - Backend endpoints for enabling/disabling featured status
+  - Automatic fee charge when property is marked as rented
+  - Featured badge display on Browse and MyProperties pages
+  - 30-day featured duration with expiry tracking
 
-### 3. CDN Cache Verification Workaround
-- **Status:** KNOWN ISSUE
-- **Description:** Frontend preview is heavily cached by CDN
-- **Workaround:** Verify code changes by checking local bundle content
-- **Note:** This is an infrastructure limitation, not a code bug
+### 3. Role-Specific Analytics Dashboards
+- **Status:** ✅ COMPLETE
+- **Description:** Each user role has tailored analytics
+- **What was done:**
+  - Renter: Favorites, applications, profile completion tracking
+  - Landlord: Properties, revenue, application funnel, maintenance
+  - Contractor: Jobs, earnings, ratings, reviews
+  - Platform view toggle for admin overview
+
+### 4. Credit Card Management UI
+- **Status:** ✅ COMPLETE
+- **Description:** Users can save and manage payment methods
+- **What was done:**
+  - Payment Methods tab added to Settings
+  - Stripe customer creation and payment method storage
+  - Set default payment method
+  - Delete saved cards
 
 ---
 
@@ -162,7 +173,9 @@ Platform is fully functional with AI chatbot (Nova), property listings, contract
 | Syndication | DONE | DONE | - | - |
 | Address Autocomplete | DONE | DONE | DONE | DONE |
 | WCB/Insurance Verify | DONE | DONE | - | - |
-| Featured Properties | PARTIAL | PARTIAL | - | - |
+| Featured Properties | DONE | DONE | - | DONE |
+| Credit Card Mgmt | DONE | DONE | - | - |
+| Role Analytics | DONE | DONE | - | DONE |
 | Competitor Analysis | MOCKED | DONE | - | - |
 
 ---

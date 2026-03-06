@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   Building2, ArrowLeft, Plus, MapPin, Bed, Bath, Edit, Trash2,
   Image as ImageIcon, X, DollarSign, Check, Eye, EyeOff, Loader2,
-  Gift, Calendar
+  Gift, Calendar, Star, Zap, CheckCircle
 } from 'lucide-react';
 import { useAuth } from '../App';
 import axios from 'axios';
@@ -263,6 +263,58 @@ const MyProperties = () => {
     } catch (err) { console.error(err); }
   };
 
+  const toggleFeatured = async (listing) => {
+    try {
+      if (listing.featured) {
+        // Disable featured
+        await axios.delete(`${API}/listings/${listing.id}/featured?landlord_id=${user.id}`);
+        alert('Featured status disabled');
+      } else {
+        // Enable featured (pay-per-success)
+        const confirmed = window.confirm(
+          'Enable Featured Listing?\n\n' +
+          '• Your listing will appear at the top of search results\n' +
+          '• Featured badge will be displayed\n' +
+          '• A $49.99 success fee will be charged only when your property is rented\n\n' +
+          'No upfront cost - you only pay when you succeed!'
+        );
+        if (!confirmed) return;
+        
+        const res = await axios.post(`${API}/listings/${listing.id}/featured?landlord_id=${user.id}`);
+        alert(res.data.message);
+      }
+      fetchListings();
+    } catch (err) { 
+      console.error(err);
+      alert('Failed to update featured status');
+    }
+  };
+
+  const markAsRented = async (listing) => {
+    const confirmed = window.confirm(
+      `Mark "${listing.title}" as rented?\n\n` +
+      (listing.featured && listing.featured_fee_pending 
+        ? 'Note: A $49.99 featured listing fee will be charged to your saved payment method.'
+        : 'This will remove the listing from active searches.')
+    );
+    if (!confirmed) return;
+    
+    try {
+      const res = await axios.post(`${API}/listings/${listing.id}/mark-rented?landlord_id=${user.id}`);
+      if (res.data.featured_fee_charged) {
+        alert(`Property marked as rented!\n\nFeatured fee of $${res.data.fee_amount} has been charged.`);
+      } else if (res.data.fee_message) {
+        alert(`Property marked as rented.\n\nNote: ${res.data.fee_message}`);
+      } else {
+        alert('Property marked as rented!');
+      }
+      fetchListings();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to mark as rented');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#F5F5F0]">
       <header className="bg-[#1A2F3A] text-white px-6 py-4">
@@ -316,15 +368,20 @@ const MyProperties = () => {
         ) : (
           <div className="grid md:grid-cols-2 gap-6">
             {listings.map(listing => (
-              <div key={listing.id} className="bg-white rounded-2xl overflow-hidden hover:shadow-lg transition-shadow" data-testid={`property-${listing.id}`}>
+              <div key={listing.id} className={`bg-white rounded-2xl overflow-hidden hover:shadow-lg transition-shadow ${listing.featured ? 'ring-2 ring-yellow-400' : ''}`} data-testid={`property-${listing.id}`}>
                 <div className="relative h-48">
                   <img src={listing.images?.[0] || 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600'} alt={listing.title} className="w-full h-full object-cover" />
-                  <div className="absolute top-3 left-3 flex gap-2">
+                  <div className="absolute top-3 left-3 flex flex-wrap gap-2">
+                    {listing.featured && (
+                      <span className="px-3 py-1 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full text-xs font-bold text-white flex items-center gap-1 shadow-md">
+                        <Star size={12} className="fill-white" /> FEATURED
+                      </span>
+                    )}
                     <span className="px-3 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium">{listing.property_type}</span>
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${listing.listing_type === 'sale' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
                       {listing.listing_type === 'sale' ? 'For Sale' : 'For Rent'}
                     </span>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${listing.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${listing.status === 'active' ? 'bg-green-100 text-green-700' : listing.status === 'rented' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'}`}>
                       {listing.status}
                     </span>
                   </div>
@@ -342,10 +399,39 @@ const MyProperties = () => {
                     <span className="flex items-center gap-1"><Bath size={14} />{listing.bathrooms} bath</span>
                     <span>{listing.sqft} sqft</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => openEdit(listing)} className="flex-1 px-3 py-2 bg-[#F5F5F0] text-[#1A2F3A] rounded-xl text-sm hover:bg-gray-200 flex items-center justify-center gap-1" data-testid={`edit-property-${listing.id}`}>
+                  
+                  {/* Featured Badge / Status */}
+                  {listing.featured && listing.featured_fee_pending && (
+                    <div className="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-700">
+                      <Zap size={12} className="inline mr-1" />
+                      Featured until {listing.featured_expires_at ? new Date(listing.featured_expires_at).toLocaleDateString() : '30 days'} • $49.99 fee on success
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button onClick={() => openEdit(listing)} className="flex-1 min-w-[80px] px-3 py-2 bg-[#F5F5F0] text-[#1A2F3A] rounded-xl text-sm hover:bg-gray-200 flex items-center justify-center gap-1" data-testid={`edit-property-${listing.id}`}>
                       <Edit size={14} /> Edit
                     </button>
+                    {listing.status === 'active' && (
+                      <button 
+                        onClick={() => toggleFeatured(listing)} 
+                        className={`px-3 py-2 rounded-xl text-sm flex items-center gap-1 ${listing.featured ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : 'bg-[#F5F5F0] hover:bg-gray-200 text-[#1A2F3A]'}`}
+                        title={listing.featured ? 'Remove Featured' : 'Boost Listing'}
+                        data-testid={`feature-property-${listing.id}`}
+                      >
+                        <Star size={14} className={listing.featured ? 'fill-yellow-500' : ''} />
+                        {listing.featured ? 'Featured' : 'Boost'}
+                      </button>
+                    )}
+                    {listing.status === 'active' && (
+                      <button 
+                        onClick={() => markAsRented(listing)} 
+                        className="px-3 py-2 bg-green-50 text-green-700 rounded-xl text-sm hover:bg-green-100 flex items-center gap-1"
+                        title="Mark as Rented"
+                      >
+                        <CheckCircle size={14} /> Rented
+                      </button>
+                    )}
                     <button onClick={() => toggleStatus(listing)} className="px-3 py-2 bg-[#F5F5F0] rounded-xl text-sm hover:bg-gray-200" title={listing.status === 'active' ? 'Deactivate' : 'Activate'}>
                       {listing.status === 'active' ? <EyeOff size={14} /> : <Eye size={14} />}
                     </button>
