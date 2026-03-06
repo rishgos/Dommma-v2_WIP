@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   Settings, User, Bell, Shield, Globe, Moon, Sun,
   Mail, Phone, Lock, Eye, EyeOff, Save, Check,
-  CreditCard, Trash2, LogOut, ChevronRight, Plus, Star, Loader2
+  CreditCard, Trash2, LogOut, ChevronRight, Plus, Star, Loader2, CheckCircle, X
 } from 'lucide-react';
 import { useAuth } from '../App';
 import axios from 'axios';
@@ -13,10 +13,12 @@ const API = process.env.REACT_APP_BACKEND_URL;
 export default function SettingsPage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('profile');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [cardAddedMessage, setCardAddedMessage] = useState(false);
   
   // Profile settings
   const [profile, setProfile] = useState({
@@ -78,7 +80,15 @@ export default function SettingsPage() {
     // Load saved preferences
     loadPreferences();
     loadPaymentMethods();
-  }, [user, navigate]);
+    
+    // Check for card added success
+    if (searchParams.get('card_added') === 'true') {
+      setActiveTab('payments');
+      setCardAddedMessage(true);
+      // Clear the URL params
+      window.history.replaceState({}, '', '/settings');
+    }
+  }, [user, navigate, searchParams]);
 
   const loadPaymentMethods = async () => {
     if (!user) return;
@@ -224,17 +234,23 @@ export default function SettingsPage() {
     
     try {
       // First create/get stripe customer
-      await axios.post(`${API}/api/stripe/customer?user_id=${user.id}`);
+      const customerRes = await axios.post(`${API}/api/stripe/customer?user_id=${user.id}`);
+      const customerId = customerRes.data.customer_id;
       
       // Get setup intent
       const setupRes = await axios.post(`${API}/api/stripe/setup-intent?user_id=${user.id}`);
       
-      // For now, show a message that Stripe Elements would be used in production
-      // In a real implementation, you'd use Stripe.js Elements here
-      alert('In production, this would open Stripe\'s secure card form. For now, cards are managed through Stripe\'s test mode.');
+      // Create a Stripe checkout session for setup mode
+      const checkoutRes = await axios.post(`${API}/api/stripe/checkout-setup?user_id=${user.id}`);
       
-      // Refresh payment methods
-      await loadPaymentMethods();
+      if (checkoutRes.data.checkout_url) {
+        // Redirect to Stripe's hosted checkout for adding card
+        window.location.href = checkoutRes.data.checkout_url;
+      } else {
+        // Fallback - refresh and show message
+        alert('Card setup initiated. Your card will appear shortly.');
+        await loadPaymentMethods();
+      }
     } catch (error) {
       alert('Failed to set up card addition: ' + (error.response?.data?.detail || error.message));
     }
@@ -380,6 +396,20 @@ export default function SettingsPage() {
                       Add Card
                     </button>
                   </div>
+                  
+                  {/* Card Added Success Message */}
+                  {cardAddedMessage && (
+                    <div className="mb-4 bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3">
+                      <CheckCircle className="text-green-600" size={20} />
+                      <div className="flex-1">
+                        <p className="font-medium text-green-800">Card Added Successfully!</p>
+                        <p className="text-sm text-green-600">Your payment method has been saved.</p>
+                      </div>
+                      <button onClick={() => setCardAddedMessage(false)} className="p-1 hover:bg-green-100 rounded">
+                        <X size={16} className="text-green-600" />
+                      </button>
+                    </div>
+                  )}
                   
                   {loadingPayments ? (
                     <div className="text-center py-8">

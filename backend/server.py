@@ -1135,6 +1135,48 @@ async def delete_payment_method(payment_method_id: str):
         logger.error(f"Delete payment method error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.post("/stripe/checkout-setup")
+async def create_checkout_setup_session(user_id: str):
+    """Create a Stripe checkout session for adding a new card"""
+    import stripe
+    stripe.api_key = os.environ.get('STRIPE_API_KEY')
+    
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get or create customer
+    customer_id = user.get("stripe_customer_id")
+    if not customer_id:
+        customer = stripe.Customer.create(
+            email=user.get("email"),
+            name=user.get("name"),
+            metadata={"user_id": user_id}
+        )
+        customer_id = customer.id
+        await db.users.update_one({"id": user_id}, {"$set": {"stripe_customer_id": customer_id}})
+    
+    try:
+        host_url = os.environ.get('FRONTEND_URL', 'https://rent-connect-25.preview.emergentagent.com')
+        
+        session = stripe.checkout.Session.create(
+            customer=customer_id,
+            payment_method_types=['card'],
+            mode='setup',
+            success_url=f"{host_url}/settings?card_added=true",
+            cancel_url=f"{host_url}/settings?card_canceled=true",
+            metadata={"user_id": user_id}
+        )
+        
+        return {
+            "success": True,
+            "checkout_url": session.url,
+            "session_id": session.id
+        }
+    except Exception as e:
+        logger.error(f"Checkout setup error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # ========== FEATURED LISTINGS (PAY-PER-SUCCESS) ==========
 
 FEATURED_FEE = 4999  # $49.99 fee charged when property is successfully rented
