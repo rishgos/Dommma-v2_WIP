@@ -2,59 +2,79 @@
 
 All notable changes to the DOMMMA platform are documented in this file.
 
-## [V21] - 2025-12-XX (Current)
+## [V21] - 2025-12-06 (Current)
 
 ### Added
 - **Document Builder** - DocuSign-like form builder for BC tenancy documents
   - BC RTB-1 (Tenancy Agreement), RTB-7 (End Notice), RTB-26 (Condition Report), RTB-30 (Rent Increase)
   - Step-by-step form filling with progress tracking
-  - Auto-fill landlord information
+  - Auto-fill landlord information from user profile
   - PDF generation and download
-  - Send for signature via email
+  - Send for signature via email with tracking
   - Document preview before sending
+  - Added to landlord sidebar navigation at `/document-builder`
+  
 - **Post-Reservation Upsells API** - Local service providers for renters
-  - Movers, Internet, Insurance, Utilities, Cleaning, Storage
-  - Curated Vancouver-area providers with ratings and promos
-  - Quote request system
-- **Enhanced Competitor Analysis** - Upgraded with web scraping capability
-  - Perplexity API integration for real-time market data
-  - Scrapes Craigslist, FB Marketplace, Kijiji for comparable prices
-  - Falls back to local database if external sources unavailable
-- **Universal Pay & Invoices System** - Comprehensive payment management for all roles
-  - Role-specific payment types (Renter: rent, utilities, movers; Landlord: property expenses, taxes; Contractor: supplies, equipment)
-  - Stripe payment processing with checkout or saved cards
-  - Automatic invoice generation with PDF download
-  - Invoice history with status tracking
-  - "Pay & Invoices" added to sidebar for all user types
+  - 6 categories: Movers, Internet, Insurance, Utilities, Cleaning, Storage
+  - Curated Vancouver-area providers with ratings, prices, and promos
+  - Quote request system with status tracking
+  - Providers include: BC Moving Co., Telus, Shaw, BCAA, BC Hydro, FortisBC
+  
+- **Enhanced Competitor Analysis** - Real-time market data scraping
+  - Perplexity API integration for live web scraping
+  - Scrapes Craigslist Vancouver, FB Marketplace, Kijiji for comparable prices
+  - AI-generated listing titles, descriptions, and hashtags
+  - Falls back to local database + AI analysis if external sources unavailable
+  
+- **Universal Pay & Invoices System** - Comprehensive payment management
+  - Role-specific payment types:
+    - Renter: Rent, Security Deposit, Utilities, Contractors, Moving
+    - Landlord: Property Expense, Contractors, Insurance, Mortgage, Taxes
+    - Contractor: Supplies, Equipment, Subcontractors, Insurance, Licenses
+  - Stripe payment processing (checkout or saved cards)
+  - Automatic invoice generation with unique invoice numbers
+  - PDF invoice download with DOMMMA branding
+  - "Pay & Invoices" added to sidebar for ALL user types
+  
 - **Credit Card Management UI** - Payment Methods tab in Settings
-  - Save and manage cards via Stripe
+  - Stripe checkout flow for adding new cards
+  - View saved cards with brand, last 4 digits, expiry
   - Set default payment method
   - Delete saved cards
-  - Secure PCI-compliant storage
-- **Role-Specific Analytics Dashboards**
-  - Renter: Favorites, applications, profile completion, messages
-  - Landlord: Properties, revenue, application funnel, maintenance
-  - Contractor: Jobs, earnings, ratings distribution, reviews
-  - Platform view toggle for admin overview
-- **Featured Listings (Pay-Per-Success)**
-  - Landlords can boost listings to top of search results
-  - $49.99 fee charged only when property is rented
-  - Featured badge on property cards
-  - 30-day featured duration
+  - PCI-DSS compliant storage via Stripe
+  
+- **Role-Specific Analytics Dashboards** - Personalized metrics
+  - Renter: Favorites count, applications tracker, profile completion, messages
+  - Landlord: Properties overview, revenue tracking, application funnel, maintenance
+  - Contractor: Jobs completed, earnings breakdown, rating distribution, reviews
+  - Platform view toggle for cross-role analytics
+  
+- **Featured Listings (Pay-Per-Success)** - Boost listings
+  - Landlords can feature properties from My Properties page
+  - $49.99 fee charged ONLY when property is successfully rented
+  - Yellow "Featured" badge on property cards in Browse
+  - 30-day featured duration with auto-expiry
+  - Mark as Rented button triggers fee collection
 
 ### Infrastructure
 - **Production Email System Live** - Resend integration fully configured
   - Domain dommma.com verified with DNS records (DKIM, SPF, MX, DMARC)
-  - Emails now sent from noreply@dommma.com
-  - New user verification emails working in production
+  - Emails sent from noreply@dommma.com
+  - New user verification emails working
+  
+- **Perplexity API Integrated** - Real-time web search for competitor analysis
+  
+- **Stripe Live Key Configured** - Production payment processing enabled
+
+### Testing
+- **19 new backend tests** for Document Builder, Upsells, Competitor Analysis
+- **9 new E2E tests** for Document Builder UI flows
+- **100% pass rate** on all new features
 
 ### Documentation
-- **Comprehensive PRD Generated** - Full product requirements document reverse-engineered from codebase
-  - 42 frontend pages documented
-  - 18+ database collections catalogued
-  - All API endpoints documented
-  - Third-party integrations mapped
-  - Feature status tracked
+- **PRD v4.0** - Updated with all new features
+- **CHANGELOG** - Full session history
+- **ROADMAP** - Updated priorities
 
 ---
 

@@ -2,153 +2,130 @@
 
 ## Current Status: V21 (December 2025)
 
-Platform is fully functional with AI chatbot (Nova), property listings, contractor marketplace, e-signing, payments, analytics, and comprehensive email verification.
+Platform is fully functional with:
+- AI chatbot (Nova) with voice
+- Property listings & search
+- Contractor marketplace
+- Document builder & e-signing
+- Universal payments & invoicing
+- Role-specific analytics
+- Featured listings
+- Post-reservation upsells
+- Real-time competitor analysis
+- Production email system
 
 ---
 
-## Immediate Priorities (P0)
+## ✅ COMPLETED (This Session)
 
-### 1. Production Email Sending
-- **Status:** ✅ COMPLETE
-- **Description:** Resend integration fully configured with domain verification
-- **What was done:** 
-  - Added DKIM, SPF, MX, DMARC records in AWS Route 53
-  - Updated sender email to noreply@dommma.com
-  - New API key configured
-- **Result:** All transactional emails now working in production
+### Production Email Sending
+- Resend integration with dommma.com domain
+- DNS records (DKIM, SPF, MX, DMARC) configured
+- Emails from noreply@dommma.com
 
-### 2. Featured Property Payment Flow
-- **Status:** ✅ COMPLETE
-- **Description:** Pay-per-success model for featured listings
-- **What was done:**
-  - Backend endpoints for enabling/disabling featured status
-  - Automatic fee charge when property is marked as rented
-  - Featured badge display on Browse and MyProperties pages
-  - 30-day featured duration with expiry tracking
+### Featured Property Payment Flow
+- Pay-per-success model ($49.99 when rented)
+- Featured badge on property cards
+- 30-day duration with auto-expiry
 
-### 3. Role-Specific Analytics Dashboards
-- **Status:** ✅ COMPLETE
-- **Description:** Each user role has tailored analytics
-- **What was done:**
-  - Renter: Favorites, applications, profile completion tracking
-  - Landlord: Properties, revenue, application funnel, maintenance
-  - Contractor: Jobs, earnings, ratings, reviews
-  - Platform view toggle for admin overview
+### Role-Specific Analytics Dashboards
+- Renter: Favorites, applications, profile completion
+- Landlord: Properties, revenue, application funnel
+- Contractor: Jobs, earnings, ratings
 
-### 4. Credit Card Management UI
-- **Status:** ✅ COMPLETE
-- **Description:** Users can save and manage payment methods
-- **What was done:**
-  - Payment Methods tab added to Settings
-  - Stripe customer creation and payment method storage
-  - Set default payment method
-  - Delete saved cards
+### Credit Card Management UI
+- Payment Methods tab in Settings
+- Stripe customer creation
+- Add/remove/set default cards
+
+### Universal Pay & Invoices
+- Role-specific payment types
+- Automatic invoice generation
+- PDF download
+
+### Document Builder
+- BC RTB forms (RTB-1, RTB-7, RTB-26, RTB-30)
+- Step-by-step wizard
+- PDF generation & e-signature
+
+### Post-Reservation Upsells
+- Local service providers API
+- 6 categories (movers, internet, etc.)
+- Quote request system
+
+### Real Competitor Scraping
+- Perplexity API integration
+- Live data from Craigslist, FB, Kijiji
+- AI-powered price suggestions
 
 ---
 
 ## Short-term Goals (P1)
 
-### 4. Role-Specific Analytics Dashboards
-- **Status:** PARTIAL - Platform analytics exists
-- **Description:** Build dedicated dashboards for each user role
-- **Files:** Create new pages under `frontend/src/pages/Analytics/`
+### 1. Integrate Upsells into Booking Flow
+- **Status:** API complete, UI integration pending
+- **Description:** Show upsells after property reservation confirmed
+- **Files:** Integrate `PostReservationOffers.jsx` into reservation confirmation
+- **Priority:** HIGH
+
+### 2. Document Signing Flow
+- **Status:** Email sending complete, signing page needed
+- **Description:** Create `/sign-document/{id}` page for recipients
 - **Features:**
-  - **Renters:** Search history, saved properties, application status
-  - **Landlords:** Listing views, inquiries, revenue tracking
-  - **Contractors:** Lead conversion, job completion rates, earnings
+  - View document details
+  - Digital signature capture
+  - Signed document storage
+- **Priority:** HIGH
 
-### 5. Real Competitor Scraping
-- **Status:** MOCKED - Uses local DB data
-- **Description:** Replace mocked scraping with real web scraping
-- **Options:**
-  - Bright Data
-  - ScrapingBee
-  - Custom scraper for FB Marketplace, Craigslist, Kijiji
-- **Files:** `backend/services/ai_tools.py`, POST /api/ai/competitor-analysis
-
-### 6. Credit Card Management UI
-- **Status:** NOT STARTED
-- **Description:** Allow users to save and manage payment methods
-- **Files:** Create component in `frontend/src/pages/User/Settings.jsx`
-- **Integration:** Stripe Customer Portal or custom implementation
+### 3. Mobile Optimization
+- **Status:** Responsive but not mobile-first
+- **Description:** Optimize key flows for mobile users
+- **Pages:** Browse, Document Builder, Payments
+- **Priority:** MEDIUM
 
 ---
 
 ## Medium-term Goals (P2)
 
-### 7. DocuSign-like Document Builder
-- **Status:** NOT STARTED
-- **Description:** Enhance Documents section for full document lifecycle
-- **Features:**
-  - Upload BC tenancy agreements
-  - Fill form fields in-browser
-  - Send for signature
-  - Store signed copies securely
+### 4. Notification Center Enhancements
+- Push notification preferences
+- Email digest options (daily/weekly)
+- In-app notification grouping
 
-### 8. Post-Reservation Upsells
-- **Status:** COMPONENT EXISTS - Needs integration
-- **Description:** Suggest services to renters after they reserve
-- **Files:** `frontend/src/components/PostReservationUpsell.jsx`
-- **Services:**
-  - Moving companies
-  - Internet providers
-  - Home insurance
-  - Utility setup
+### 5. Landlord Tenant Portal
+- Dedicated portal for existing tenants
+- Maintenance request submission
+- Rent payment history
+- Lease document access
 
-### 9. In-House Financing (Mocked)
-- **Status:** NOT STARTED
-- **Description:** Build UI mockups for financing features
-- **Features (mocked):**
-  - Rent-to-own programs
-  - Deposit financing
-  - Line of credit for landlords/contractors
+### 6. Contractor Scheduling
+- Calendar integration for job booking
+- Availability management
+- Automatic reminder emails
 
 ---
 
-## Long-term Vision (P3)
+## Future Goals (P3)
 
-### 10. In-House Financing
-- **Description:** Line of Credit for platform users
-- **Targets:**
-  - Landlords (property improvements)
-  - Contractors (equipment purchases)
-  - Renters (security deposits)
+### 7. iOS/Android Native Apps
+- React Native or Flutter
+- Push notifications
+- Offline support for key features
 
-### 11. Native Mobile Apps
-- **Description:** iOS and Android apps
-- **Approach:**
-  - React Native or Flutter
-  - Push notification support
-  - Offline capability
-  - Native camera access
+### 8. Multi-Language Support
+- French Canadian
+- Mandarin
+- Punjabi (Vancouver demographics)
 
-### 12. Advanced AI Features
-- **Description:** Next-gen AI capabilities
-- **Features:**
-  - Multi-property comparison
-  - Market trend predictions
-  - Automated rent adjustments
-  - Chatbot personality customization
+### 9. AI Enhancements
+- Property photo analysis
+- Virtual staging suggestions
+- Automated lease clause review
 
----
-
-## Technical Debt
-
-### Code Quality
-| Task | Priority | Effort |
-|------|----------|--------|
-| Split server.py into routers | P3 | Medium |
-| Fix npm peer dependency warnings | P2 | Low |
-| Add comprehensive test coverage | P2 | High |
-| Implement proper error boundaries | P3 | Low |
-
-### Infrastructure
-| Task | Priority | Effort |
-|------|----------|--------|
-| Set up CI/CD pipeline | P2 | Medium |
-| Add monitoring/alerting | P2 | Medium |
-| Implement rate limiting | P2 | Low |
-| Database backup automation | P1 | Low |
+### 10. In-House Financing (Mocked)
+- Rent-to-own programs UI
+- Deposit financing calculator
+- Credit score integration mockup
 
 ---
 
@@ -166,49 +143,34 @@ Platform is fully functional with AI chatbot (Nova), property listings, contract
 | DocuSign E-Sign | DONE | DONE | DONE | DONE |
 | Analytics Dashboard | DONE | DONE | DONE | DONE |
 | Lease Assignments | DONE | DONE | DONE | DONE |
-| E-Sign Documents | DONE | DONE | DONE | DONE |
 | My Resume | DONE | DONE | DONE | DONE |
 | AI Applicant Ranking | DONE | DONE | DONE | DONE |
 | Video Tours | DONE | DONE | - | - |
 | Syndication | DONE | DONE | - | - |
 | Address Autocomplete | DONE | DONE | DONE | DONE |
 | WCB/Insurance Verify | DONE | DONE | - | - |
-| Featured Properties | DONE | DONE | - | DONE |
-| Credit Card Mgmt | DONE | DONE | - | - |
-| Role Analytics | DONE | DONE | - | DONE |
-| Competitor Analysis | MOCKED | DONE | - | - |
+| **Featured Properties** | DONE | DONE | DONE | DONE |
+| **Credit Card Mgmt** | DONE | DONE | DONE | DONE |
+| **Role Analytics** | DONE | DONE | DONE | DONE |
+| **Document Builder** | DONE | DONE | DONE | DONE |
+| **Pay & Invoices** | DONE | DONE | DONE | DONE |
+| **Upsells API** | DONE | PARTIAL | DONE | DONE |
+| **Competitor Scraping** | DONE | DONE | DONE | DONE |
 
 ---
 
-## Success Metrics
+## API Keys Configured
 
-### User Engagement
-- Daily active users
-- Chat messages per session
-- Listings created via AI
-- Contractor bookings
-
-### Revenue
-- Stripe transaction volume
-- Lease assignment fees
-- Premium subscriptions (future)
-
-### Platform Health
-- API response times
-- Error rates
-- User satisfaction scores
-
----
-
-## Timeline (Estimated)
-
-| Quarter | Focus |
-|---------|-------|
-| Q4 2025 | Complete P0 items (DNS, Featured Properties) |
-| Q1 2026 | Role-specific Analytics, Credit Card UI |
-| Q2 2026 | DocuSign-like builder, Post-reservation upsells |
-| Q3 2026 | Mobile Apps MVP |
-| Q4 2026 | In-House Financing, Scale |
+| Service | Status | Notes |
+|---------|--------|-------|
+| Anthropic (Claude) | ✅ Active | AI chatbot |
+| OpenAI | ✅ Active | Whisper + TTS |
+| Stripe | ✅ Active | Live key |
+| Resend | ✅ Active | Domain verified |
+| Google Maps | ✅ Active | Places + Maps |
+| DocuSign | ✅ Active | OAuth configured |
+| Perplexity | ✅ Active | Web scraping |
+| MongoDB Atlas | ✅ Active | Production DB |
 
 ---
 
@@ -216,9 +178,8 @@ Platform is fully functional with AI chatbot (Nova), property listings, contract
 
 | Blocker | Owner | Resolution |
 |---------|-------|------------|
-| ~~Resend Test Mode~~ | ~~User~~ | ✅ RESOLVED - DNS records added, domain verified |
-| CDN Caching | Infrastructure | Platform limitation - use local bundle verification |
+| CDN Caching | Infrastructure | Platform limitation - code deploys correctly |
 
 ---
 
-*Last updated: December 2025*
+*Last updated: December 6, 2025*

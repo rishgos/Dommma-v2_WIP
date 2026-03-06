@@ -1,7 +1,7 @@
 # DOMMMA - Product Requirements Document (PRD)
 
 ## Document Information
-- **Version:** 3.0
+- **Version:** 4.0
 - **Last Updated:** December 2025
 - **Status:** Active Development
 - **Product Owner:** DOMMMA Team
@@ -240,11 +240,68 @@ To revolutionize the real estate experience by providing an AI-powered platform 
 | Commute Optimizer | ✅ Complete | Find properties by commute |
 | Lease Assignment Marketplace | ✅ Complete | Transfer leases |
 | Listing Syndication | ✅ Complete | Post to external platforms |
-| AI Competitor Analysis | ✅ Complete | Price recommendations |
+| AI Competitor Analysis | ✅ Complete | Real-time price scraping via Perplexity |
 | Calendar Integration | ✅ Complete | Google Calendar OAuth |
 | Address Autocomplete | ✅ Complete | Google Places API |
-| Analytics Dashboard | ✅ Complete | Platform metrics |
-| Settings Management | ✅ Complete | User preferences |
+| Analytics Dashboard | ✅ Complete | Role-specific metrics |
+| Settings Management | ✅ Complete | User preferences + payment methods |
+
+### 3.10 Document Builder (NEW)
+| Feature | Status | Description |
+|---------|--------|-------------|
+| BC Form Templates | ✅ Complete | RTB-1, RTB-7, RTB-26, RTB-30 |
+| Step-by-Step Wizard | ✅ Complete | Section-based form filling |
+| Auto-fill | ✅ Complete | Pre-populates landlord info |
+| PDF Generation | ✅ Complete | Download completed forms |
+| Send for Signature | ✅ Complete | Email documents for e-sign |
+| Document Preview | ✅ Complete | Review before sending |
+
+**API Endpoints:**
+- `POST /api/document-builder/save` - Save draft document
+- `POST /api/document-builder/send` - Send for signature
+- `POST /api/document-builder/pdf` - Generate PDF
+- `GET /api/document-builder/list/{user_id}` - List user documents
+
+### 3.11 Universal Payments & Invoices (NEW)
+| Feature | Status | Description |
+|---------|--------|-------------|
+| Role-Specific Payment Types | ✅ Complete | Rent, utilities, contractors, etc. |
+| Stripe Integration | ✅ Complete | Secure card processing |
+| Invoice Generation | ✅ Complete | Auto-generated per payment |
+| PDF Invoice Download | ✅ Complete | Professional invoices |
+| Payment History | ✅ Complete | Full transaction log |
+| Credit Card Management | ✅ Complete | Save/manage payment methods |
+
+**API Endpoints:**
+- `POST /api/payments/create` - Create payment + invoice
+- `GET /api/invoices/{user_id}` - Get user invoices
+- `GET /api/invoices/{invoice_id}/pdf` - Download invoice PDF
+- `GET /api/payments/types/{user_type}` - Get role payment types
+- `POST /api/stripe/checkout-setup` - Add new card
+
+### 3.12 Post-Reservation Upsells (NEW)
+| Feature | Status | Description |
+|---------|--------|-------------|
+| Service Categories | ✅ Complete | Movers, internet, insurance, etc. |
+| Local Providers | ✅ Complete | Vancouver-area curated list |
+| Quote Requests | ✅ Complete | Request service quotes |
+
+**API Endpoints:**
+- `GET /api/upsells/services/{city}` - Get local service providers
+- `POST /api/upsells/request-quote` - Request service quote
+
+### 3.13 Featured Listings (NEW)
+| Feature | Status | Description |
+|---------|--------|-------------|
+| Boost Listing | ✅ Complete | Landlord can feature properties |
+| Pay-Per-Success | ✅ Complete | $49.99 fee when rented |
+| Featured Badge | ✅ Complete | Visual indicator on cards |
+| Priority Sorting | ✅ Complete | Featured appear first |
+
+**API Endpoints:**
+- `POST /api/listings/{id}/featured` - Enable featured
+- `DELETE /api/listings/{id}/featured` - Disable featured
+- `POST /api/listings/{id}/mark-rented` - Mark rented + charge fee
 
 ---
 
