@@ -1,104 +1,93 @@
 # DOMMMA Product Roadmap
 
-## Current Status: V16 (March 2026)
+## Current Status: V21 (December 2025)
 
-Platform is fully functional with AI chatbot, property listings, contractor marketplace, e-signing, payments, and analytics.
+Platform is fully functional with AI chatbot (Nova), property listings, contractor marketplace, e-signing, payments, analytics, and comprehensive email verification.
 
 ---
 
 ## Immediate Priorities (P0)
 
-### 1. DocuSign Client Secret Configuration
-- **Status:** BLOCKED - Needs user input
-- **Description:** User needs to provide DocuSign Client Secret from DocuSign Developer Console
-- **Impact:** DocuSign OAuth token exchange will fail without it
-- **Action:** Request from user in next session
+### 1. Production Email Sending
+- **Status:** BLOCKED - Needs user DNS setup
+- **Description:** Resend API is in test mode, can only send to verified email
+- **Action Required:** User must add DNS records (DKIM, MX, SPF) in AWS Route 53 for dommma.com
+- **Impact:** Email verification for new users won't work in production
 
-### 2. My Resume Page Implementation
-- **Status:** IN PROGRESS
-- **Description:** Build out the renter resume page (`/my-resume`) with full functionality
-- **Files:** `/app/frontend/src/pages/MyResume.jsx`
+### 2. Featured Property Payment Flow
+- **Status:** PARTIAL - Model exists, payment flow pending
+- **Description:** Connect Stripe payment for landlords to mark listings as "featured"
+- **Files:** `backend/server.py`, `frontend/src/pages/Landlord/MyProperties.jsx`
 - **Features needed:**
-  - Employment information form
-  - Rental history section
-  - References management
-  - Resume PDF export
-  - Completeness score display
+  - Stripe checkout for featured upgrade
+  - Payment-on-success (when property rented)
+  - Featured badge display
+  - Priority sorting in search results
 
-### 3. AI Applicant Ranking Logic
-- **Status:** SCAFFOLDED
-- **Description:** Implement AI-powered tenant ranking for landlords
-- **Files:** `/app/frontend/src/pages/ApplicantRanking.jsx`
-- **Features needed:**
-  - Fetch applicants for landlord's properties
-  - AI scoring based on income, employment, rental history
-  - Sort and filter applicants
-  - Quick approve/reject actions
+### 3. CDN Cache Verification Workaround
+- **Status:** KNOWN ISSUE
+- **Description:** Frontend preview is heavily cached by CDN
+- **Workaround:** Verify code changes by checking local bundle content
+- **Note:** This is an infrastructure limitation, not a code bug
 
 ---
 
 ## Short-term Goals (P1)
 
-### 4. Video Tours with Cloudinary
-- **Status:** SDK installed, needs integration
-- **Description:** Allow landlords to upload video tours of properties
-- **Files:** 
-  - `/app/frontend/src/components/VideoTourUploader.jsx` (exists)
-  - `/app/frontend/src/components/VideoTourPlayer.jsx` (exists)
-- **Tasks:**
-  - Backend endpoint for Cloudinary signature
-  - Video upload in Add Property flow
-  - Video display on listing detail page
-  - Progress tracking during upload
-
-### 5. Listing Syndication (Deep Integration)
-- **Status:** SCAFFOLDED
-- **Description:** Auto-post listings to external platforms
-- **Files:** `/app/frontend/src/pages/ListingSyndication.jsx`
-- **Platforms:**
-  - Facebook Marketplace
-  - Craigslist
-  - Kijiji
+### 4. Role-Specific Analytics Dashboards
+- **Status:** PARTIAL - Platform analytics exists
+- **Description:** Build dedicated dashboards for each user role
+- **Files:** Create new pages under `frontend/src/pages/Analytics/`
 - **Features:**
-  - One-click formatted content generation
-  - Deep links to post on each platform
-  - Syndication tracking and stats
+  - **Renters:** Search history, saved properties, application status
+  - **Landlords:** Listing views, inquiries, revenue tracking
+  - **Contractors:** Lead conversion, job completion rates, earnings
 
-### 6. Renter Resume from Chat
-- **Status:** AI tool exists, needs enhancement
-- **Description:** Auto-build tenant profile from conversation with Nova
-- **Enhancement needed:**
-  - Extract more data points from chat
-  - Prompt user to fill gaps
-  - Save directly to renter_resumes collection
+### 5. Real Competitor Scraping
+- **Status:** MOCKED - Uses local DB data
+- **Description:** Replace mocked scraping with real web scraping
+- **Options:**
+  - Bright Data
+  - ScrapingBee
+  - Custom scraper for FB Marketplace, Craigslist, Kijiji
+- **Files:** `backend/services/ai_tools.py`, POST /api/ai/competitor-analysis
+
+### 6. Credit Card Management UI
+- **Status:** NOT STARTED
+- **Description:** Allow users to save and manage payment methods
+- **Files:** Create component in `frontend/src/pages/User/Settings.jsx`
+- **Integration:** Stripe Customer Portal or custom implementation
 
 ---
 
 ## Medium-term Goals (P2)
 
-### 7. Verification System (Trust Score)
-- **Description:** Build user trust through verification
-- **Components:**
-  - Persona integration for ID verification
-  - AI document review for contractor licenses
-  - Trust score calculation
-  - Verified badges on profiles
-
-### 8. AI Listing Optimizer
-- **Description:** AI suggests optimal pricing and descriptions
+### 7. DocuSign-like Document Builder
+- **Status:** NOT STARTED
+- **Description:** Enhance Documents section for full document lifecycle
 - **Features:**
-  - Analyze comparable listings
-  - Suggest competitive pricing
-  - Generate optimized descriptions
-  - Photo quality recommendations
+  - Upload BC tenancy agreements
+  - Fill form fields in-browser
+  - Send for signature
+  - Store signed copies securely
 
-### 9. Enhanced Maintenance Triage
-- **Description:** Improve AI maintenance analysis
-- **Features:**
-  - Photo upload in chat
-  - Multi-image analysis
-  - Auto-dispatch to contractors
-  - Priority escalation rules
+### 8. Post-Reservation Upsells
+- **Status:** COMPONENT EXISTS - Needs integration
+- **Description:** Suggest services to renters after they reserve
+- **Files:** `frontend/src/components/PostReservationUpsell.jsx`
+- **Services:**
+  - Moving companies
+  - Internet providers
+  - Home insurance
+  - Utility setup
+
+### 9. In-House Financing (Mocked)
+- **Status:** NOT STARTED
+- **Description:** Build UI mockups for financing features
+- **Features (mocked):**
+  - Rent-to-own programs
+  - Deposit financing
+  - Line of credit for landlords/contractors
 
 ---
 
@@ -153,20 +142,25 @@ Platform is fully functional with AI chatbot, property listings, contractor mark
 
 | Feature | Backend | Frontend | Testing | Docs |
 |---------|---------|----------|---------|------|
-| Auth | DONE | DONE | DONE | DONE |
-| Listings | DONE | DONE | DONE | DONE |
-| Contractors | DONE | DONE | DONE | DONE |
-| AI Chat | DONE | DONE | DONE | DONE |
-| Voice | DONE | DONE | DONE | DONE |
-| Payments | DONE | DONE | DONE | DONE |
-| DocuSign | DONE | DONE | DONE | PARTIAL |
-| Analytics | DONE | DONE | DONE | DONE |
+| Auth + Email Verification | DONE | DONE | DONE | DONE |
+| Listings + Search | DONE | DONE | DONE | DONE |
+| Claim Listing Flow | DONE | DONE | DONE | DONE |
+| Contractors + Ratings | DONE | DONE | DONE | DONE |
+| AI Chat (Nova) | DONE | DONE | DONE | DONE |
+| Voice STT/TTS | DONE | DONE | DONE | DONE |
+| Payments (Stripe) | DONE | DONE | DONE | DONE |
+| DocuSign E-Sign | DONE | DONE | DONE | DONE |
+| Analytics Dashboard | DONE | DONE | DONE | DONE |
 | Lease Assignments | DONE | DONE | DONE | DONE |
-| E-Sign | DONE | DONE | DONE | DONE |
-| My Resume | PARTIAL | SCAFFOLDED | - | - |
-| AI Ranking | - | SCAFFOLDED | - | - |
-| Video Tours | PARTIAL | SCAFFOLDED | - | - |
-| Syndication | - | SCAFFOLDED | - | - |
+| E-Sign Documents | DONE | DONE | DONE | DONE |
+| My Resume | DONE | DONE | DONE | DONE |
+| AI Applicant Ranking | DONE | DONE | DONE | DONE |
+| Video Tours | DONE | DONE | - | - |
+| Syndication | DONE | DONE | - | - |
+| Address Autocomplete | DONE | DONE | DONE | DONE |
+| WCB/Insurance Verify | DONE | DONE | - | - |
+| Featured Properties | PARTIAL | PARTIAL | - | - |
+| Competitor Analysis | MOCKED | DONE | - | - |
 
 ---
 
@@ -194,11 +188,21 @@ Platform is fully functional with AI chatbot, property listings, contractor mark
 
 | Quarter | Focus |
 |---------|-------|
-| Q1 2026 | Complete P0 items, Video Tours |
-| Q2 2026 | Verification System, AI Optimizer |
+| Q4 2025 | Complete P0 items (DNS, Featured Properties) |
+| Q1 2026 | Role-specific Analytics, Credit Card UI |
+| Q2 2026 | DocuSign-like builder, Post-reservation upsells |
 | Q3 2026 | Mobile Apps MVP |
 | Q4 2026 | In-House Financing, Scale |
 
 ---
 
-*Last updated: March 2, 2026*
+## Known Blockers
+
+| Blocker | Owner | Resolution |
+|---------|-------|------------|
+| Resend Test Mode | User | Add DNS records in AWS Route 53 |
+| CDN Caching | Infrastructure | Platform limitation - use local bundle verification |
+
+---
+
+*Last updated: December 2025*

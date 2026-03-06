@@ -2,6 +2,47 @@
 
 All notable changes to the DOMMMA platform are documented in this file.
 
+## [V21] - 2025-12-XX (Current)
+
+### Documentation
+- **Comprehensive PRD Generated** - Full product requirements document reverse-engineered from codebase
+  - 42 frontend pages documented
+  - 18+ database collections catalogued
+  - All API endpoints documented
+  - Third-party integrations mapped
+  - Feature status tracked
+
+---
+
+## [V20] - 2026-03-04
+
+### Security
+- **Email Verification System** - Full implementation for new user registrations
+  - POST /api/auth/register now sends verification email
+  - GET /api/auth/verify-email?token=X for email verification
+  - POST /api/auth/resend-verification for resending emails
+  - Legacy users (pre-verification) can still login
+  - Login now properly rejects unverified emails
+
+### Fixed
+- **Critical Auth Vulnerability** - Login no longer creates accounts for any email/password
+- **Nova Audio Stop** - Muting now properly stops audio playback immediately
+- **Contractor Payments Page** - Shows role-appropriate payment options
+
+### Added
+- **Address Autocomplete Component** - Reusable component using Google Places
+  - Integrated across 9 pages
+  - Auto-fill city/province
+  - Canadian address restriction
+- **Claim Listing Flow** - Unauthenticated users can create and later claim listings
+- **Contractor WCB/Insurance Verification** - AI-powered document verification
+- **Renter Pay Rent Card** - Added to renter dashboard
+- **Lease Duration Filters** - 3/6/9/12 month options on Browse
+- **Special Offers Filter** - Find properties with deals
+- **AI Competitor Analysis** - Price recommendations for landlords
+
+---
+
 ## [V16] - 2026-03-02
 
 ### Added
