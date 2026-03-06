@@ -1,0 +1,106 @@
+{
+  "summary": "Tested Document Builder, Upsells API, and Competitor Analysis features. All 19 backend tests pass, all 9 frontend E2E tests pass (3 new Document Builder tests + 6 existing core-flows tests). Added data-testid attributes to DocumentBuilder.jsx for testing.",
+  "mode": "generate",
+  "baseline_commit": "2a58f384c03da80c4c29baf99ad6cb0c946d2e56",
+  "head_commit": "5fde121d270e1ad314b75304ed7c62a34d036860",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "DashboardLayout sidebar",
+        "issue": "Sidebar overlay intercepts pointer events on buttons when viewport is small. Buttons at bottom of form pages may be blocked by sidebar footer.",
+        "selector": "[data-testid='dashboard-sidebar']",
+        "priority": "LOW",
+        "workaround": "Use JavaScript click or force: true in Playwright tests"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "regression_results": {
+    "total_specs": 2,
+    "passed": 9,
+    "failed": 0,
+    "skipped": 0
+  },
+  "backend_test_results": {
+    "total_tests": 19,
+    "passed": 19,
+    "failed": 0
+  },
+  "specs_created": [
+    "/app/tests/e2e/document-builder.spec.ts",
+    "/app/backend/tests/test_document_builder_upsells.py"
+  ],
+  "specs_updated": [
+    "/app/tests/fixtures/helpers.ts"
+  ],
+  "quarantined_tests": [],
+  "test_report_links": [
+    "/app/backend/tests/test_document_builder_upsells.py",
+    "/app/test_reports/pytest/test_document_builder_upsells.xml",
+    "/app/tests/e2e/document-builder.spec.ts",
+    "/app/tests/e2e/core-flows.spec.ts"
+  ],
+  "action_items": [],
+  "updated_files": [
+    "/app/frontend/src/pages/DocumentBuilder.jsx",
+    "/app/tests/fixtures/helpers.ts"
+  ],
+  "success_rate": {
+    "backend": "100% (19/19 tests passed)",
+    "frontend": "100% (9/9 tests passed)"
+  },
+  "seed_data_creation": "Test documents created via API during testing (auto-cleaned by unique UUIDs)",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "All 3 new features working correctly: 1) Document Builder - templates load, form wizard works, preview page has PDF download and send for signature. 2) Upsells API - returns all 6 service categories (movers, internet, insurance, utilities, cleaning, storage) with provider details. 3) Competitor Analysis - returns recommended price, title, description, selling points via AI. Note: Perplexity API integration is MOCKED - falls back to local data when no API key.",
+  "features_tested": {
+    "Document_Builder_Template_Selection": {
+      "status": "WORKING",
+      "notes": "All 4 templates (RTB-1, RTB-7, RTB-26, RTB-30) load correctly with descriptions"
+    },
+    "Document_Builder_Form_Wizard": {
+      "status": "WORKING",
+      "notes": "RTB-1 has 7 sections, form fields render correctly, auto-populates landlord info from user"
+    },
+    "Document_Builder_Preview": {
+      "status": "WORKING",
+      "notes": "Shows document preview, Download PDF button, Print button, Send for Signature section"
+    },
+    "Document_Builder_Save_Draft_API": {
+      "status": "WORKING",
+      "notes": "POST /api/document-builder/save creates document, returns id"
+    },
+    "Document_Builder_PDF_Generation": {
+      "status": "WORKING",
+      "notes": "POST /api/document-builder/pdf generates valid PDF with form data"
+    },
+    "Document_Builder_Send_Signature": {
+      "status": "WORKING",
+      "notes": "POST /api/document-builder/send creates document with pending_signature status, sends email"
+    },
+    "Upsells_Services_API": {
+      "status": "WORKING",
+      "notes": "GET /api/upsells/services/{city} returns movers, internet, insurance, utilities, cleaning, storage"
+    },
+    "Upsells_Quote_Request": {
+      "status": "WORKING",
+      "notes": "POST /api/upsells/request-quote records quote request with provider details"
+    },
+    "Competitor_Analysis_API": {
+      "status": "WORKING",
+      "notes": "POST /api/ai/competitor-analysis returns AI-generated title, description, price suggestion (Perplexity MOCKED)"
+    }
+  },
+  "mocked_integrations": [
+    {
+      "api": "Perplexity API",
+      "reason": "No PERPLEXITY_API_KEY configured",
+      "fallback": "Uses local database listings and default Vancouver market rates"
+    }
+  ]
+}

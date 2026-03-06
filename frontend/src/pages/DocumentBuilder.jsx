@@ -379,16 +379,16 @@ export default function DocumentBuilder() {
   if (step === 'select') {
     return (
       <DashboardLayout>
-        <div className="max-w-4xl mx-auto space-y-6">
+        <div className="max-w-4xl mx-auto space-y-6" data-testid="document-builder-page">
           <div>
-            <h1 className="text-2xl font-semibold text-[#1A2F3A] flex items-center gap-3" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+            <h1 className="text-2xl font-semibold text-[#1A2F3A] flex items-center gap-3" style={{ fontFamily: 'Cormorant Garamond, serif' }} data-testid="document-builder-title">
               <FileText />
               Document Builder
             </h1>
-            <p className="text-gray-600 mt-1">Create and fill official BC tenancy documents</p>
+            <p className="text-gray-600 mt-1" data-testid="document-builder-subtitle">Create and fill official BC tenancy documents</p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid md:grid-cols-2 gap-4" data-testid="templates-grid">
             {TEMPLATES.map(template => (
               <button
                 key={template.id}
@@ -426,21 +426,22 @@ export default function DocumentBuilder() {
     
     return (
       <DashboardLayout>
-        <div className="max-w-3xl mx-auto space-y-6">
+        <div className="max-w-3xl mx-auto space-y-6" data-testid="document-fill-page">
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
               <button
                 onClick={() => currentSection === 0 ? setStep('select') : setCurrentSection(c => c - 1)}
                 className="flex items-center gap-2 text-gray-600 hover:text-[#1A2F3A] mb-2"
+                data-testid="back-button"
               >
                 <ChevronLeft size={18} />
                 {currentSection === 0 ? 'Back to Templates' : 'Previous Section'}
               </button>
-              <h1 className="text-xl font-semibold text-[#1A2F3A]">{selectedTemplate.name}</h1>
+              <h1 className="text-xl font-semibold text-[#1A2F3A]" data-testid="selected-template-name">{selectedTemplate.name}</h1>
             </div>
             <div className="text-right">
-              <p className="text-sm text-gray-500 mb-1">Section {currentSection + 1} of {selectedTemplate.sections.length}</p>
+              <p className="text-sm text-gray-500 mb-1" data-testid="section-progress">Section {currentSection + 1} of {selectedTemplate.sections.length}</p>
               <div className="w-32 h-2 bg-gray-100 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-[#1A2F3A] transition-all duration-300"
@@ -451,8 +452,8 @@ export default function DocumentBuilder() {
           </div>
 
           {/* Form Section */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-[#1A2F3A] mb-6 flex items-center gap-2">
+          <div className="bg-white rounded-2xl p-6 shadow-sm" data-testid="form-section">
+            <h2 className="text-lg font-semibold text-[#1A2F3A] mb-6 flex items-center gap-2" data-testid="section-title">
               {section.title}
             </h2>
             
@@ -479,6 +480,7 @@ export default function DocumentBuilder() {
               onClick={handleSaveDocument}
               disabled={saving}
               className="px-4 py-2 text-gray-600 hover:text-[#1A2F3A] flex items-center gap-2"
+              data-testid="save-draft-button"
             >
               {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
               Save Draft
@@ -489,6 +491,7 @@ export default function DocumentBuilder() {
                 <button
                   onClick={() => setCurrentSection(c => c + 1)}
                   className="px-6 py-2.5 bg-[#1A2F3A] text-white rounded-lg font-medium hover:bg-[#2C4A52] flex items-center gap-2"
+                  data-testid="next-section-button"
                 >
                   Next Section
                   <ChevronRight size={16} />
@@ -497,6 +500,7 @@ export default function DocumentBuilder() {
                 <button
                   onClick={() => setStep('preview')}
                   className="px-6 py-2.5 bg-[#1A2F3A] text-white rounded-lg font-medium hover:bg-[#2C4A52] flex items-center gap-2"
+                  data-testid="preview-button"
                 >
                   <Eye size={16} />
                   Preview Document
@@ -527,23 +531,25 @@ export default function DocumentBuilder() {
   if (step === 'preview') {
     return (
       <DashboardLayout>
-        <div className="max-w-4xl mx-auto space-y-6">
+        <div className="max-w-4xl mx-auto space-y-6" data-testid="document-preview-page">
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
               <button
                 onClick={() => setStep('fill')}
                 className="flex items-center gap-2 text-gray-600 hover:text-[#1A2F3A] mb-2"
+                data-testid="back-to-edit-button"
               >
                 <ChevronLeft size={18} />
                 Back to Edit
               </button>
-              <h1 className="text-xl font-semibold text-[#1A2F3A]">Review Document</h1>
+              <h1 className="text-xl font-semibold text-[#1A2F3A]" data-testid="review-title">Review Document</h1>
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={handleDownloadPDF}
                 className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2"
+                data-testid="download-pdf-button"
               >
                 <Download size={16} />
                 Download PDF
@@ -551,6 +557,7 @@ export default function DocumentBuilder() {
               <button
                 onClick={() => window.print()}
                 className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2"
+                data-testid="print-button"
               >
                 <Printer size={16} />
                 Print
@@ -588,7 +595,7 @@ export default function DocumentBuilder() {
           </div>
 
           {/* Send for Signature */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <div className="bg-white rounded-2xl p-6 shadow-sm" data-testid="send-signature-section">
             <h3 className="font-semibold text-[#1A2F3A] mb-4 flex items-center gap-2">
               <Send size={18} />
               Send for Signature
@@ -604,12 +611,14 @@ export default function DocumentBuilder() {
                   onChange={(e) => setRecipientEmail(e.target.value)}
                   placeholder="tenant@email.com"
                   className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#1A2F3A]/20 focus:border-[#1A2F3A]"
+                  data-testid="recipient-email-input"
                 />
               </div>
               <button
                 onClick={handleSendForSignature}
                 disabled={sending || !recipientEmail}
                 className="px-6 py-2.5 bg-[#1A2F3A] text-white rounded-lg font-medium hover:bg-[#2C4A52] disabled:opacity-50 flex items-center gap-2"
+                data-testid="send-document-button"
               >
                 {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                 Send Document
