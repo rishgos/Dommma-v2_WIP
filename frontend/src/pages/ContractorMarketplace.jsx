@@ -144,16 +144,15 @@ const ContractorMarketplace = () => {
                   {activeTab === 'contractors' ? 'Verified professionals for every job' : 'Open jobs waiting for your bid'}
                 </p>
               </div>
-              {user && user.user_type !== 'contractor' && (
-                <button
-                  onClick={() => setShowJobForm(true)}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-white text-[#1A2F3A] rounded-full font-medium hover:bg-gray-100 transition-colors"
-                  data-testid="post-job-btn"
-                >
-                  <Plus size={18} />
-                  Post a Job
-                </button>
-              )}
+              {/* Post a Job button - links to bark.com-style wizard */}
+              <Link
+                to="/get-quotes"
+                className="flex items-center gap-2 px-5 py-2.5 bg-white text-[#1A2F3A] rounded-full font-medium hover:bg-gray-100 transition-colors"
+                data-testid="post-job-btn"
+              >
+                <Plus size={18} />
+                Get Free Quotes
+              </Link>
             </div>
 
             {/* Tabs */}

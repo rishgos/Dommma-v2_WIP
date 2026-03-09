@@ -46,6 +46,12 @@ A guided job posting flow inspired by bark.com:
 - **Success confirmation** with professional notification
 - **Guest posting** supported (no login required)
 
+#### Email Notifications for Job Flow
+- **Customer confirmation email** - Sent when job request is posted
+- **Contractor lead notification** - Sent to matching contractors with new lead details
+- **Bid received notification** - Customer receives email when contractor submits quote
+- All emails use professional DOMMMA branding with clear CTAs
+
 #### Universal Star Rating System
 - All user roles (Renters, Landlords, Contractors) can receive ratings
 - Rating endpoints: POST/GET `/api/ratings/user`, `/api/ratings/summary/{user_id}`

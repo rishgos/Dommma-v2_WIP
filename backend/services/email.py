@@ -103,3 +103,114 @@ def email_offer_received(seller_name: str, listing_title: str, offer_amount: int
         <p style="color:#555;">Log in to review and respond to this offer.</p>
       </div>
     </div>"""
+
+
+def email_job_request_confirmation(customer_name: str, service_title: str, location: str, answers: dict = None) -> str:
+    """Email sent to customer confirming their job request"""
+    answers_html = ""
+    if answers:
+        answers_list = "".join([f'<li style="color:#555;margin:4px 0;">{k.replace("_", " ").title()}: {v}</li>' for k, v in answers.items() if v])
+        answers_html = f'<ul style="list-style:none;padding:0;margin:10px 0;">{answers_list}</ul>'
+    
+    return f"""
+    <div style="font-family:'Georgia',serif;max-width:600px;margin:0 auto;background:#F5F5F0;padding:40px;">
+      <div style="background:#1A2F3A;padding:30px;border-radius:16px 16px 0 0;text-align:center;">
+        <h1 style="color:white;font-family:'Georgia',serif;margin:0;font-size:28px;">DOMMMA</h1>
+        <p style="color:rgba(255,255,255,0.7);margin:8px 0 0;font-size:14px;">Your Request is Live</p>
+      </div>
+      <div style="background:white;padding:30px;border-radius:0 0 16px 16px;">
+        <div style="text-align:center;margin-bottom:20px;">
+          <div style="display:inline-block;background:#22c55e;color:white;padding:8px 16px;border-radius:20px;font-size:14px;">✓ Request Posted</div>
+        </div>
+        <h2 style="color:#1A2F3A;margin:0 0 16px;text-align:center;">Hi {customer_name}!</h2>
+        <p style="color:#555;line-height:1.6;text-align:center;">Your request has been posted. Local professionals will contact you with quotes soon.</p>
+        
+        <div style="background:#F5F5F0;border-radius:12px;padding:20px;margin:20px 0;">
+          <p style="margin:0 0 8px;color:#1A2F3A;font-weight:bold;font-size:18px;">{service_title}</p>
+          <p style="margin:0;color:#888;font-size:14px;">📍 {location}</p>
+          {answers_html}
+        </div>
+        
+        <div style="background:#FEF3C7;border-radius:12px;padding:16px;margin:20px 0;">
+          <p style="margin:0;color:#92400E;font-size:14px;">💡 <strong>What happens next?</strong></p>
+          <p style="margin:8px 0 0;color:#92400E;font-size:13px;">Local professionals will review your request and send you quotes. You can compare their profiles, ratings, and prices before choosing.</p>
+        </div>
+        
+        <p style="color:#888;font-size:12px;text-align:center;margin-top:20px;">You'll receive emails when professionals respond to your request.</p>
+      </div>
+    </div>"""
+
+
+def email_new_lead_notification(contractor_name: str, service_title: str, location: str, description: str, job_id: str) -> str:
+    """Email sent to contractors about new job lead matching their specialty"""
+    return f"""
+    <div style="font-family:'Georgia',serif;max-width:600px;margin:0 auto;background:#F5F5F0;padding:40px;">
+      <div style="background:#1A2F3A;padding:30px;border-radius:16px 16px 0 0;text-align:center;">
+        <h1 style="color:white;font-family:'Georgia',serif;margin:0;font-size:28px;">DOMMMA</h1>
+        <p style="color:rgba(255,255,255,0.7);margin:8px 0 0;font-size:14px;">New Lead Alert</p>
+      </div>
+      <div style="background:white;padding:30px;border-radius:0 0 16px 16px;">
+        <div style="text-align:center;margin-bottom:20px;">
+          <div style="display:inline-block;background:#3B82F6;color:white;padding:8px 16px;border-radius:20px;font-size:14px;">🔔 New Job Request</div>
+        </div>
+        <h2 style="color:#1A2F3A;margin:0 0 16px;">Hi {contractor_name}!</h2>
+        <p style="color:#555;line-height:1.6;">A new job matching your expertise has been posted in your area.</p>
+        
+        <div style="background:#F5F5F0;border-radius:12px;padding:20px;margin:20px 0;">
+          <p style="margin:0 0 8px;color:#1A2F3A;font-weight:bold;font-size:18px;">{service_title}</p>
+          <p style="margin:0 0 12px;color:#888;font-size:14px;">📍 {location}</p>
+          <p style="margin:0;color:#555;font-size:14px;line-height:1.5;">{description[:200]}{'...' if len(description) > 200 else ''}</p>
+        </div>
+        
+        <div style="text-align:center;margin:24px 0;">
+          <a href="https://dommma.com/contractors?tab=jobs" style="background:#1A2F3A;color:white;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;">View & Submit Quote</a>
+        </div>
+        
+        <div style="background:#ECFDF5;border-radius:12px;padding:16px;margin:20px 0;">
+          <p style="margin:0;color:#065F46;font-size:14px;">💰 <strong>Quick Response Tip</strong></p>
+          <p style="margin:8px 0 0;color:#065F46;font-size:13px;">Contractors who respond within the first hour are 3x more likely to be hired. Include a personalized message and competitive quote!</p>
+        </div>
+        
+        <p style="color:#888;font-size:12px;text-align:center;">You're receiving this because your profile matches: {service_title}</p>
+      </div>
+    </div>"""
+
+
+def email_bid_received(customer_name: str, contractor_name: str, bid_amount: float, job_title: str, message: str) -> str:
+    """Email sent to customer when a contractor submits a bid"""
+    return f"""
+    <div style="font-family:'Georgia',serif;max-width:600px;margin:0 auto;background:#F5F5F0;padding:40px;">
+      <div style="background:#1A2F3A;padding:30px;border-radius:16px 16px 0 0;text-align:center;">
+        <h1 style="color:white;font-family:'Georgia',serif;margin:0;font-size:28px;">DOMMMA</h1>
+        <p style="color:rgba(255,255,255,0.7);margin:8px 0 0;font-size:14px;">New Quote Received</p>
+      </div>
+      <div style="background:white;padding:30px;border-radius:0 0 16px 16px;">
+        <h2 style="color:#1A2F3A;margin:0 0 16px;">Hi {customer_name}!</h2>
+        <p style="color:#555;line-height:1.6;">Great news! A professional has submitted a quote for your job.</p>
+        
+        <div style="background:#F5F5F0;border-radius:12px;padding:20px;margin:20px 0;">
+          <p style="margin:0 0 4px;color:#888;font-size:12px;">QUOTE FOR</p>
+          <p style="margin:0 0 16px;color:#1A2F3A;font-weight:bold;">{job_title}</p>
+          
+          <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid #E5E5E5;padding-top:16px;">
+            <div>
+              <p style="margin:0;color:#1A2F3A;font-weight:bold;font-size:16px;">{contractor_name}</p>
+            </div>
+            <div style="text-align:right;">
+              <p style="margin:0;color:#1A2F3A;font-weight:bold;font-size:24px;">${bid_amount:,.2f}</p>
+            </div>
+          </div>
+          
+          <div style="background:white;border-radius:8px;padding:12px;margin-top:12px;">
+            <p style="margin:0;color:#555;font-size:14px;font-style:italic;">"{message[:150]}{'...' if len(message) > 150 else ''}"</p>
+          </div>
+        </div>
+        
+        <div style="text-align:center;margin:24px 0;">
+          <a href="https://dommma.com/dashboard" style="background:#1A2F3A;color:white;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;">View All Quotes</a>
+        </div>
+        
+        <p style="color:#888;font-size:12px;text-align:center;">Compare quotes from multiple professionals before making your decision.</p>
+      </div>
+    </div>"""
+

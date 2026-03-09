@@ -18,7 +18,7 @@ import asyncio
 
 # Shared modules
 from db import db, client
-from services.email import send_email, email_welcome, email_booking_confirmed, email_application_update, email_offer_received, email_verification, generate_verification_token
+from services.email import send_email, email_welcome, email_booking_confirmed, email_application_update, email_offer_received, email_verification, generate_verification_token, email_job_request_confirmation, email_new_lead_notification, email_bid_received
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -5435,13 +5435,27 @@ async def create_job_post(job: JobPostCreate, user_id: str):
     
     await db.job_posts.insert_one(job_doc)
     
-    # Notify relevant contractors (those with matching specialty)
+    # Send confirmation email to customer
+    if job.contact_email:
+        asyncio.create_task(send_email(
+            job.contact_email,
+            f"Your Request is Live - {job.title}",
+            email_job_request_confirmation(
+                job.contact_name or user_name,
+                job.title,
+                job.address,
+                job.answers
+            )
+        ))
+    
+    # Notify relevant contractors (those with matching specialty) via in-app notification AND email
     contractors = await db.contractor_profiles.find(
         {"specialties": {"$in": [job.category.lower()]}, "status": "active"},
-        {"_id": 0, "user_id": 1}
+        {"_id": 0, "user_id": 1, "business_name": 1}
     ).to_list(50)
     
     for c in contractors:
+        # In-app notification
         await db.notifications.insert_one({
             "id": str(uuid.uuid4()),
             "user_id": c["user_id"],
@@ -5452,6 +5466,21 @@ async def create_job_post(job: JobPostCreate, user_id: str):
             "read": False,
             "created_at": datetime.now(timezone.utc).isoformat()
         })
+        
+        # Get contractor's email
+        contractor_user = await db.users.find_one({"id": c["user_id"]}, {"_id": 0, "email": 1})
+        if contractor_user and contractor_user.get("email"):
+            asyncio.create_task(send_email(
+                contractor_user["email"],
+                f"New Lead: {job.title} in {job.address}",
+                email_new_lead_notification(
+                    c.get("business_name", "Professional"),
+                    job.title,
+                    job.address,
+                    job.description,
+                    job_id
+                )
+            ))
     
     job_doc.pop("_id", None)
     return job_doc
@@ -5554,17 +5583,33 @@ async def create_job_bid(job_id: str, bid: JobBidCreate, contractor_id: str):
         {"$inc": {"bid_count": 1}, "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}}
     )
     
-    # Notify job poster
-    await db.notifications.insert_one({
-        "id": str(uuid.uuid4()),
-        "user_id": job["user_id"],
-        "title": "New Bid Received",
-        "body": f"{contractor.get('business_name', 'A contractor')} submitted a bid of ${bid.amount}",
-        "type": "job_bid",
-        "data": {"job_id": job_id, "bid_id": bid_id},
-        "read": False,
-        "created_at": datetime.now(timezone.utc).isoformat()
-    })
+    # In-app notification for job poster
+    if job["user_id"] != "guest":
+        await db.notifications.insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": job["user_id"],
+            "title": "New Bid Received",
+            "body": f"{contractor.get('business_name', 'A contractor')} submitted a bid of ${bid.amount}",
+            "type": "job_bid",
+            "data": {"job_id": job_id, "bid_id": bid_id},
+            "read": False,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+    
+    # Email notification to job poster
+    customer_email = job.get("contact_email")
+    if customer_email:
+        asyncio.create_task(send_email(
+            customer_email,
+            f"New Quote: ${bid.amount:.2f} for {job['title']}",
+            email_bid_received(
+                job.get("contact_name", "Customer"),
+                contractor.get("business_name", "Professional"),
+                bid.amount,
+                job["title"],
+                bid.message
+            )
+        ))
     
     bid_doc.pop("_id", None)
     return bid_doc
