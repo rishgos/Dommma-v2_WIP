@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   Search, Star, MapPin, Clock, DollarSign, Shield,
   Phone, Mail, ChevronRight, Filter, Wrench, Zap, Droplets,
-  Paintbrush, Hammer, Leaf, Sparkles, Calendar, Send, X, MessageSquare
+  Paintbrush, Hammer, Leaf, Sparkles, Calendar, Send, X, MessageSquare, Plus, Briefcase
 } from 'lucide-react';
 import { useAuth } from '../App';
 import axios from 'axios';
@@ -11,6 +11,7 @@ import ContractorReviews from '../components/reviews/ContractorReviews';
 import ContractorLeaderboard from '../components/reviews/ContractorLeaderboard';
 import MainLayout from '../components/layout/MainLayout';
 import AddressAutocomplete from '../components/ui/AddressAutocomplete';
+import { JobPostForm, JobCard, JobBidForm, BidsList } from '../components/jobs/JobComponents';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -28,6 +29,14 @@ const ContractorMarketplace = () => {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Job posting states
+  const [showJobForm, setShowJobForm] = useState(false);
+  const [jobs, setJobs] = useState([]);
+  const [loadingJobs, setLoadingJobs] = useState(false);
+  const [activeTab, setActiveTab] = useState('contractors'); // 'contractors' or 'jobs'
+  const [selectedJobForBid, setSelectedJobForBid] = useState(null);
+  const [selectedJobForBids, setSelectedJobForBids] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedContractor, setSelectedContractor] = useState(null);
   const [contractorServices, setContractorServices] = useState([]);
@@ -39,7 +48,10 @@ const ContractorMarketplace = () => {
 
   const categories = ['plumbing', 'electrical', 'painting', 'renovation', 'landscaping', 'cleaning'];
 
-  useEffect(() => { fetchContractors(); }, [searchQuery, selectedCategory]);
+  useEffect(() => { 
+    fetchContractors();
+    fetchJobs();
+  }, [searchQuery, selectedCategory]);
 
   const fetchContractors = async () => {
     try {
@@ -50,6 +62,29 @@ const ContractorMarketplace = () => {
       const res = await axios.get(`${API}/contractors/search?${params}`);
       setContractors(res.data);
     } catch (e) { console.error(e); } finally { setLoading(false); }
+  };
+
+  const fetchJobs = async () => {
+    try {
+      setLoadingJobs(true);
+      const params = new URLSearchParams();
+      if (selectedCategory) params.append('category', selectedCategory);
+      const res = await axios.get(`${API}/jobs?${params}`);
+      setJobs(res.data);
+    } catch (e) { console.error(e); } finally { setLoadingJobs(false); }
+  };
+
+  const handleJobViewBids = (job) => {
+    if (user?.user_type === 'contractor') {
+      setSelectedJobForBid(job);
+    } else if (job.user_id === user?.id) {
+      setSelectedJobForBids(job);
+    } else {
+      // Non-owner, non-contractor - redirect to login or show info
+      if (!user) {
+        navigate('/login');
+      }
+    }
   };
 
   const viewContractor = async (contractor) => {
@@ -100,18 +135,62 @@ const ContractorMarketplace = () => {
         {/* Page Header */}
         <header className="bg-[#1A2F3A] text-white px-6 py-8">
           <div className="max-w-6xl mx-auto">
-            <div className="mb-6">
-              <h1 className="text-4xl md:text-5xl font-bold mb-2" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
-                Find Contractors
-              </h1>
-              <p className="text-lg text-white/80">Verified professionals for every job</p>
+            <div className="flex items-start justify-between mb-6">
+              <div>
+                <h1 className="text-4xl md:text-5xl font-bold mb-2" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+                  {activeTab === 'contractors' ? 'Find Contractors' : 'Browse Jobs'}
+                </h1>
+                <p className="text-lg text-white/80">
+                  {activeTab === 'contractors' ? 'Verified professionals for every job' : 'Open jobs waiting for your bid'}
+                </p>
+              </div>
+              {user && user.user_type !== 'contractor' && (
+                <button
+                  onClick={() => setShowJobForm(true)}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-white text-[#1A2F3A] rounded-full font-medium hover:bg-gray-100 transition-colors"
+                  data-testid="post-job-btn"
+                >
+                  <Plus size={18} />
+                  Post a Job
+                </button>
+              )}
             </div>
+
+            {/* Tabs */}
+            <div className="flex gap-2 mb-6">
+              <button
+                onClick={() => setActiveTab('contractors')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                  activeTab === 'contractors' 
+                    ? 'bg-white text-[#1A2F3A]' 
+                    : 'bg-white/10 text-white/80 hover:bg-white/20'
+                }`}
+              >
+                <Wrench size={16} />
+                Find Contractors
+              </button>
+              <button
+                onClick={() => setActiveTab('jobs')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                  activeTab === 'jobs' 
+                    ? 'bg-white text-[#1A2F3A]' 
+                    : 'bg-white/10 text-white/80 hover:bg-white/20'
+                }`}
+              >
+                <Briefcase size={16} />
+                Browse Jobs
+                {jobs.length > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 text-xs bg-yellow-400 text-[#1A2F3A] rounded-full">{jobs.length}</span>
+                )}
+              </button>
+            </div>
+
             <div className="relative max-w-2xl">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input
                 type="text" value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Search contractors by name, specialty..."
+                placeholder={activeTab === 'contractors' ? 'Search contractors by name, specialty...' : 'Search jobs...'}
                 className="w-full pl-12 pr-4 py-3 rounded-full bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:bg-white/20 outline-none"
                 data-testid="contractor-search-input"
               />
@@ -146,52 +225,96 @@ const ContractorMarketplace = () => {
           })}
         </div>
 
-        {/* Results */}
-        {loading ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1,2,3].map(i => <div key={i} className="bg-white rounded-2xl p-6 animate-pulse"><div className="h-24 bg-gray-200 rounded-xl mb-4" /><div className="h-4 bg-gray-200 rounded w-2/3" /></div>)}
-          </div>
-        ) : contractors.length === 0 ? (
-          <div className="bg-white rounded-2xl p-12 text-center">
-            <Wrench className="mx-auto mb-4 text-gray-300" size={64} />
-            <h3 className="text-xl font-semibold text-[#1A2F3A] mb-2">No Contractors Found</h3>
-            <p className="text-gray-500">Try adjusting your search or category filter</p>
-          </div>
-        ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {contractors.map(c => (
-              <div key={c.id} className="bg-white rounded-2xl overflow-hidden hover:shadow-lg transition-shadow cursor-pointer" onClick={() => viewContractor(c)} data-testid={`contractor-card-${c.id}`}>
-                <div className="h-32 bg-gradient-to-br from-[#1A2F3A] to-[#2C4A52] relative p-5">
-                  <div className="absolute top-4 right-4 flex items-center gap-1">
-                    {c.verified && <span className="flex items-center gap-1 px-2 py-1 bg-green-500/20 text-green-300 rounded-full text-xs"><Shield size={10} /> Verified</span>}
-                    {c.insurance && <span className="px-2 py-1 bg-blue-500/20 text-blue-300 rounded-full text-xs">Insured</span>}
-                  </div>
-                  <div className="absolute bottom-0 left-5 translate-y-1/2">
-                    <div className="w-16 h-16 rounded-2xl bg-white shadow-lg flex items-center justify-center text-2xl font-bold text-[#1A2F3A]" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
-                      {c.business_name?.charAt(0)}
+        {/* Results based on active tab */}
+        {activeTab === 'contractors' ? (
+          <>
+            {/* Contractors Results */}
+            {loading ? (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1,2,3].map(i => <div key={i} className="bg-white rounded-2xl p-6 animate-pulse"><div className="h-24 bg-gray-200 rounded-xl mb-4" /><div className="h-4 bg-gray-200 rounded w-2/3" /></div>)}
+              </div>
+            ) : contractors.length === 0 ? (
+              <div className="bg-white rounded-2xl p-12 text-center">
+                <Wrench className="mx-auto mb-4 text-gray-300" size={64} />
+                <h3 className="text-xl font-semibold text-[#1A2F3A] mb-2">No Contractors Found</h3>
+                <p className="text-gray-500">Try adjusting your search or category filter</p>
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {contractors.map(c => (
+                  <div key={c.id} className="bg-white rounded-2xl overflow-hidden hover:shadow-lg transition-shadow cursor-pointer" onClick={() => viewContractor(c)} data-testid={`contractor-card-${c.id}`}>
+                    <div className="h-32 bg-gradient-to-br from-[#1A2F3A] to-[#2C4A52] relative p-5">
+                      <div className="absolute top-4 right-4 flex items-center gap-1">
+                        {c.verified && <span className="flex items-center gap-1 px-2 py-1 bg-green-500/20 text-green-300 rounded-full text-xs"><Shield size={10} /> Verified</span>}
+                        {c.insurance && <span className="px-2 py-1 bg-blue-500/20 text-blue-300 rounded-full text-xs">Insured</span>}
+                      </div>
+                      <div className="absolute bottom-0 left-5 translate-y-1/2">
+                        <div className="w-16 h-16 rounded-2xl bg-white shadow-lg flex items-center justify-center text-2xl font-bold text-[#1A2F3A]" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+                          {c.business_name?.charAt(0)}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="pt-10 px-5 pb-5">
+                      <h3 className="font-semibold text-[#1A2F3A] text-lg mb-1">{c.business_name}</h3>
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="flex items-center">{renderStars(c.rating)}</div>
+                        <span className="text-sm text-gray-500">({c.review_count || 0})</span>
+                      </div>
+                      <p className="text-sm text-gray-500 line-clamp-2 mb-3">{c.description}</p>
+                      <div className="flex flex-wrap gap-1.5 mb-3">
+                        {c.specialties?.slice(0, 3).map(s => (
+                          <span key={s} className="px-2 py-0.5 bg-[#F5F5F0] text-gray-600 rounded text-xs capitalize">{s}</span>
+                        ))}
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-500 flex items-center gap-1"><MapPin size={12} />{c.service_areas?.[0]}</span>
+                        {c.hourly_rate && <span className="font-semibold text-[#1A2F3A]">${c.hourly_rate}/hr</span>}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="pt-10 px-5 pb-5">
-                  <h3 className="font-semibold text-[#1A2F3A] text-lg mb-1">{c.business_name}</h3>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="flex items-center">{renderStars(c.rating)}</div>
-                    <span className="text-sm text-gray-500">({c.review_count || 0})</span>
-                  </div>
-                  <p className="text-sm text-gray-500 line-clamp-2 mb-3">{c.description}</p>
-                  <div className="flex flex-wrap gap-1.5 mb-3">
-                    {c.specialties?.slice(0, 3).map(s => (
-                      <span key={s} className="px-2 py-0.5 bg-[#F5F5F0] text-gray-600 rounded text-xs capitalize">{s}</span>
-                    ))}
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-500 flex items-center gap-1"><MapPin size={12} />{c.service_areas?.[0]}</span>
-                    {c.hourly_rate && <span className="font-semibold text-[#1A2F3A]">${c.hourly_rate}/hr</span>}
-                  </div>
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
+            )}
+          </>
+        ) : (
+          <>
+            {/* Jobs Results */}
+            {loadingJobs ? (
+              <div className="grid md:grid-cols-2 gap-6">
+                {[1,2,3].map(i => <div key={i} className="bg-white rounded-2xl p-6 animate-pulse"><div className="h-24 bg-gray-200 rounded-xl mb-4" /><div className="h-4 bg-gray-200 rounded w-2/3" /></div>)}
+              </div>
+            ) : jobs.length === 0 ? (
+              <div className="bg-white rounded-2xl p-12 text-center">
+                <Briefcase className="mx-auto mb-4 text-gray-300" size={64} />
+                <h3 className="text-xl font-semibold text-[#1A2F3A] mb-2">No Jobs Posted Yet</h3>
+                <p className="text-gray-500">
+                  {user?.user_type === 'contractor' 
+                    ? 'Check back later for new job opportunities' 
+                    : 'Be the first to post a job and receive quotes from contractors'}
+                </p>
+                {user && user.user_type !== 'contractor' && (
+                  <button
+                    onClick={() => setShowJobForm(true)}
+                    className="mt-4 px-6 py-2 bg-[#1A2F3A] text-white rounded-full font-medium hover:bg-[#2C4A52] transition-colors inline-flex items-center gap-2"
+                  >
+                    <Plus size={16} />
+                    Post Your First Job
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 gap-6">
+                {jobs.map(job => (
+                  <JobCard 
+                    key={job.id} 
+                    job={job} 
+                    onViewBids={handleJobViewBids}
+                    isOwner={job.user_id === user?.id}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         )}
           </div>
 
@@ -370,6 +493,41 @@ const ContractorMarketplace = () => {
           </div>
         </div>
       )}
+
+      {/* Job Post Form Modal */}
+      <JobPostForm
+        isOpen={showJobForm}
+        onClose={() => setShowJobForm(false)}
+        onSuccess={() => {
+          fetchJobs();
+          setActiveTab('jobs');
+        }}
+        userId={user?.id}
+      />
+
+      {/* Job Bid Form Modal (for contractors) */}
+      <JobBidForm
+        job={selectedJobForBid}
+        isOpen={!!selectedJobForBid}
+        onClose={() => setSelectedJobForBid(null)}
+        onSuccess={() => {
+          fetchJobs();
+          setSelectedJobForBid(null);
+        }}
+        contractorId={user?.id}
+      />
+
+      {/* Bids List Modal (for job owners) */}
+      <BidsList
+        job={selectedJobForBids}
+        isOpen={!!selectedJobForBids}
+        onClose={() => setSelectedJobForBids(null)}
+        onAcceptBid={() => {
+          fetchJobs();
+          setSelectedJobForBids(null);
+        }}
+        userId={user?.id}
+      />
       </div>
     </MainLayout>
   );

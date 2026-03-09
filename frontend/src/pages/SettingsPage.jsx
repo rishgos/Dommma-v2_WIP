@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   Settings, User, Bell, Shield, Globe, Moon, Sun,
   Mail, Phone, Lock, Eye, EyeOff, Save, Check,
-  CreditCard, Trash2, LogOut, ChevronRight, Plus, Star, Loader2, CheckCircle, X
+  CreditCard, Trash2, LogOut, ChevronRight, Plus, Star, Loader2, CheckCircle, X, Home
 } from 'lucide-react';
 import { useAuth } from '../App';
 import axios from 'axios';
@@ -501,65 +501,215 @@ export default function SettingsPage() {
               </div>
             )}
 
-            {/* Notifications Tab */}
+            {/* Notifications Tab - Enhanced like Wise */}
             {activeTab === 'notifications' && (
-              <div className="bg-white rounded-2xl p-6 shadow-sm space-y-6">
-                <h2 className="text-xl font-semibold text-[#1A2F3A]">Notification Preferences</h2>
-                
-                <div className="space-y-4">
-                  <h3 className="font-medium text-gray-700 flex items-center gap-2">
-                    <Mail size={16} /> Email Notifications
-                  </h3>
-                  
-                  {[
-                    { key: 'email_new_listings', label: 'New listings matching my search' },
-                    { key: 'email_messages', label: 'New messages from landlords/renters' },
-                    { key: 'email_applications', label: 'Application status updates' },
-                  ].map(item => (
-                    <label key={item.key} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100">
-                      <span className="text-sm text-gray-700">{item.label}</span>
-                      <input
-                        type="checkbox"
-                        checked={notifications[item.key]}
-                        onChange={e => setNotifications({ ...notifications, [item.key]: e.target.checked })}
-                        className="w-5 h-5 text-[#1A2F3A] rounded border-gray-300 focus:ring-[#1A2F3A]"
-                      />
-                    </label>
-                  ))}
-                  
-                  <h3 className="font-medium text-gray-700 flex items-center gap-2 mt-6">
-                    <Bell size={16} /> Push Notifications
-                  </h3>
-                  
-                  <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100">
-                    <span className="text-sm text-gray-700">Enable push notifications</span>
-                    <input
-                      type="checkbox"
-                      checked={notifications.push_enabled}
-                      onChange={e => setNotifications({ ...notifications, push_enabled: e.target.checked })}
-                      className="w-5 h-5 text-[#1A2F3A] rounded border-gray-300 focus:ring-[#1A2F3A]"
-                    />
-                  </label>
-                  
-                  <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100">
-                    <span className="text-sm text-gray-700">SMS notifications (viewing reminders)</span>
-                    <input
-                      type="checkbox"
-                      checked={notifications.sms_enabled}
-                      onChange={e => setNotifications({ ...notifications, sms_enabled: e.target.checked })}
-                      className="w-5 h-5 text-[#1A2F3A] rounded border-gray-300 focus:ring-[#1A2F3A]"
-                    />
-                  </label>
+              <div className="space-y-6">
+                {/* Header */}
+                <div className="bg-white rounded-2xl p-6 shadow-sm">
+                  <h2 className="text-xl font-semibold text-[#1A2F3A] mb-2">Notification Preferences</h2>
+                  <p className="text-gray-500 text-sm">Control how and when you receive updates from DOMMMA</p>
                 </div>
-                
-                <button
-                  onClick={handleSaveNotifications}
-                  disabled={saving}
-                  className="px-6 py-2 bg-[#1A2F3A] text-white rounded-lg hover:bg-[#2C4A52] transition-colors flex items-center gap-2 disabled:opacity-50"
-                >
-                  {saved ? <Check size={18} /> : <Save size={18} />}
-                  {saved ? 'Saved!' : saving ? 'Saving...' : 'Save Changes'}
-                </button>
+
+                {/* Account Activity */}
+                <div className="bg-white rounded-2xl p-6 shadow-sm" data-testid="notifications-account">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                      <Shield size={20} className="text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-[#1A2F3A]">Account & Security</h3>
+                      <p className="text-xs text-gray-500">Important alerts about your account</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3 pl-13">
+                    {[
+                      { key: 'security_login', label: 'New login from unknown device', desc: 'Get alerted when someone signs in to your account', locked: true },
+                      { key: 'security_password', label: 'Password changes', desc: 'Notification when your password is changed', locked: true },
+                      { key: 'payment_receipts', label: 'Payment receipts', desc: 'Receive receipts for all payments you make' },
+                    ].map(item => (
+                      <div key={item.key} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                        <div>
+                          <p className="font-medium text-gray-800">{item.label}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{item.desc}</p>
+                        </div>
+                        {item.locked ? (
+                          <div className="flex items-center gap-2 text-gray-400">
+                            <Lock size={14} />
+                            <span className="text-xs">Always on</span>
+                          </div>
+                        ) : (
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={notifications[item.key] !== false}
+                              onChange={e => setNotifications({ ...notifications, [item.key]: e.target.checked })}
+                              className="sr-only peer"
+                            />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#1A2F3A]"></div>
+                          </label>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Messages & Communication */}
+                <div className="bg-white rounded-2xl p-6 shadow-sm" data-testid="notifications-messages">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                      <Mail size={20} className="text-purple-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-[#1A2F3A]">Messages & Communication</h3>
+                      <p className="text-xs text-gray-500">Stay connected with landlords, renters, and contractors</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3 pl-13">
+                    {[
+                      { key: 'email_messages', label: 'Direct messages', desc: 'Email when someone sends you a message' },
+                      { key: 'push_messages', label: 'Push notifications for messages', desc: 'Get instant alerts on your device' },
+                      { key: 'email_applications', label: 'Application updates', desc: 'Status changes on your rental applications' },
+                    ].map(item => (
+                      <div key={item.key} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                        <div>
+                          <p className="font-medium text-gray-800">{item.label}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{item.desc}</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={notifications[item.key] !== false}
+                            onChange={e => setNotifications({ ...notifications, [item.key]: e.target.checked })}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#1A2F3A]"></div>
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Property & Listings */}
+                <div className="bg-white rounded-2xl p-6 shadow-sm" data-testid="notifications-property">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                      <Home size={20} className="text-green-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-[#1A2F3A]">Property & Listings</h3>
+                      <p className="text-xs text-gray-500">Updates about properties you're interested in</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3 pl-13">
+                    {[
+                      { key: 'email_new_listings', label: 'New listing alerts', desc: 'Properties matching your saved searches' },
+                      { key: 'price_drops', label: 'Price drop alerts', desc: 'When saved properties reduce their price' },
+                      { key: 'viewing_reminders', label: 'Viewing reminders', desc: 'Reminders before scheduled property viewings' },
+                      { key: 'availability_updates', label: 'Availability updates', desc: 'When saved properties become available' },
+                    ].map(item => (
+                      <div key={item.key} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                        <div>
+                          <p className="font-medium text-gray-800">{item.label}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{item.desc}</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={notifications[item.key] !== false}
+                            onChange={e => setNotifications({ ...notifications, [item.key]: e.target.checked })}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#1A2F3A]"></div>
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Payments & Billing */}
+                <div className="bg-white rounded-2xl p-6 shadow-sm" data-testid="notifications-payments">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
+                      <CreditCard size={20} className="text-orange-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-[#1A2F3A]">Payments & Billing</h3>
+                      <p className="text-xs text-gray-500">Payment reminders and transaction updates</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3 pl-13">
+                    {[
+                      { key: 'rent_reminders', label: 'Rent due reminders', desc: 'Get reminded before your rent is due' },
+                      { key: 'late_payment_alerts', label: 'Late payment alerts', desc: 'Notifications when payments are overdue' },
+                      { key: 'invoice_generated', label: 'Invoice generated', desc: 'When new invoices are created for you' },
+                    ].map(item => (
+                      <div key={item.key} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                        <div>
+                          <p className="font-medium text-gray-800">{item.label}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{item.desc}</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={notifications[item.key] !== false}
+                            onChange={e => setNotifications({ ...notifications, [item.key]: e.target.checked })}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#1A2F3A]"></div>
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Delivery Methods */}
+                <div className="bg-white rounded-2xl p-6 shadow-sm" data-testid="notifications-delivery">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-[#1A2F3A]/10 rounded-xl flex items-center justify-center">
+                      <Bell size={20} className="text-[#1A2F3A]" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-[#1A2F3A]">Delivery Methods</h3>
+                      <p className="text-xs text-gray-500">Choose how you want to receive notifications</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3 pl-13">
+                    {[
+                      { key: 'push_enabled', label: 'Push notifications', desc: 'Get instant alerts on your browser or mobile device' },
+                      { key: 'sms_enabled', label: 'SMS notifications', desc: 'Receive important updates via text message' },
+                      { key: 'email_digest', label: 'Weekly email digest', desc: 'Get a summary of activity every week' },
+                    ].map(item => (
+                      <div key={item.key} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                        <div>
+                          <p className="font-medium text-gray-800">{item.label}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{item.desc}</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={notifications[item.key]}
+                            onChange={e => setNotifications({ ...notifications, [item.key]: e.target.checked })}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#1A2F3A]"></div>
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Save Button */}
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleSaveNotifications}
+                    disabled={saving}
+                    className="px-6 py-3 bg-[#1A2F3A] text-white rounded-xl hover:bg-[#2C4A52] transition-colors flex items-center gap-2 disabled:opacity-50 font-medium"
+                    data-testid="save-notifications-btn"
+                  >
+                    {saved ? <Check size={18} /> : <Save size={18} />}
+                    {saved ? 'Saved!' : saving ? 'Saving...' : 'Save Changes'}
+                  </button>
+                </div>
               </div>
             )}
 

@@ -5372,6 +5372,305 @@ async def get_contractor_leaderboard(limit: int = 10):
     
     return contractors
 
+
+# ========== JOB POSTING & BIDDING SYSTEM (bark.com-like) ==========
+
+class JobPostCreate(BaseModel):
+    title: str
+    category: str  # plumbing, electrical, painting, etc.
+    description: str
+    address: str
+    budget_min: Optional[float] = None
+    budget_max: Optional[float] = None
+    preferred_date: Optional[str] = None
+    urgency: str = "flexible"  # flexible, this_week, urgent
+    images: Optional[List[str]] = []
+
+class JobBidCreate(BaseModel):
+    amount: float
+    message: str
+    estimated_duration: Optional[str] = None
+    available_date: Optional[str] = None
+
+@api_router.post("/jobs")
+async def create_job_post(job: JobPostCreate, user_id: str):
+    """Create a new job posting (customer posts a job, contractors bid on it)"""
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    job_id = str(uuid.uuid4())
+    job_doc = {
+        "id": job_id,
+        "user_id": user_id,
+        "user_name": user.get("name", "Anonymous"),
+        "title": job.title,
+        "category": job.category.lower(),
+        "description": job.description,
+        "address": job.address,
+        "budget_min": job.budget_min,
+        "budget_max": job.budget_max,
+        "preferred_date": job.preferred_date,
+        "urgency": job.urgency,
+        "images": job.images or [],
+        "status": "open",  # open, in_progress, completed, cancelled
+        "bid_count": 0,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.job_posts.insert_one(job_doc)
+    
+    # Notify relevant contractors (those with matching specialty)
+    contractors = await db.contractor_profiles.find(
+        {"specialties": {"$in": [job.category.lower()]}, "status": "active"},
+        {"_id": 0, "user_id": 1}
+    ).to_list(50)
+    
+    for c in contractors:
+        await db.notifications.insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": c["user_id"],
+            "title": "New Job Opportunity",
+            "body": f"New job posted: {job.title}",
+            "type": "job_post",
+            "data": {"job_id": job_id},
+            "read": False,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+    
+    job_doc.pop("_id", None)
+    return job_doc
+
+@api_router.get("/jobs")
+async def get_job_posts(
+    category: Optional[str] = None,
+    status: str = "open",
+    limit: int = 20,
+    skip: int = 0
+):
+    """Get all job posts (for contractors to browse)"""
+    query = {"status": status}
+    if category:
+        query["category"] = category.lower()
+    
+    jobs = await db.job_posts.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    
+    # Add bid count for each job
+    for job in jobs:
+        bids = await db.job_bids.count_documents({"job_id": job["id"]})
+        job["bid_count"] = bids
+    
+    return jobs
+
+@api_router.get("/jobs/{job_id}")
+async def get_job_post(job_id: str):
+    """Get a specific job post with details"""
+    job = await db.job_posts.find_one({"id": job_id}, {"_id": 0})
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    # Get bids for this job
+    bids = await db.job_bids.find({"job_id": job_id}, {"_id": 0}).sort("created_at", -1).to_list(50)
+    
+    # Add contractor info to each bid
+    for bid in bids:
+        contractor = await db.contractor_profiles.find_one(
+            {"user_id": bid["contractor_id"]},
+            {"_id": 0, "business_name": 1, "avatar": 1, "rating": 1, "review_count": 1, "verified": 1}
+        )
+        bid["contractor"] = contractor or {}
+    
+    job["bids"] = bids
+    return job
+
+@api_router.get("/jobs/user/{user_id}")
+async def get_user_job_posts(user_id: str, status: Optional[str] = None):
+    """Get job posts created by a user"""
+    query = {"user_id": user_id}
+    if status:
+        query["status"] = status
+    
+    jobs = await db.job_posts.find(query, {"_id": 0}).sort("created_at", -1).to_list(50)
+    
+    for job in jobs:
+        bids = await db.job_bids.count_documents({"job_id": job["id"]})
+        job["bid_count"] = bids
+    
+    return jobs
+
+@api_router.post("/jobs/{job_id}/bids")
+async def create_job_bid(job_id: str, bid: JobBidCreate, contractor_id: str):
+    """Submit a bid on a job (contractor submits a quote)"""
+    # Verify job exists and is open
+    job = await db.job_posts.find_one({"id": job_id}, {"_id": 0})
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job["status"] != "open":
+        raise HTTPException(status_code=400, detail="Job is no longer accepting bids")
+    
+    # Verify contractor
+    contractor = await db.contractor_profiles.find_one({"user_id": contractor_id}, {"_id": 0})
+    if not contractor:
+        raise HTTPException(status_code=404, detail="Contractor profile not found")
+    
+    # Check if already bid
+    existing = await db.job_bids.find_one({"job_id": job_id, "contractor_id": contractor_id})
+    if existing:
+        raise HTTPException(status_code=400, detail="You have already submitted a bid for this job")
+    
+    bid_id = str(uuid.uuid4())
+    bid_doc = {
+        "id": bid_id,
+        "job_id": job_id,
+        "contractor_id": contractor_id,
+        "amount": bid.amount,
+        "message": bid.message,
+        "estimated_duration": bid.estimated_duration,
+        "available_date": bid.available_date,
+        "status": "pending",  # pending, accepted, rejected
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.job_bids.insert_one(bid_doc)
+    
+    # Update job bid count
+    await db.job_posts.update_one(
+        {"id": job_id},
+        {"$inc": {"bid_count": 1}, "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    # Notify job poster
+    await db.notifications.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_id": job["user_id"],
+        "title": "New Bid Received",
+        "body": f"{contractor.get('business_name', 'A contractor')} submitted a bid of ${bid.amount}",
+        "type": "job_bid",
+        "data": {"job_id": job_id, "bid_id": bid_id},
+        "read": False,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    bid_doc.pop("_id", None)
+    return bid_doc
+
+@api_router.get("/jobs/{job_id}/bids")
+async def get_job_bids(job_id: str):
+    """Get all bids for a job"""
+    bids = await db.job_bids.find({"job_id": job_id}, {"_id": 0}).sort("created_at", -1).to_list(50)
+    
+    for bid in bids:
+        contractor = await db.contractor_profiles.find_one(
+            {"user_id": bid["contractor_id"]},
+            {"_id": 0, "business_name": 1, "avatar": 1, "rating": 1, "review_count": 1, "verified": 1, "completed_jobs": 1}
+        )
+        bid["contractor"] = contractor or {}
+    
+    return bids
+
+@api_router.put("/jobs/{job_id}/bids/{bid_id}/accept")
+async def accept_job_bid(job_id: str, bid_id: str, user_id: str):
+    """Accept a bid and hire the contractor"""
+    # Verify job belongs to user
+    job = await db.job_posts.find_one({"id": job_id}, {"_id": 0})
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job["user_id"] != user_id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Get the bid
+    bid = await db.job_bids.find_one({"id": bid_id, "job_id": job_id}, {"_id": 0})
+    if not bid:
+        raise HTTPException(status_code=404, detail="Bid not found")
+    
+    # Accept this bid
+    await db.job_bids.update_one(
+        {"id": bid_id},
+        {"$set": {"status": "accepted", "accepted_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    # Reject all other bids
+    await db.job_bids.update_many(
+        {"job_id": job_id, "id": {"$ne": bid_id}},
+        {"$set": {"status": "rejected"}}
+    )
+    
+    # Update job status
+    await db.job_posts.update_one(
+        {"id": job_id},
+        {"$set": {
+            "status": "in_progress",
+            "accepted_bid_id": bid_id,
+            "accepted_contractor_id": bid["contractor_id"],
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    # Create a booking from this job
+    booking_id = str(uuid.uuid4())
+    booking_doc = {
+        "id": booking_id,
+        "customer_id": user_id,
+        "contractor_id": bid["contractor_id"],
+        "job_id": job_id,
+        "title": job["title"],
+        "description": job["description"],
+        "address": job["address"],
+        "amount": bid["amount"],
+        "status": "confirmed",
+        "preferred_date": bid.get("available_date") or job.get("preferred_date"),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.bookings.insert_one(booking_doc)
+    
+    # Notify contractor
+    await db.notifications.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_id": bid["contractor_id"],
+        "title": "Bid Accepted!",
+        "body": f"Your bid of ${bid['amount']} for '{job['title']}' was accepted",
+        "type": "bid_accepted",
+        "data": {"job_id": job_id, "bid_id": bid_id, "booking_id": booking_id},
+        "read": False,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    return {"status": "accepted", "booking_id": booking_id}
+
+@api_router.put("/jobs/{job_id}/cancel")
+async def cancel_job_post(job_id: str, user_id: str):
+    """Cancel a job post"""
+    job = await db.job_posts.find_one({"id": job_id}, {"_id": 0})
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job["user_id"] != user_id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    await db.job_posts.update_one(
+        {"id": job_id},
+        {"$set": {"status": "cancelled", "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    return {"status": "cancelled"}
+
+@api_router.get("/contractors/{contractor_id}/bids")
+async def get_contractor_bids(contractor_id: str, status: Optional[str] = None):
+    """Get all bids submitted by a contractor"""
+    query = {"contractor_id": contractor_id}
+    if status:
+        query["status"] = status
+    
+    bids = await db.job_bids.find(query, {"_id": 0}).sort("created_at", -1).to_list(50)
+    
+    for bid in bids:
+        job = await db.job_posts.find_one({"id": bid["job_id"]}, {"_id": 0, "title": 1, "category": 1, "address": 1, "status": 1})
+        bid["job"] = job or {}
+    
+    return bids
+
+
 # ========== USER PROFILE ==========
 
 @api_router.get("/users/{user_id}")
@@ -6408,6 +6707,168 @@ async def get_contractor_analytics(user_id: str):
         "recent_reviews": recent_reviews,
         "generated_at": datetime.now(timezone.utc).isoformat()
     }
+
+
+# ========== UNIVERSAL RATING SYSTEM ==========
+
+class UserRatingCreate(BaseModel):
+    rated_user_id: str
+    rating: int  # 1-5 stars
+    review: Optional[str] = None
+    context_type: str  # 'rental', 'service', 'landlord', 'contractor', 'renter'
+    context_id: Optional[str] = None  # listing_id, booking_id, etc.
+
+class UserRatingResponse(BaseModel):
+    id: str
+    rated_user_id: str
+    rater_user_id: str
+    rater_name: str
+    rating: int
+    review: Optional[str]
+    context_type: str
+    context_id: Optional[str]
+    created_at: str
+
+@api_router.post("/ratings/user")
+async def create_user_rating(rating_data: UserRatingCreate, rater_id: str):
+    """Create a rating for any user (renter, landlord, contractor)"""
+    # Validate rating
+    if not 1 <= rating_data.rating <= 5:
+        raise HTTPException(status_code=400, detail="Rating must be between 1 and 5")
+    
+    # Get rater info
+    rater = await db.users.find_one({"id": rater_id}, {"_id": 0})
+    if not rater:
+        raise HTTPException(status_code=404, detail="Rater not found")
+    
+    # Get rated user
+    rated_user = await db.users.find_one({"id": rating_data.rated_user_id}, {"_id": 0})
+    if not rated_user:
+        raise HTTPException(status_code=404, detail="User to rate not found")
+    
+    # Prevent self-rating
+    if rater_id == rating_data.rated_user_id:
+        raise HTTPException(status_code=400, detail="Cannot rate yourself")
+    
+    # Check for existing rating in same context
+    existing = await db.user_ratings.find_one({
+        "rated_user_id": rating_data.rated_user_id,
+        "rater_user_id": rater_id,
+        "context_type": rating_data.context_type,
+        "context_id": rating_data.context_id
+    })
+    
+    if existing:
+        raise HTTPException(status_code=400, detail="You have already rated this user for this context")
+    
+    # Create rating
+    rating_id = str(uuid.uuid4())
+    rating_doc = {
+        "id": rating_id,
+        "rated_user_id": rating_data.rated_user_id,
+        "rated_user_type": rated_user.get("user_type"),
+        "rater_user_id": rater_id,
+        "rater_name": rater.get("name", "Anonymous"),
+        "rater_type": rater.get("user_type"),
+        "rating": rating_data.rating,
+        "review": rating_data.review,
+        "context_type": rating_data.context_type,
+        "context_id": rating_data.context_id,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.user_ratings.insert_one(rating_doc)
+    
+    # Update user's average rating
+    await update_user_rating_stats(rating_data.rated_user_id)
+    
+    return rating_doc
+
+async def update_user_rating_stats(user_id: str):
+    """Recalculate and update a user's rating statistics"""
+    ratings = await db.user_ratings.find(
+        {"rated_user_id": user_id},
+        {"_id": 0, "rating": 1}
+    ).to_list(1000)
+    
+    if ratings:
+        avg_rating = sum(r["rating"] for r in ratings) / len(ratings)
+        await db.users.update_one(
+            {"id": user_id},
+            {"$set": {
+                "rating": round(avg_rating, 1),
+                "rating_count": len(ratings)
+            }}
+        )
+
+@api_router.get("/ratings/user/{user_id}")
+async def get_user_ratings(user_id: str, limit: int = 20):
+    """Get all ratings for a user"""
+    ratings = await db.user_ratings.find(
+        {"rated_user_id": user_id},
+        {"_id": 0}
+    ).sort("created_at", -1).limit(limit).to_list(limit)
+    
+    # Get user's rating stats
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "rating": 1, "rating_count": 1, "user_type": 1, "name": 1})
+    
+    return {
+        "user_id": user_id,
+        "user_name": user.get("name") if user else None,
+        "user_type": user.get("user_type") if user else None,
+        "average_rating": user.get("rating", 0) if user else 0,
+        "total_ratings": user.get("rating_count", 0) if user else 0,
+        "reviews": ratings
+    }
+
+@api_router.get("/ratings/summary/{user_id}")
+async def get_user_rating_summary(user_id: str):
+    """Get rating summary with distribution for a user"""
+    ratings = await db.user_ratings.find(
+        {"rated_user_id": user_id},
+        {"_id": 0, "rating": 1}
+    ).to_list(1000)
+    
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "rating": 1, "rating_count": 1, "user_type": 1, "name": 1})
+    
+    # Calculate distribution
+    distribution = {5: 0, 4: 0, 3: 0, 2: 0, 1: 0}
+    for r in ratings:
+        distribution[r["rating"]] = distribution.get(r["rating"], 0) + 1
+    
+    total = len(ratings)
+    distribution_pct = {
+        k: round((v / total * 100) if total > 0 else 0, 1)
+        for k, v in distribution.items()
+    }
+    
+    return {
+        "user_id": user_id,
+        "user_name": user.get("name") if user else None,
+        "user_type": user.get("user_type") if user else None,
+        "average_rating": user.get("rating", 0) if user else 0,
+        "total_ratings": total,
+        "distribution": distribution,
+        "distribution_percentage": distribution_pct
+    }
+
+@api_router.delete("/ratings/{rating_id}")
+async def delete_user_rating(rating_id: str, user_id: str):
+    """Delete a rating (only by the rater)"""
+    rating = await db.user_ratings.find_one({"id": rating_id})
+    if not rating:
+        raise HTTPException(status_code=404, detail="Rating not found")
+    
+    if rating.get("rater_user_id") != user_id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this rating")
+    
+    rated_user_id = rating.get("rated_user_id")
+    await db.user_ratings.delete_one({"id": rating_id})
+    
+    # Update user's rating stats
+    await update_user_rating_stats(rated_user_id)
+    
+    return {"success": True, "message": "Rating deleted"}
 
 
 # Include the router
