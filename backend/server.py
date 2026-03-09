@@ -4526,11 +4526,11 @@ async def update_maintenance_request(request_id: str, updates: Dict[str, Any]):
     
     return {"status": "updated"}
 
-# ========== CONTRACTOR JOBS ==========
+# ========== CONTRACTOR JOBS (LANDLORD TO CONTRACTOR) ==========
 
-@api_router.post("/jobs", response_model=dict)
+@api_router.post("/contractor-jobs", response_model=dict)
 async def create_contractor_job(landlord_id: str, job: ContractorJobCreate):
-    """Create a job posting for contractors"""
+    """Create a job posting for contractors (landlord posts maintenance job)"""
     job_obj = ContractorJob(
         landlord_id=landlord_id,
         maintenance_request_id=job.maintenance_request_id,
@@ -4547,7 +4547,7 @@ async def create_contractor_job(landlord_id: str, job: ContractorJobCreate):
     
     return {"id": job_obj.id, "status": "created"}
 
-@api_router.get("/jobs")
+@api_router.get("/contractor-jobs")
 async def get_contractor_jobs(
     category: Optional[str] = None,
     status: Optional[str] = None,
@@ -4567,19 +4567,19 @@ async def get_contractor_jobs(
     jobs = await db.contractor_jobs.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
     return jobs
 
-@api_router.get("/jobs/landlord/{landlord_id}")
+@api_router.get("/contractor-jobs/landlord/{landlord_id}")
 async def get_landlord_jobs(landlord_id: str):
     """Get jobs posted by a landlord"""
     jobs = await db.contractor_jobs.find({"landlord_id": landlord_id}, {"_id": 0}).sort("created_at", -1).to_list(50)
     return jobs
 
-@api_router.get("/jobs/contractor/{contractor_id}")
+@api_router.get("/contractor-jobs/contractor/{contractor_id}")
 async def get_contractor_assigned_jobs(contractor_id: str):
     """Get jobs assigned to a contractor"""
     jobs = await db.contractor_jobs.find({"contractor_id": contractor_id}, {"_id": 0}).sort("created_at", -1).to_list(50)
     return jobs
 
-@api_router.post("/jobs/{job_id}/bid")
+@api_router.post("/contractor-jobs/{job_id}/bid")
 async def submit_bid(job_id: str, bid: ContractorBid):
     """Submit a bid for a job"""
     job = await db.contractor_jobs.find_one({"id": job_id}, {"_id": 0})
@@ -4617,7 +4617,7 @@ async def submit_bid(job_id: str, bid: ContractorBid):
     
     return {"bid_id": bid_doc["id"], "status": "submitted"}
 
-@api_router.post("/jobs/{job_id}/select-bid")
+@api_router.post("/contractor-jobs/{job_id}/select-bid")
 async def select_bid(job_id: str, bid_id: str, landlord_id: str):
     """Select a winning bid for a job"""
     job = await db.contractor_jobs.find_one({"id": job_id}, {"_id": 0})
@@ -5385,6 +5385,11 @@ class JobPostCreate(BaseModel):
     preferred_date: Optional[str] = None
     urgency: str = "flexible"  # flexible, this_week, urgent
     images: Optional[List[str]] = []
+    # New fields for bark.com-style wizard
+    contact_email: Optional[str] = None
+    contact_name: Optional[str] = None
+    contact_phone: Optional[str] = None
+    answers: Optional[Dict[str, Any]] = {}  # Store questionnaire answers
 
 class JobBidCreate(BaseModel):
     amount: float
@@ -5395,15 +5400,19 @@ class JobBidCreate(BaseModel):
 @api_router.post("/jobs")
 async def create_job_post(job: JobPostCreate, user_id: str):
     """Create a new job posting (customer posts a job, contractors bid on it)"""
-    user = await db.users.find_one({"id": user_id}, {"_id": 0})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+    # Allow guest users (user_id='guest') to post jobs
+    user = None
+    user_name = "Guest"
+    if user_id != 'guest':
+        user = await db.users.find_one({"id": user_id}, {"_id": 0})
+        if user:
+            user_name = user.get("name", "Anonymous")
     
     job_id = str(uuid.uuid4())
     job_doc = {
         "id": job_id,
         "user_id": user_id,
-        "user_name": user.get("name", "Anonymous"),
+        "user_name": user_name,
         "title": job.title,
         "category": job.category.lower(),
         "description": job.description,
@@ -5415,6 +5424,11 @@ async def create_job_post(job: JobPostCreate, user_id: str):
         "images": job.images or [],
         "status": "open",  # open, in_progress, completed, cancelled
         "bid_count": 0,
+        # Contact info for bark.com-style
+        "contact_email": job.contact_email,
+        "contact_name": job.contact_name,
+        "contact_phone": job.contact_phone,
+        "answers": job.answers or {},
         "created_at": datetime.now(timezone.utc).isoformat(),
         "updated_at": datetime.now(timezone.utc).isoformat()
     }

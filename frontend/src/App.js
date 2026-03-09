@@ -44,6 +44,7 @@ import SettingsPage from "@/pages/SettingsPage";
 import VerifyEmail from "@/pages/VerifyEmail";
 import ClaimListing from "@/pages/ClaimListing";
 import DocumentBuilder from "@/pages/DocumentBuilder";
+import ServiceRequestWizard from "@/pages/ServiceRequestWizard";
 
 // Layout
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -128,6 +129,7 @@ function App() {
           {/* Public Contractor Pages */}
           <Route path="/contractors" element={<ContractorMarketplace />} />
           <Route path="/portfolio/:contractorId" element={<ContractorPortfolio />} />
+          <Route path="/get-quotes" element={<ServiceRequestWizard />} />
           
           {/* Lease Assignment Marketplace - Public */}
           <Route path="/lease-assignments" element={<LeaseAssignments />} />
