@@ -104,13 +104,13 @@ A guided job posting flow inspired by bark.com:
 ## 4. Upcoming Tasks (Priority Order)
 
 ### P0 - Critical
-- [ ] Cloudflare integration (CDN, R2, DDoS protection)
-- [ ] Payment recipient verification documentation
+- [x] ~~Answer user's rent collection questions~~ ✅ Guide created at /app/memory/RENT_COLLECTION_GUIDE.md
+- [ ] Cloudflare integration (CDN, R2, DDoS protection) - Plan at /app/memory/CLOUDFLARE_INTEGRATION_PLAN.md
 
 ### P1 - High
 - [ ] Full platform audit (test all links/features)
-- [ ] Answer user's rent collection questions
-- [ ] Signed documents permanent storage confirmation
+- [x] ~~Payment recipient verification documentation~~ ✅ Included in rent guide
+- [x] ~~Signed documents permanent storage confirmation~~ ✅ Documented in rent guide
 
 ### P2 - Medium
 - [ ] DocuSign-like functionality enhancements

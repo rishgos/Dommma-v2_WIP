@@ -1177,6 +1177,326 @@ async def create_checkout_setup_session(user_id: str):
         logger.error(f"Checkout setup error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+# ========== RENT INVOICES & COLLECTION ==========
+
+class RentInvoiceCreate(BaseModel):
+    tenant_id: str
+    property_id: str
+    amount: float
+    due_date: str
+    description: str = "Monthly Rent"
+    late_fee_type: str = "none"  # none, flat, percentage, daily
+    late_fee_amount: float = 0
+    grace_period_days: int = 3
+
+@api_router.post("/rent-invoices")
+async def create_rent_invoice(invoice: RentInvoiceCreate, landlord_id: str):
+    """Create a rent invoice for a tenant"""
+    # Verify landlord
+    landlord = await db.users.find_one({"id": landlord_id}, {"_id": 0})
+    if not landlord or landlord.get("user_type") != "landlord":
+        raise HTTPException(status_code=403, detail="Only landlords can create rent invoices")
+    
+    # Get tenant
+    tenant = await db.users.find_one({"id": invoice.tenant_id}, {"_id": 0})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    
+    # Get property
+    property_info = await db.listings.find_one({"id": invoice.property_id}, {"_id": 0})
+    
+    invoice_id = str(uuid.uuid4())
+    invoice_number = f"RENT-{datetime.now().strftime('%Y%m')}-{invoice_id[:8].upper()}"
+    
+    invoice_doc = {
+        "id": invoice_id,
+        "invoice_number": invoice_number,
+        "type": "rent",
+        "landlord_id": landlord_id,
+        "landlord_name": landlord.get("name"),
+        "tenant_id": invoice.tenant_id,
+        "tenant_name": tenant.get("name"),
+        "tenant_email": tenant.get("email"),
+        "property_id": invoice.property_id,
+        "property_address": property_info.get("address") if property_info else None,
+        "amount": invoice.amount,
+        "due_date": invoice.due_date,
+        "grace_period_days": invoice.grace_period_days,
+        "late_fee_type": invoice.late_fee_type,
+        "late_fee_amount": invoice.late_fee_amount,
+        "description": invoice.description,
+        "status": "pending",  # pending, paid, overdue, cancelled
+        "paid_at": None,
+        "late_fee_applied": False,
+        "late_fee_total": 0,
+        "reminders_sent": 0,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.rent_invoices.insert_one(invoice_doc)
+    
+    # Send invoice email to tenant
+    if tenant.get("email"):
+        asyncio.create_task(send_email(
+            tenant["email"],
+            f"Rent Invoice - {invoice.description}",
+            f"""
+            <div style="font-family:'Georgia',serif;max-width:600px;margin:0 auto;background:#F5F5F0;padding:40px;">
+              <div style="background:#1A2F3A;padding:30px;border-radius:16px 16px 0 0;text-align:center;">
+                <h1 style="color:white;font-family:'Georgia',serif;margin:0;font-size:28px;">DOMMMA</h1>
+                <p style="color:rgba(255,255,255,0.7);margin:8px 0 0;font-size:14px;">Rent Invoice</p>
+              </div>
+              <div style="background:white;padding:30px;border-radius:0 0 16px 16px;">
+                <h2 style="color:#1A2F3A;">Hi {tenant.get('name', 'Tenant')},</h2>
+                <p style="color:#555;">Your rent invoice is ready.</p>
+                <div style="background:#F5F5F0;border-radius:12px;padding:20px;margin:20px 0;">
+                  <p style="margin:4px 0;color:#555;">{invoice.description}</p>
+                  <p style="margin:4px 0;color:#1A2F3A;font-size:28px;font-weight:bold;">${invoice.amount:,.2f}</p>
+                  <p style="margin:4px 0;color:#888;">Due: {invoice.due_date}</p>
+                </div>
+                <a href="https://dommma.com/payments" style="display:inline-block;background:#1A2F3A;color:white;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:bold;">Pay Now</a>
+              </div>
+            </div>
+            """
+        ))
+    
+    # Create notification
+    await db.notifications.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_id": invoice.tenant_id,
+        "title": "New Rent Invoice",
+        "body": f"Rent of ${invoice.amount:,.2f} is due on {invoice.due_date}",
+        "type": "payment",
+        "data": {"invoice_id": invoice_id},
+        "read": False,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    invoice_doc.pop("_id", None)
+    return invoice_doc
+
+@api_router.get("/rent-invoices")
+async def get_rent_invoices(user_id: str, role: str = "tenant"):
+    """Get rent invoices for a user (as tenant or landlord)"""
+    if role == "landlord":
+        query = {"landlord_id": user_id}
+    else:
+        query = {"tenant_id": user_id}
+    
+    invoices = await db.rent_invoices.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
+    
+    # Update status for overdue invoices
+    now = datetime.now(timezone.utc)
+    for inv in invoices:
+        if inv["status"] == "pending":
+            due = datetime.fromisoformat(inv["due_date"].replace('Z', '+00:00')) if 'T' in inv["due_date"] else datetime.strptime(inv["due_date"], "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            grace_end = due + timedelta(days=inv.get("grace_period_days", 3))
+            if now > grace_end:
+                inv["status"] = "overdue"
+    
+    return invoices
+
+@api_router.get("/rent-invoices/{invoice_id}")
+async def get_rent_invoice(invoice_id: str):
+    """Get a specific rent invoice"""
+    invoice = await db.rent_invoices.find_one({"id": invoice_id}, {"_id": 0})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    return invoice
+
+@api_router.post("/rent-invoices/{invoice_id}/pay")
+async def pay_rent_invoice(invoice_id: str, user_id: str):
+    """Pay a rent invoice using saved payment method"""
+    import stripe
+    stripe.api_key = os.environ.get('STRIPE_API_KEY')
+    
+    invoice = await db.rent_invoices.find_one({"id": invoice_id}, {"_id": 0})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    
+    if invoice["tenant_id"] != user_id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    if invoice["status"] == "paid":
+        return {"success": True, "message": "Invoice already paid"}
+    
+    # Get user's default payment method
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user or not user.get("stripe_customer_id"):
+        raise HTTPException(status_code=400, detail="No payment method on file. Please add a card first.")
+    
+    try:
+        customer = stripe.Customer.retrieve(user["stripe_customer_id"])
+        default_pm = customer.invoice_settings.default_payment_method
+        
+        if not default_pm:
+            raise HTTPException(status_code=400, detail="No default payment method. Please add a card first.")
+        
+        # Calculate total with late fees if applicable
+        total = invoice["amount"]
+        if invoice.get("late_fee_applied") and invoice.get("late_fee_total"):
+            total += invoice["late_fee_total"]
+        
+        # Create payment intent
+        payment_intent = stripe.PaymentIntent.create(
+            amount=int(total * 100),  # cents
+            currency="cad",
+            customer=user["stripe_customer_id"],
+            payment_method=default_pm,
+            confirm=True,
+            description=f"Rent Payment - {invoice['description']}",
+            metadata={
+                "invoice_id": invoice_id,
+                "type": "rent"
+            },
+            automatic_payment_methods={
+                "enabled": True,
+                "allow_redirects": "never"
+            }
+        )
+        
+        if payment_intent.status == "succeeded":
+            # Update invoice
+            await db.rent_invoices.update_one(
+                {"id": invoice_id},
+                {"$set": {
+                    "status": "paid",
+                    "paid_at": datetime.now(timezone.utc).isoformat(),
+                    "payment_intent_id": payment_intent.id,
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }}
+            )
+            
+            # Notify landlord
+            await db.notifications.insert_one({
+                "id": str(uuid.uuid4()),
+                "user_id": invoice["landlord_id"],
+                "title": "Rent Payment Received",
+                "body": f"{invoice['tenant_name']} paid ${total:,.2f} for rent",
+                "type": "payment",
+                "data": {"invoice_id": invoice_id},
+                "read": False,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            })
+            
+            return {"success": True, "message": "Payment successful", "amount": total}
+        else:
+            raise HTTPException(status_code=400, detail=f"Payment failed: {payment_intent.status}")
+            
+    except stripe.error.CardError as e:
+        raise HTTPException(status_code=400, detail=f"Card error: {e.error.message}")
+    except Exception as e:
+        logger.error(f"Rent payment error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/rent-invoices/{invoice_id}/send-reminder")
+async def send_rent_reminder(invoice_id: str, landlord_id: str):
+    """Send a reminder email for an unpaid invoice"""
+    invoice = await db.rent_invoices.find_one({"id": invoice_id}, {"_id": 0})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    
+    if invoice["landlord_id"] != landlord_id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    if invoice["status"] == "paid":
+        return {"success": False, "message": "Invoice already paid"}
+    
+    tenant = await db.users.find_one({"id": invoice["tenant_id"]}, {"_id": 0})
+    if not tenant or not tenant.get("email"):
+        raise HTTPException(status_code=400, detail="Tenant email not found")
+    
+    # Send reminder
+    is_overdue = invoice.get("status") == "overdue"
+    subject = f"{'OVERDUE: ' if is_overdue else ''}Rent Reminder - ${invoice['amount']:,.2f} Due"
+    
+    asyncio.create_task(send_email(
+        tenant["email"],
+        subject,
+        f"""
+        <div style="font-family:'Georgia',serif;max-width:600px;margin:0 auto;background:#F5F5F0;padding:40px;">
+          <div style="background:{'#DC2626' if is_overdue else '#1A2F3A'};padding:30px;border-radius:16px 16px 0 0;text-align:center;">
+            <h1 style="color:white;font-family:'Georgia',serif;margin:0;font-size:28px;">{'⚠️ OVERDUE' if is_overdue else 'Reminder'}</h1>
+          </div>
+          <div style="background:white;padding:30px;border-radius:0 0 16px 16px;">
+            <h2 style="color:#1A2F3A;">Hi {tenant.get('name', 'Tenant')},</h2>
+            <p style="color:#555;">This is a {'final reminder' if is_overdue else 'friendly reminder'} that your rent payment is {'overdue' if is_overdue else 'due soon'}.</p>
+            <div style="background:#F5F5F0;border-radius:12px;padding:20px;margin:20px 0;">
+              <p style="margin:4px 0;color:#555;">{invoice['description']}</p>
+              <p style="margin:4px 0;color:#1A2F3A;font-size:28px;font-weight:bold;">${invoice['amount']:,.2f}</p>
+              <p style="margin:4px 0;color:#888;">Due: {invoice['due_date']}</p>
+            </div>
+            <a href="https://dommma.com/payments" style="display:inline-block;background:#1A2F3A;color:white;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:bold;">Pay Now</a>
+          </div>
+        </div>
+        """
+    ))
+    
+    # Update reminder count
+    await db.rent_invoices.update_one(
+        {"id": invoice_id},
+        {"$inc": {"reminders_sent": 1}, "$set": {"last_reminder_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    return {"success": True, "message": "Reminder sent"}
+
+@api_router.post("/rent-invoices/{invoice_id}/apply-late-fee")
+async def apply_late_fee(invoice_id: str, landlord_id: str):
+    """Apply late fee to an overdue invoice"""
+    invoice = await db.rent_invoices.find_one({"id": invoice_id}, {"_id": 0})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    
+    if invoice["landlord_id"] != landlord_id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    if invoice["status"] == "paid":
+        return {"success": False, "message": "Invoice already paid"}
+    
+    if invoice.get("late_fee_applied"):
+        return {"success": False, "message": "Late fee already applied"}
+    
+    # Calculate late fee
+    late_fee = 0
+    if invoice["late_fee_type"] == "flat":
+        late_fee = invoice["late_fee_amount"]
+    elif invoice["late_fee_type"] == "percentage":
+        late_fee = invoice["amount"] * (invoice["late_fee_amount"] / 100)
+    elif invoice["late_fee_type"] == "daily":
+        due = datetime.fromisoformat(invoice["due_date"].replace('Z', '+00:00')) if 'T' in invoice["due_date"] else datetime.strptime(invoice["due_date"], "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        days_late = (datetime.now(timezone.utc) - due).days
+        late_fee = invoice["late_fee_amount"] * max(0, days_late)
+    
+    if late_fee > 0:
+        await db.rent_invoices.update_one(
+            {"id": invoice_id},
+            {"$set": {
+                "late_fee_applied": True,
+                "late_fee_total": round(late_fee, 2),
+                "status": "overdue",
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        
+        # Notify tenant
+        await db.notifications.insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": invoice["tenant_id"],
+            "title": "Late Fee Applied",
+            "body": f"A late fee of ${late_fee:,.2f} has been added to your rent invoice",
+            "type": "payment",
+            "data": {"invoice_id": invoice_id},
+            "read": False,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+        
+        return {"success": True, "late_fee": round(late_fee, 2)}
+    
+    return {"success": False, "message": "No late fee configured"}
+
+
 # ========== FEATURED LISTINGS (PAY-PER-SUCCESS) ==========
 
 FEATURED_FEE = 4999  # $49.99 fee charged when property is successfully rented
