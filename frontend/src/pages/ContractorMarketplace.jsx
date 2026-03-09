@@ -4,7 +4,7 @@ import {
   Search, Star, MapPin, Clock, DollarSign, Shield,
   Phone, Mail, ChevronRight, Filter, Wrench, Zap, Droplets,
   Paintbrush, Hammer, Leaf, Sparkles, Calendar, Send, X, MessageSquare, Plus, Briefcase,
-  ArrowLeft, Loader2, Check, User, AlertCircle
+  ArrowLeft, Loader2, Check, User, AlertCircle, Navigation
 } from 'lucide-react';
 import { useAuth } from '../App';
 import axios from 'axios';
@@ -12,6 +12,7 @@ import ContractorReviews from '../components/reviews/ContractorReviews';
 import ContractorLeaderboard from '../components/reviews/ContractorLeaderboard';
 import MainLayout from '../components/layout/MainLayout';
 import AddressAutocomplete from '../components/ui/AddressAutocomplete';
+import PostalCodeAutocomplete from '../components/ui/PostalCodeAutocomplete';
 import { JobCard, JobBidForm, BidsList } from '../components/jobs/JobComponents';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -505,26 +506,13 @@ const ContractorMarketplace = () => {
                   )}
                 </div>
                 
-                <div className="flex items-center border-l border-gray-200 bg-white relative group">
-                  <button 
-                    onClick={detectLocation}
-                    disabled={detectingLocation}
-                    className="ml-2 p-1.5 rounded-full hover:bg-gray-100 transition-colors"
-                    title="Use my location"
-                  >
-                    {detectingLocation ? (
-                      <Loader2 size={18} className="text-gray-400 animate-spin" />
-                    ) : (
-                      <MapPin size={18} className="text-gray-400 hover:text-[#1A2F3A]" />
-                    )}
-                  </button>
-                  <input
-                    type="text"
+                <div className="border-l border-gray-200">
+                  <PostalCodeAutocomplete
                     value={postcode}
-                    onChange={(e) => setPostcode(e.target.value.toUpperCase())}
+                    onChange={setPostcode}
+                    onDetectLocation={detectLocation}
+                    detectingLocation={detectingLocation}
                     placeholder="Postal code"
-                    className="w-28 md:w-36 px-2 py-4 text-gray-800 text-lg border-none outline-none uppercase"
-                    data-testid="postcode-input"
                   />
                 </div>
                 
@@ -551,7 +539,7 @@ const ContractorMarketplace = () => {
                     </>
                   ) : (
                     <>
-                      <MapPin size={14} />
+                      <Navigation size={14} />
                       Use my current location
                     </>
                   )}
