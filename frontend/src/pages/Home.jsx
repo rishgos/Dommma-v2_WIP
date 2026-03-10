@@ -240,17 +240,10 @@ const Home = () => {
               {t('hero.subtitle')}
             </p>
             <div className="flex items-center gap-6">
-              <Link
-                to="/about"
-                className="flex items-center gap-2 text-white hover:text-white/80 transition-colors group"
-                data-testid="hero-cta"
-              >
-                <span className="text-sm tracking-wider">{t('hero.ourStory')}</span>
-                <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-              </Link>
               <Link 
                 to="/browse"
                 className="px-6 py-3 bg-white text-[#1A2F3A] rounded-full text-sm font-medium hover:bg-white/90 transition-colors"
+                data-testid="hero-cta"
               >
                 {t('hero.browseProperties')}
               </Link>
