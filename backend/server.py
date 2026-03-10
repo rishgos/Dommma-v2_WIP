@@ -680,8 +680,9 @@ async def register_user(request: Request, user_data: UserCreate):
     user_doc['preferences'] = {}  # For Nova's memory
     await db.users.insert_one(user_doc)
     
-    # Build verification link
-    origin = request.headers.get('origin', str(request.base_url).rstrip('/'))
+    # Build verification link - use FRONTEND_URL env var or origin header
+    frontend_url = os.environ.get('FRONTEND_URL', 'https://storage-migration-3.preview.emergentagent.com')
+    origin = request.headers.get('origin', frontend_url).rstrip('/')
     verification_link = f"{origin}/verify-email?token={verification_token}"
     
     # Send verification email (non-blocking)
@@ -774,8 +775,9 @@ async def resend_verification(request: Request, email: str = Body(..., embed=Tru
         {"$set": {"verification_token": verification_token, "verification_token_expires": token_expires}}
     )
     
-    # Build verification link
-    origin = request.headers.get('origin', str(request.base_url).rstrip('/'))
+    # Build verification link - use FRONTEND_URL env var or origin header
+    frontend_url = os.environ.get('FRONTEND_URL', 'https://storage-migration-3.preview.emergentagent.com')
+    origin = request.headers.get('origin', frontend_url).rstrip('/')
     verification_link = f"{origin}/verify-email?token={verification_token}"
     
     # Send verification email
