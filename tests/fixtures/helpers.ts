@@ -47,6 +47,18 @@ export async function loginAsRenter(page: Page) {
   await page.waitForLoadState('domcontentloaded');
 }
 
+export async function loginAsTestUser(page: Page) {
+  // Use the provided test user: test@dommma.com / test123
+  await page.goto('/login', { waitUntil: 'domcontentloaded' });
+  await page.waitForLoadState('domcontentloaded');
+  await page.getByRole('button', { name: 'Renter' }).click();
+  await page.fill('input[type="email"]', 'test@dommma.com');
+  await page.fill('input[type="password"]', 'test123');
+  await page.getByRole('button', { name: 'Sign In' }).click();
+  await page.waitForURL('**/dashboard**', { timeout: 10000 });
+  await page.waitForLoadState('domcontentloaded');
+}
+
 export async function openNovaChat(page: Page) {
   const chatButton = page.getByTestId('nova-chat-button');
   await expect(chatButton).toBeVisible();

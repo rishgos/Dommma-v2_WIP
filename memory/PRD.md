@@ -1,8 +1,8 @@
 # DOMMMA - Product Requirements Document (PRD)
 
 ## Document Information
-- **Version:** 5.0
-- **Last Updated:** March 2026
+- **Version:** 5.1
+- **Last Updated:** March 10, 2026
 - **Status:** Active Development
 - **Product Owner:** DOMMMA Team
 
@@ -24,14 +24,38 @@ To revolutionize the real estate experience by providing an AI-powered platform 
 
 ## 2. Recent Updates (March 2026)
 
-### 2.1 Bug Fixes Completed
+### 2.1 Latest Session Updates (March 10, 2026)
+
+#### Cloudflare R2 Storage Integration ✅ COMPLETE
+- **Status:** FULLY WORKING
+- **What was done:**
+  - Fixed R2 connection (issue was permission-based, not credentials)
+  - All upload endpoints now use R2 storage with base64 fallback
+  - Updated endpoints:
+    - `POST /api/upload/image` - Now uses R2
+    - `POST /api/upload/property-image` - R2 with property organization
+    - `POST /api/upload/document` - R2 for documents
+    - `POST /api/upload/avatar` - R2 for avatars
+    - `POST /api/upload/contractor-portfolio` - R2 for portfolios
+    - `POST /api/documents/upload` - Legacy endpoint now uses R2
+    - `GET /api/storage/status` - Check R2 configuration
+  - Extended document types to include: PDF, Word, Excel, text, CSV, JSON
+
+#### Star Rating Display on Dashboards ✅ NEW
+- `UserRatingCard` component now integrated into all user dashboards:
+  - Renter Dashboard
+  - Landlord Dashboard  
+  - Contractor Dashboard
+- Shows rating summary, distribution, and recent reviews
+
+### 2.2 Previous Bug Fixes Completed
 - ✅ Removed "Our Story" section from homepage (confusing arrow)
 - ✅ Fixed oversized "Featured Listing" text - now compact with 2 property rows visible
 - ✅ Fixed double sidebar on Pay & Invoices page for Renters/Contractors
 - ✅ Fixed duplicate `/api/jobs` route conflict (renamed old routes to `/api/contractor-jobs`)
 - ✅ Email verification flow confirmed working
 
-### 2.2 New Features Implemented
+### 2.3 Features Implemented
 
 #### Bark.com-Style Service Request Wizard (`/get-quotes`)
 A guided job posting flow inspired by bark.com:
@@ -81,6 +105,7 @@ A guided job posting flow inspired by bark.com:
 - **Email:** Resend (production-ready)
 - **Maps:** Google Maps Platform (address autocomplete)
 - **Analytics:** Perplexity AI (competitor scraping)
+- **Storage:** Cloudflare R2 (object storage for images/documents) ✅ NEW
 
 ### 3.2 Key Routes
 - `/` - Homepage
@@ -105,17 +130,19 @@ A guided job posting flow inspired by bark.com:
 
 ### P0 - Critical
 - [x] ~~Answer user's rent collection questions~~ ✅ Guide created at /app/memory/RENT_COLLECTION_GUIDE.md
-- [ ] Cloudflare integration (CDN, R2, DDoS protection) - Plan at /app/memory/CLOUDFLARE_INTEGRATION_PLAN.md
+- [x] ~~Cloudflare R2 integration~~ ✅ COMPLETE - All uploads now use R2
 
 ### P1 - High
 - [ ] Full platform audit (test all links/features)
 - [x] ~~Payment recipient verification documentation~~ ✅ Included in rent guide
 - [x] ~~Signed documents permanent storage confirmation~~ ✅ Documented in rent guide
+- [x] ~~Display star ratings on user profiles~~ ✅ Added to all dashboards
 
 ### P2 - Medium
 - [ ] DocuSign-like functionality enhancements
 - [ ] In-house financing UI
 - [ ] Advanced analytics expansion
+- [ ] Cloudflare CDN & DDoS Protection (user configuration needed)
 
 ---
 

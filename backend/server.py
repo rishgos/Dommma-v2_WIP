@@ -19,6 +19,7 @@ import asyncio
 # Shared modules
 from db import db, client
 from services.email import send_email, email_welcome, email_booking_confirmed, email_application_update, email_offer_received, email_verification, generate_verification_token, email_job_request_confirmation, email_new_lead_notification, email_bid_received
+from services.r2_storage import upload_file, upload_property_image, upload_document as r2_upload_document, upload_avatar, upload_contractor_portfolio, delete_file, is_r2_configured
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -1157,7 +1158,7 @@ async def create_checkout_setup_session(user_id: str):
         await db.users.update_one({"id": user_id}, {"$set": {"stripe_customer_id": customer_id}})
     
     try:
-        host_url = os.environ.get('FRONTEND_URL', 'https://ai-concierge-fix.preview.emergentagent.com')
+        host_url = os.environ.get('FRONTEND_URL', 'https://storage-migration-3.preview.emergentagent.com')
         
         session = stripe.checkout.Session.create(
             customer=customer_id,
@@ -1710,7 +1711,7 @@ async def create_payment(user_id: str, payment: PaymentRequest):
         
         if not default_pm:
             # Create a checkout session instead
-            host_url = os.environ.get('FRONTEND_URL', 'https://ai-concierge-fix.preview.emergentagent.com')
+            host_url = os.environ.get('FRONTEND_URL', 'https://storage-migration-3.preview.emergentagent.com')
             session = stripe.checkout.Session.create(
                 customer=customer_id,
                 payment_method_types=['card'],
@@ -2088,7 +2089,7 @@ async def send_builder_document(doc: DocumentBuilderSend):
         from services.email import send_email
         
         # Generate signing link
-        sign_link = f"https://ai-concierge-fix.preview.emergentagent.com/sign-document/{doc_id}"
+        sign_link = f"https://storage-migration-3.preview.emergentagent.com/sign-document/{doc_id}"
         
         email_html = f"""
         <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; background: #F5F5F0; padding: 40px;">
@@ -2287,23 +2288,58 @@ async def request_service_quote(data: Dict[str, Any]):
 # ========== DOCUMENT MANAGEMENT ROUTES ==========
 
 @api_router.post("/documents/upload")
-async def upload_document(
+async def upload_document_legacy(
     user_id: str,
     name: str,
     doc_type: str,
     file: UploadFile = File(...)
 ):
+    """Upload a document to R2 storage (with base64 fallback)"""
     try:
         content = await file.read()
+        doc_id = str(uuid.uuid4())
+        
+        # Try R2 first if configured
+        if is_r2_configured():
+            try:
+                result = await r2_upload_document(
+                    file_data=content,
+                    filename=file.filename,
+                    content_type=file.content_type or "application/octet-stream",
+                    user_id=user_id,
+                    document_type=doc_type
+                )
+                
+                doc = Document(
+                    id=doc_id,
+                    user_id=user_id,
+                    name=name,
+                    type=doc_type,
+                    url=result["url"],
+                    content=None  # Don't store content in DB
+                )
+                doc_dict = doc.model_dump()
+                doc_dict["r2_key"] = result["key"]
+                doc_dict["storage"] = "r2"
+                await db.documents.insert_one(doc_dict)
+                
+                return {"id": doc.id, "name": doc.name, "type": doc.type, "url": result["url"], "status": "uploaded"}
+            except Exception as e:
+                logger.warning(f"R2 document upload failed, falling back to base64: {e}")
+        
+        # Fallback to base64 storage
         content_b64 = base64.b64encode(content).decode('utf-8')
         
         doc = Document(
+            id=doc_id,
             user_id=user_id,
             name=name,
             type=doc_type,
             content=content_b64
         )
-        await db.documents.insert_one(doc.model_dump())
+        doc_dict = doc.model_dump()
+        doc_dict["storage"] = "base64"
+        await db.documents.insert_one(doc_dict)
         
         return {"id": doc.id, "name": doc.name, "type": doc.type, "status": "uploaded"}
         
@@ -6161,22 +6197,50 @@ async def delete_user_account(user_id: str):
 
 @api_router.post("/upload/image")
 async def upload_image(file: UploadFile = File(...)):
-    """Upload an image and return base64 data URL"""
+    """Upload an image to R2 (with fallback to base64 for backward compatibility)"""
     content = await file.read()
-    if len(content) > 5 * 1024 * 1024:  # 5MB limit
-        raise HTTPException(status_code=400, detail="File too large (max 5MB)")
+    if len(content) > 10 * 1024 * 1024:  # 10MB limit
+        raise HTTPException(status_code=400, detail="File too large (max 10MB)")
     
     content_type = file.content_type or "image/jpeg"
+    image_id = str(uuid.uuid4())
+    
+    # Try R2 first if configured
+    if is_r2_configured():
+        try:
+            result = await upload_file(
+                file_data=content,
+                filename=file.filename,
+                content_type=content_type,
+                folder="images",
+                metadata={"image_id": image_id}
+            )
+            
+            # Store reference in DB
+            await db.images.insert_one({
+                "id": image_id,
+                "filename": file.filename,
+                "content_type": content_type,
+                "r2_url": result["url"],
+                "r2_key": result["key"],
+                "storage": "r2",
+                "created_at": datetime.now(timezone.utc).isoformat()
+            })
+            
+            return {"id": image_id, "url": result["url"]}
+        except Exception as e:
+            logger.warning(f"R2 upload failed, falling back to base64: {e}")
+    
+    # Fallback to base64 storage
     b64 = base64.b64encode(content).decode("utf-8")
     data_url = f"data:{content_type};base64,{b64}"
     
-    # Store in DB for persistence
-    image_id = str(uuid.uuid4())
     await db.images.insert_one({
         "id": image_id,
         "filename": file.filename,
         "content_type": content_type,
         "data": data_url,
+        "storage": "base64",
         "created_at": datetime.now(timezone.utc).isoformat()
     })
     
@@ -7248,6 +7312,167 @@ async def delete_user_rating(rating_id: str, user_id: str):
     await update_user_rating_stats(rated_user_id)
     
     return {"success": True, "message": "Rating deleted"}
+
+
+# ========== FILE UPLOAD ENDPOINTS (Cloudflare R2) ==========
+
+@api_router.get("/storage/status")
+async def get_storage_status():
+    """Check if R2 storage is configured"""
+    return {"configured": is_r2_configured()}
+
+@api_router.post("/upload/property-image")
+async def upload_property_image_endpoint(
+    file: UploadFile = File(...),
+    property_id: str = "",
+    user_id: str = ""
+):
+    """Upload a property listing image to R2"""
+    if not is_r2_configured():
+        raise HTTPException(status_code=503, detail="Storage service not configured")
+    
+    if not file.content_type.startswith('image/'):
+        raise HTTPException(status_code=400, detail="File must be an image")
+    
+    try:
+        content = await file.read()
+        result = await upload_property_image(
+            file_data=content,
+            filename=file.filename,
+            content_type=file.content_type,
+            property_id=property_id or str(uuid.uuid4()),
+            user_id=user_id
+        )
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Property image upload error: {e}")
+        raise HTTPException(status_code=500, detail="Upload failed")
+
+@api_router.post("/upload/document")
+async def upload_document_endpoint(
+    file: UploadFile = File(...),
+    user_id: str = "",
+    document_type: str = "general"
+):
+    """Upload a document (lease, contract, etc.) to R2"""
+    if not is_r2_configured():
+        raise HTTPException(status_code=503, detail="Storage service not configured")
+    
+    try:
+        content = await file.read()
+        result = await r2_upload_document(
+            file_data=content,
+            filename=file.filename,
+            content_type=file.content_type,
+            user_id=user_id,
+            document_type=document_type
+        )
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Document upload error: {e}")
+        raise HTTPException(status_code=500, detail="Upload failed")
+
+@api_router.post("/upload/avatar")
+async def upload_avatar_endpoint(
+    file: UploadFile = File(...),
+    user_id: str = ""
+):
+    """Upload a user avatar to R2"""
+    if not is_r2_configured():
+        raise HTTPException(status_code=503, detail="Storage service not configured")
+    
+    if not file.content_type.startswith('image/'):
+        raise HTTPException(status_code=400, detail="Avatar must be an image")
+    
+    try:
+        content = await file.read()
+        result = await upload_avatar(
+            file_data=content,
+            filename=file.filename,
+            content_type=file.content_type,
+            user_id=user_id
+        )
+        
+        # Update user's avatar URL in database
+        if user_id:
+            await db.users.update_one(
+                {"id": user_id},
+                {"$set": {"avatar": result["url"]}}
+            )
+        
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Avatar upload error: {e}")
+        raise HTTPException(status_code=500, detail="Upload failed")
+
+@api_router.post("/upload/contractor-portfolio")
+async def upload_portfolio_endpoint(
+    file: UploadFile = File(...),
+    contractor_id: str = ""
+):
+    """Upload a contractor portfolio image to R2"""
+    if not is_r2_configured():
+        raise HTTPException(status_code=503, detail="Storage service not configured")
+    
+    if not contractor_id:
+        raise HTTPException(status_code=400, detail="contractor_id is required")
+    
+    if not file.content_type.startswith('image/'):
+        raise HTTPException(status_code=400, detail="Portfolio image must be an image")
+    
+    try:
+        content = await file.read()
+        result = await upload_contractor_portfolio(
+            file_data=content,
+            filename=file.filename,
+            content_type=file.content_type,
+            contractor_id=contractor_id
+        )
+        
+        # Add to contractor's portfolio array
+        await db.contractor_profiles.update_one(
+            {"user_id": contractor_id},
+            {"$push": {"portfolio_images": result["url"]}}
+        )
+        
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Portfolio upload error: {e}")
+        raise HTTPException(status_code=500, detail="Upload failed")
+
+@api_router.post("/upload/general")
+async def upload_general_file(
+    file: UploadFile = File(...),
+    folder: str = "uploads",
+    user_id: str = ""
+):
+    """Upload a general file to R2"""
+    if not is_r2_configured():
+        raise HTTPException(status_code=503, detail="Storage service not configured")
+    
+    try:
+        content = await file.read()
+        result = await upload_file(
+            file_data=content,
+            filename=file.filename,
+            content_type=file.content_type,
+            folder=folder,
+            user_id=user_id
+        )
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"General upload error: {e}")
+        raise HTTPException(status_code=500, detail="Upload failed")
 
 
 # Include the router

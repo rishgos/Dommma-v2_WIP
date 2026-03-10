@@ -10,6 +10,7 @@ import { useAuth } from '../App';
 import axios from 'axios';
 import PendingReviews from '../components/reviews/PendingReviews';
 import NotificationPrompt from '../components/notifications/NotificationPrompt';
+import UserRatingCard from '../components/ratings/UserRatingCard';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -132,12 +133,15 @@ const RenterDashboard = ({ userId }) => {
           ))}
         </div>
       </div>
+      
+      {/* Your Rating Section */}
+      <UserRatingCard userId={userId} showReviews={true} limit={3} />
     </div>
   );
 };
 
 // Landlord Dashboard
-const LandlordDashboard = () => {
+const LandlordDashboard = ({ userId }) => {
   return (
     <div className="space-y-8">
       {/* Quick Stats */}
@@ -208,12 +212,15 @@ const LandlordDashboard = () => {
           ))}
         </div>
       </div>
+      
+      {/* Your Rating Section */}
+      <UserRatingCard userId={userId} showReviews={true} limit={3} />
     </div>
   );
 };
 
 // Contractor Dashboard
-const ContractorDashboard = () => {
+const ContractorDashboard = ({ userId }) => {
   return (
     <div className="space-y-8">
       {/* Quick Stats */}
@@ -296,6 +303,9 @@ const ContractorDashboard = () => {
           ))}
         </div>
       </div>
+      
+      {/* Your Rating Section */}
+      <UserRatingCard userId={userId} showReviews={true} limit={3} />
     </div>
   );
 };
@@ -319,8 +329,8 @@ const Dashboard = () => {
       <NotificationPrompt userId={user.id} />
       
       {user.user_type === 'renter' && <RenterDashboard userId={user.id} />}
-      {user.user_type === 'landlord' && <LandlordDashboard />}
-      {user.user_type === 'contractor' && <ContractorDashboard />}
+      {user.user_type === 'landlord' && <LandlordDashboard userId={user.id} />}
+      {user.user_type === 'contractor' && <ContractorDashboard userId={user.id} />}
     </div>
   );
 };

@@ -242,7 +242,7 @@ class TestDocuSignAuthUrlEndpoint:
         """Test that DocuSign auth-url endpoint is accessible"""
         response = api_client.get(
             f"{BASE_URL}/api/docusign/auth-url?user_id=test123",
-            headers={"Origin": "https://ai-concierge-fix.preview.emergentagent.com"}
+            headers={"Origin": "https://storage-migration-3.preview.emergentagent.com"}
         )
         assert response.status_code == 200
     
@@ -250,7 +250,7 @@ class TestDocuSignAuthUrlEndpoint:
         """Test that auth-url response contains auth_url"""
         response = api_client.get(
             f"{BASE_URL}/api/docusign/auth-url?user_id=test123",
-            headers={"Origin": "https://ai-concierge-fix.preview.emergentagent.com"}
+            headers={"Origin": "https://storage-migration-3.preview.emergentagent.com"}
         )
         data = response.json()
         
@@ -261,7 +261,7 @@ class TestDocuSignAuthUrlEndpoint:
         """Test that auth-url response contains state for CSRF protection"""
         response = api_client.get(
             f"{BASE_URL}/api/docusign/auth-url?user_id=test123",
-            headers={"Origin": "https://ai-concierge-fix.preview.emergentagent.com"}
+            headers={"Origin": "https://storage-migration-3.preview.emergentagent.com"}
         )
         data = response.json()
         
