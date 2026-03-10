@@ -21,8 +21,8 @@ R2_SECRET_KEY = os.environ.get('R2_SECRET_KEY')
 R2_ENDPOINT = os.environ.get('R2_ENDPOINT')
 R2_BUCKET = os.environ.get('R2_BUCKET', 'dommma-files')
 
-# Public URL for accessing files (can be customized with custom domain)
-R2_PUBLIC_URL = os.environ.get('R2_PUBLIC_URL', f"https://pub-{R2_ACCOUNT_ID}.r2.dev")
+# Public URL for accessing files (R2.dev public bucket URL)
+R2_PUBLIC_URL = os.environ.get('R2_PUBLIC_URL', 'https://pub-8d4e8e319ae746e9abc018ced1a00386.r2.dev')
 
 # Initialize S3 client for R2
 def get_r2_client():
@@ -136,22 +136,13 @@ async def upload_file(
             **extra_args
         )
         
-        # Generate presigned URL for public access (valid for 7 days)
-        # For production, you should set up a custom domain with public access
-        presigned_url = client.generate_presigned_url(
-            'get_object',
-            Params={'Bucket': R2_BUCKET, 'Key': key},
-            ExpiresIn=604800  # 7 days
-        )
-        
-        # Also generate direct URL (for custom domain if configured)
-        direct_url = f"{R2_ENDPOINT}/{R2_BUCKET}/{key}"
+        # Generate public URL using the R2.dev public URL
+        public_url = f"{R2_PUBLIC_URL}/{key}"
         
         logger.info(f"File uploaded to R2: {key} ({file_size} bytes)")
         
         return {
-            "url": presigned_url,  # Use presigned URL for access
-            "direct_url": direct_url,
+            "url": public_url,
             "key": key,
             "size": file_size,
             "content_type": content_type,
