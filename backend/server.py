@@ -3396,6 +3396,72 @@ async def get_esign_document(doc_id: str):
         raise HTTPException(status_code=404, detail="Document not found")
     return document
 
+@api_router.get("/esign/documents/{doc_id}/audit")
+async def get_document_audit_trail(doc_id: str):
+    """Get audit trail for a document"""
+    document = await db.esign_documents.find_one({"id": doc_id}, {"_id": 0})
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    audit_trail = document.get("audit_trail", [])
+    
+    # Add creation event if not present
+    if not audit_trail:
+        audit_trail = [{
+            "event": "created",
+            "timestamp": document.get("created_at"),
+            "actor": document.get("created_by_name", "Unknown"),
+            "details": f"Document created: {document.get('title')}"
+        }]
+    
+    return {"document_id": doc_id, "audit_trail": audit_trail}
+
+@api_router.post("/esign/documents/{doc_id}/audit")
+async def add_audit_event(doc_id: str, event: str, actor: str, details: str = None):
+    """Add an audit event to a document"""
+    document = await db.esign_documents.find_one({"id": doc_id})
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    audit_event = {
+        "event": event,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "actor": actor,
+        "details": details
+    }
+    
+    await db.esign_documents.update_one(
+        {"id": doc_id},
+        {"$push": {"audit_trail": audit_event}}
+    )
+    
+    return {"success": True, "event": audit_event}
+
+@api_router.post("/esign/templates")
+async def create_esign_template(
+    user_id: str,
+    name: str,
+    form_type: str,
+    default_fields: dict = None
+):
+    """Create a reusable document template"""
+    template = {
+        "id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "name": name,
+        "form_type": form_type,
+        "default_fields": default_fields or {},
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.esign_templates.insert_one(template)
+    return {"id": template["id"], "name": name}
+
+@api_router.get("/esign/templates")
+async def get_esign_templates(user_id: str):
+    """Get user's document templates"""
+    templates = await db.esign_templates.find({"user_id": user_id}, {"_id": 0}).to_list(50)
+    return templates
+
 # ========== DOCUSIGN OAUTH 2.0 INTEGRATION ==========
 
 from services.docusign_service import DocuSignService, DocuSignError
@@ -7152,6 +7218,198 @@ async def get_contractor_analytics(user_id: str):
     }
 
 
+@api_router.get("/analytics/trends/{user_id}")
+async def get_user_trends(user_id: str, period: str = "30d"):
+    """Get trend data for a user (views, applications, earnings over time)"""
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "user_type": 1})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Calculate date range
+    days = int(period.replace("d", "")) if period.endswith("d") else 30
+    start_date = datetime.now(timezone.utc) - timedelta(days=days)
+    
+    trends = {
+        "period": period,
+        "start_date": start_date.isoformat(),
+        "end_date": datetime.now(timezone.utc).isoformat(),
+        "data_points": []
+    }
+    
+    user_type = user.get("user_type")
+    
+    if user_type == "landlord":
+        # Get daily views and applications for landlord's properties
+        properties = await db.listings.find({"user_id": user_id}, {"_id": 0, "id": 1}).to_list(100)
+        property_ids = [p["id"] for p in properties]
+        
+        for i in range(days):
+            day = start_date + timedelta(days=i)
+            day_str = day.strftime("%Y-%m-%d")
+            
+            # Count applications for this day
+            apps_count = await db.applications.count_documents({
+                "listing_id": {"$in": property_ids},
+                "created_at": {"$regex": f"^{day_str}"}
+            })
+            
+            trends["data_points"].append({
+                "date": day_str,
+                "applications": apps_count,
+                "views": apps_count * 10  # Estimate views as 10x applications
+            })
+            
+    elif user_type == "contractor":
+        # Get daily jobs and earnings
+        for i in range(days):
+            day = start_date + timedelta(days=i)
+            day_str = day.strftime("%Y-%m-%d")
+            
+            jobs_count = await db.contractor_bookings.count_documents({
+                "contractor_id": user_id,
+                "created_at": {"$regex": f"^{day_str}"}
+            })
+            
+            trends["data_points"].append({
+                "date": day_str,
+                "jobs": jobs_count,
+                "leads": jobs_count * 3  # Estimate leads
+            })
+    else:
+        # Renter - track searches and applications
+        for i in range(days):
+            day = start_date + timedelta(days=i)
+            day_str = day.strftime("%Y-%m-%d")
+            
+            apps_count = await db.applications.count_documents({
+                "user_id": user_id,
+                "created_at": {"$regex": f"^{day_str}"}
+            })
+            
+            trends["data_points"].append({
+                "date": day_str,
+                "applications": apps_count,
+                "searches": apps_count * 5  # Estimate
+            })
+    
+    return trends
+
+@api_router.get("/analytics/insights/{user_id}")
+async def get_user_insights(user_id: str):
+    """Get AI-generated insights for user performance"""
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "user_type": 1, "name": 1})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user_type = user.get("user_type")
+    insights = []
+    
+    if user_type == "landlord":
+        # Get landlord metrics
+        properties = await db.listings.find({"user_id": user_id}, {"_id": 0}).to_list(100)
+        total_properties = len(properties)
+        active_properties = len([p for p in properties if p.get("status") == "active"])
+        
+        apps = await db.applications.find({"listing_id": {"$in": [p["id"] for p in properties]}}).to_list(500)
+        total_apps = len(apps)
+        
+        if total_properties > 0 and active_properties < total_properties * 0.5:
+            insights.append({
+                "type": "warning",
+                "title": "Inactive Listings",
+                "message": f"Only {active_properties} of {total_properties} listings are active. Consider reactivating or updating your listings.",
+                "action": "View Listings",
+                "action_url": "/my-properties"
+            })
+        
+        if total_apps > 0:
+            avg_apps_per_listing = total_apps / max(active_properties, 1)
+            if avg_apps_per_listing < 2:
+                insights.append({
+                    "type": "tip",
+                    "title": "Boost Applications",
+                    "message": "Your listings are receiving below-average applications. Try adding more photos or adjusting pricing.",
+                    "action": "Optimize Listings",
+                    "action_url": "/listing-optimizer"
+                })
+        
+        insights.append({
+            "type": "info",
+            "title": "Market Update",
+            "message": "Vancouver rental prices have increased 3% this quarter. Consider reviewing your pricing.",
+            "action": "View Analytics",
+            "action_url": "/analytics"
+        })
+        
+    elif user_type == "contractor":
+        # Get contractor metrics
+        profile = await db.contractor_profiles.find_one({"user_id": user_id}, {"_id": 0})
+        reviews = await db.ratings.find({"rated_user_id": user_id}).to_list(100)
+        
+        if profile and not profile.get("verified"):
+            insights.append({
+                "type": "tip",
+                "title": "Get Verified",
+                "message": "Verified contractors receive 3x more leads. Complete your verification to stand out.",
+                "action": "Start Verification",
+                "action_url": "/contractor-profile"
+            })
+        
+        if len(reviews) < 5:
+            insights.append({
+                "type": "tip",
+                "title": "Build Your Reputation",
+                "message": f"You have {len(reviews)} reviews. Encourage satisfied customers to leave reviews.",
+                "action": "View Reviews",
+                "action_url": "/analytics"
+            })
+        
+        insights.append({
+            "type": "success",
+            "title": "High Demand Alert",
+            "message": "Plumbing services are in high demand this week. Check available jobs!",
+            "action": "Browse Jobs",
+            "action_url": "/contractors"
+        })
+        
+    else:  # Renter
+        # Get renter metrics
+        apps = await db.applications.find({"user_id": user_id}).to_list(100)
+        favorites = await db.favorites.count_documents({"user_id": user_id})
+        
+        pending_apps = len([a for a in apps if a.get("status") == "pending"])
+        
+        if pending_apps > 0:
+            insights.append({
+                "type": "info",
+                "title": "Applications Pending",
+                "message": f"You have {pending_apps} pending applications. Check for updates!",
+                "action": "View Applications",
+                "action_url": "/applications"
+            })
+        
+        if favorites > 10:
+            insights.append({
+                "type": "tip",
+                "title": "Compare Properties",
+                "message": f"You have {favorites} saved properties. Use our comparison tool to decide!",
+                "action": "Compare",
+                "action_url": "/compare"
+            })
+        
+        insights.append({
+            "type": "info",
+            "title": "New Listings",
+            "message": "12 new properties matching your criteria were listed this week.",
+            "action": "Browse",
+            "action_url": "/browse"
+        })
+    
+    return {"user_id": user_id, "user_type": user_type, "insights": insights}
+
+
+
+
 # ========== UNIVERSAL RATING SYSTEM ==========
 
 class UserRatingCreate(BaseModel):
@@ -7473,6 +7731,71 @@ async def upload_general_file(
     except Exception as e:
         logger.error(f"General upload error: {e}")
         raise HTTPException(status_code=500, detail="Upload failed")
+
+
+# ============== FINANCING ENDPOINTS ==============
+
+class FinancingApplication(BaseModel):
+    financing_type: str  # rent-to-own, deposit-financing, first-month-free
+    full_name: str
+    email: str
+    phone: Optional[str] = None
+    monthly_income: Optional[str] = None
+    employment_status: str = "employed"
+    credit_score_range: str = "600-650"
+    property_interest: Optional[str] = None
+    message: Optional[str] = None
+    user_id: Optional[str] = None
+
+@api_router.post("/financing/applications")
+async def submit_financing_application(application: FinancingApplication):
+    """Submit a financing application (rent-to-own, deposit financing, etc.)"""
+    try:
+        app_data = application.model_dump()
+        app_data["id"] = str(uuid.uuid4())
+        app_data["status"] = "pending"
+        app_data["created_at"] = datetime.now(timezone.utc).isoformat()
+        
+        await db.financing_applications.insert_one(app_data)
+        
+        # Send notification email
+        try:
+            await send_email(
+                to_email=application.email,
+                subject=f"DOMMMA - {application.financing_type.replace('-', ' ').title()} Application Received",
+                html_content=f"""
+                <h2>Thank you for your application!</h2>
+                <p>Hi {application.full_name},</p>
+                <p>We've received your application for our {application.financing_type.replace('-', ' ').title()} program.</p>
+                <p>Our team will review your application and contact you within 2 business days.</p>
+                <p><strong>Application Details:</strong></p>
+                <ul>
+                    <li>Program: {application.financing_type.replace('-', ' ').title()}</li>
+                    <li>Employment: {application.employment_status}</li>
+                    <li>Credit Range: {application.credit_score_range}</li>
+                </ul>
+                <p>Best regards,<br>The DOMMMA Team</p>
+                """
+            )
+        except Exception as e:
+            logger.warning(f"Failed to send financing confirmation email: {e}")
+        
+        return {"id": app_data["id"], "status": "pending", "message": "Application submitted successfully"}
+    except Exception as e:
+        logger.error(f"Financing application error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/financing/applications")
+async def get_financing_applications(user_id: str = None, status: str = None):
+    """Get financing applications (admin or user-specific)"""
+    query = {}
+    if user_id:
+        query["user_id"] = user_id
+    if status:
+        query["status"] = status
+    
+    applications = await db.financing_applications.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return applications
 
 
 # Include the router

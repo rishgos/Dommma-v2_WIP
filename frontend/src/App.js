@@ -45,6 +45,7 @@ import VerifyEmail from "@/pages/VerifyEmail";
 import ClaimListing from "@/pages/ClaimListing";
 import DocumentBuilder from "@/pages/DocumentBuilder";
 import ServiceRequestWizard from "@/pages/ServiceRequestWizard";
+import Financing from "@/pages/Financing";
 
 // Layout
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -138,6 +139,9 @@ function App() {
           
           {/* Claim Listing - Public */}
           <Route path="/claim-listing" element={<ClaimListing />} />
+          
+          {/* Financing - Public */}
+          <Route path="/financing" element={<Financing />} />
           
           {/* Dashboard Routes - All with persistent sidebar */}
           <Route path="/dashboard" element={<DashboardLayout><Dashboard /></DashboardLayout>} />

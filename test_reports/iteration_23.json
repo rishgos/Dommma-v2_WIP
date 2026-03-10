@@ -1,0 +1,131 @@
+{
+  "summary": "Tested new features: Financing page UI/API, E-Sign templates & audit trail APIs, Analytics insights/trends APIs, and Homepage without 'Our Story' link. Found 1 CRITICAL frontend bug and 1 backend bug.",
+  "mode": "generate",
+  "baseline_commit": "d8867c7c741408bdab756833801f08be5e96e1d1",
+  "head_commit": "e1aa50365ba69b6e0f9d4293790006ce7c56a10a",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "POST /api/esign/documents",
+        "issue": "Returns 500 error due to MongoDB ObjectId serialization issue. Document is created but response fails with: ValueError: [TypeError(\"'ObjectId' object is not iterable\")]",
+        "priority": "HIGH",
+        "fix": "Add {'_id': 0} projection when returning the document, or exclude _id from response"
+      }
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Financing.jsx - ApplicationForm",
+        "issue": "CRITICAL: Application modal crashes with 'Send is not defined' error when clicking 'Apply Now' button. The Send icon from lucide-react is used on line 379 but not imported.",
+        "selector": "button:has-text('Apply Now')",
+        "priority": "CRITICAL",
+        "fix": "Add 'Send' to the lucide-react imports in /app/frontend/src/pages/Financing.jsx line 3-8"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "regression_results": {
+    "total_specs": 2,
+    "passed": 24,
+    "failed": 1,
+    "skipped": 1
+  },
+  "backend_test_results": {
+    "total_tests": 17,
+    "passed": 16,
+    "failed": 0,
+    "skipped": 1
+  },
+  "frontend_test_results": {
+    "total_tests": 9,
+    "passed": 8,
+    "failed": 1,
+    "note": "1 test fails due to critical Financing modal bug (Send icon not imported)"
+  },
+  "features_tested": {
+    "financing_page": {
+      "page_load": "PASS - Three financing options displayed (Rent-to-Own, Deposit Financing, First Month Free)",
+      "calculator": "PASS - Financing calculator displayed with all inputs",
+      "faq_section": "PASS - FAQ section visible",
+      "how_it_works": "PASS - How it works section visible",
+      "apply_button": "FAIL - Crashes with 'Send is not defined' error"
+    },
+    "financing_api": {
+      "POST_applications": "PASS - Creates applications for all financing types",
+      "GET_applications": "PASS - Returns list with optional filters",
+      "all_financing_types": "PASS - rent-to-own, deposit-financing, first-month-free"
+    },
+    "esign_api": {
+      "GET_documents": "PASS - Returns documents for user",
+      "POST_documents": "FAIL - Returns 500 due to ObjectId serialization bug",
+      "GET_templates": "PASS - Returns templates for user",
+      "POST_templates": "PASS - Creates new templates",
+      "GET_audit_trail": "PASS - Returns 404 for non-existent docs, audit data for existing"
+    },
+    "analytics_api": {
+      "overview": "PASS - Returns platform-wide analytics",
+      "revenue": "PASS - Returns revenue analytics with period filter",
+      "renter_analytics": "PASS - Returns renter-specific analytics",
+      "landlord_analytics": "PASS - Returns landlord-specific analytics",
+      "contractor_analytics": "PASS - Returns contractor-specific analytics",
+      "recent_activity": "PASS - Returns activity feed"
+    },
+    "homepage": {
+      "our_story_link_removed": "PASS - 'Our Story' link is NOT visible in navigation",
+      "navigation_items": "PASS - All expected nav items visible (Home, About, Properties, Lease Takeover, Pros, Contact)"
+    },
+    "dashboard": {
+      "nova_insights": "PASS - Nova Insights link visible in sidebar when logged in"
+    }
+  },
+  "specs_created": [
+    "/app/backend/tests/test_financing_esign_analytics.py",
+    "/app/tests/e2e/financing-homepage.spec.ts"
+  ],
+  "specs_updated": [],
+  "quarantined_tests": [],
+  "test_report_links": [
+    "/app/backend/tests/test_financing_esign_analytics.py",
+    "/app/tests/e2e/financing-homepage.spec.ts",
+    "/app/test_reports/pytest/financing_esign_analytics_results.xml"
+  ],
+  "action_items": [
+    "CRITICAL: Fix Financing.jsx - Add 'Send' to lucide-react imports (line 3-8). Currently: 'Send is not defined' error when clicking Apply Now",
+    "HIGH: Fix POST /api/esign/documents - Add {'_id': 0} projection to response to avoid ObjectId serialization error"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_financing_esign_analytics.py",
+    "/app/tests/e2e/financing-homepage.spec.ts"
+  ],
+  "success_rate": {
+    "backend": "94% (16/17 passed, 1 skipped due to known bug)",
+    "frontend": "89% (8/9 passed, 1 failed due to critical bug)"
+  },
+  "seed_data_creation": "None - used existing test user test@dommma.com / test123",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Two bugs need fixing: 1) CRITICAL: Financing.jsx missing 'Send' import from lucide-react - application modal is completely broken. 2) HIGH: POST /api/esign/documents returns 500 due to MongoDB _id serialization. All other features (Financing API, E-Sign templates, Analytics APIs, Homepage navigation) work correctly.",
+  "rca_of_issue": {
+    "financing_modal_bug": {
+      "root_cause": "Missing import - 'Send' icon from lucide-react is used in ApplicationForm component (line 379) but not included in the import statement (lines 3-8)",
+      "reproduction_steps": [
+        "Navigate to /financing",
+        "Click 'Apply Now' button on any financing option",
+        "Modal appears then crashes with 'Send is not defined' error"
+      ],
+      "mitigation": "Add 'Send' to the lucide-react import: import { DollarSign, Calculator, Home, TrendingUp, Shield, CheckCircle, Clock, FileText, ArrowRight, Percent, Building, Key, Wallet, PiggyBank, CreditCard, HelpCircle, ChevronRight, Star, AlertCircle, Loader2, Send } from 'lucide-react';"
+    },
+    "esign_documents_bug": {
+      "root_cause": "MongoDB document returned directly without excluding _id field. The _id field (ObjectId type) cannot be JSON serialized by FastAPI.",
+      "reproduction_steps": [
+        "POST to /api/esign/documents with valid payload",
+        "Server returns 500 Internal Server Error",
+        "Log shows: ValueError: [TypeError(\"'ObjectId' object is not iterable\")]"
+      ],
+      "mitigation": "Change line 3352 in server.py to exclude _id: await db.esign_documents.insert_one(document); return {k: v for k, v in document.items() if k != '_id'}"
+    }
+  }
+}
