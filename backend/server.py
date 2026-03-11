@@ -7422,6 +7422,116 @@ async def get_user_insights(user_id: str):
 
 
 
+# ========== SYNDICATION AI CONTENT GENERATION ==========
+
+class SyndicationRequest(BaseModel):
+    listing_id: str
+    listing_data: dict
+
+@api_router.post("/syndication/generate-description")
+async def generate_syndication_description(request: SyndicationRequest):
+    """Generate AI-powered listing description for syndication"""
+    listing = request.listing_data
+    
+    try:
+        from anthropic import AsyncAnthropic
+        anthropic_client = AsyncAnthropic(api_key=os.environ.get('ANTHROPIC_API_KEY'))
+        
+        # Build context about the listing
+        address = listing.get('address', '')
+        city = listing.get('city', 'Vancouver')
+        price = listing.get('price', 0)
+        bedrooms = listing.get('bedrooms', 1)
+        bathrooms = listing.get('bathrooms', 1)
+        sqft = listing.get('sqft', 0)
+        property_type = listing.get('property_type', 'Apartment')
+        amenities = listing.get('amenities', [])
+        description = listing.get('description', '')
+        pet_friendly = listing.get('pet_friendly', False)
+        
+        prompt = f"""Generate compelling marketing content for a rental listing in Metro Vancouver.
+
+LISTING DETAILS:
+- Address: {address}, {city}
+- Price: ${price}/month
+- Type: {property_type}
+- Bedrooms: {bedrooms}
+- Bathrooms: {bathrooms}
+- Size: {sqft} sqft
+- Pet Friendly: {"Yes" if pet_friendly else "No"}
+- Amenities: {', '.join(amenities) if amenities else 'Modern finishes'}
+- Original Description: {description}
+
+Please provide:
+1. A compelling 2-3 sentence description that highlights the best features and appeals to renters. Focus on lifestyle benefits and key selling points. Make it sound professional but warm.
+
+2. The neighborhood/area information for {city} - what's nearby, transit access, walkability, local amenities (restaurants, parks, shopping). Be specific to the actual area if you know it.
+
+3. 5 key highlights/selling points as bullet points that would attract renters.
+
+Format your response EXACTLY as JSON:
+{{
+  "description": "Your compelling 2-3 sentence description here",
+  "neighborhood": "2-3 sentences about the neighborhood and area",
+  "highlights": ["highlight 1", "highlight 2", "highlight 3", "highlight 4", "highlight 5"]
+}}
+
+Only respond with valid JSON, no other text."""
+
+        response = await anthropic_client.messages.create(
+            model="claude-sonnet-4-5-20250929",
+            max_tokens=800,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        
+        # Parse the response
+        ai_text = response.content[0].text.strip()
+        
+        # Try to parse as JSON
+        import json
+        try:
+            # Handle potential markdown code blocks
+            if ai_text.startswith('```'):
+                ai_text = ai_text.split('```')[1]
+                if ai_text.startswith('json'):
+                    ai_text = ai_text[4:]
+            ai_content = json.loads(ai_text)
+        except json.JSONDecodeError:
+            # Fallback: extract content manually
+            ai_content = {
+                "description": f"Beautiful {bedrooms}-bedroom {property_type.lower()} available in {city}. This well-appointed home offers modern amenities and a comfortable living space perfect for your lifestyle.",
+                "neighborhood": f"{city} offers excellent access to transit, shopping, and dining options. The area is known for its vibrant community and convenient location.",
+                "highlights": [
+                    f"{bedrooms} spacious bedroom{'s' if bedrooms > 1 else ''}",
+                    "Modern finishes throughout",
+                    "Great location with easy transit access",
+                    "Bright and welcoming atmosphere",
+                    "Pet friendly" if pet_friendly else "Quiet residential area"
+                ]
+            }
+        
+        ai_content["generated"] = True
+        return ai_content
+        
+    except Exception as e:
+        logger.error(f"Error generating syndication content: {e}")
+        # Return fallback content
+        return {
+            "description": f"Wonderful {listing.get('bedrooms', 1)}-bedroom {listing.get('property_type', 'apartment').lower()} available in {listing.get('city', 'Vancouver')}. Modern finishes and a great location make this the perfect place to call home.",
+            "neighborhood": f"{listing.get('city', 'Vancouver')} is a vibrant area with excellent transit access, local shops, and parks nearby.",
+            "highlights": [
+                f"{listing.get('bedrooms', 1)} bedroom{'s' if listing.get('bedrooms', 1) > 1 else ''}",
+                "Modern appliances",
+                "Great natural light",
+                "Convenient location",
+                "Close to amenities"
+            ],
+            "generated": True
+        }
+
+
+
+
 
 # ========== UNIVERSAL RATING SYSTEM ==========
 

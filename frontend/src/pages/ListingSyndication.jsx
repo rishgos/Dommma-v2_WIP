@@ -49,6 +49,10 @@ export default function ListingSyndication() {
   const [copiedField, setCopiedField] = useState(null);
   const [expandedPlatform, setExpandedPlatform] = useState('facebook');
   const [syndicationHistory, setSyndicationHistory] = useState({});
+  
+  // AI-generated content state
+  const [aiContent, setAiContent] = useState({});
+  const [generatingAI, setGeneratingAI] = useState(false);
 
   useEffect(() => {
     if (!user || user.user_type !== 'landlord') {
@@ -57,6 +61,13 @@ export default function ListingSyndication() {
     }
     fetchListings();
   }, [user, navigate]);
+  
+  // Generate AI content when listing is selected
+  useEffect(() => {
+    if (selectedListing && !aiContent[selectedListing.id]) {
+      generateAIContent(selectedListing);
+    }
+  }, [selectedListing]);
 
   const fetchListings = async () => {
     try {
@@ -70,6 +81,43 @@ export default function ListingSyndication() {
       console.error('Error fetching listings:', error);
     } finally {
       setLoading(false);
+    }
+  };
+  
+  const generateAIContent = async (listing) => {
+    if (!listing) return;
+    
+    setGeneratingAI(true);
+    try {
+      const response = await axios.post(`${API}/api/syndication/generate-description`, {
+        listing_id: listing.id,
+        listing_data: listing
+      });
+      
+      setAiContent(prev => ({
+        ...prev,
+        [listing.id]: response.data
+      }));
+    } catch (error) {
+      console.error('Error generating AI content:', error);
+      // Fallback to basic content
+      setAiContent(prev => ({
+        ...prev,
+        [listing.id]: { generated: false }
+      }));
+    } finally {
+      setGeneratingAI(false);
+    }
+  };
+  
+  const regenerateAIContent = () => {
+    if (selectedListing) {
+      setAiContent(prev => {
+        const newContent = { ...prev };
+        delete newContent[selectedListing.id];
+        return newContent;
+      });
+      generateAIContent(selectedListing);
     }
   };
 
@@ -94,7 +142,13 @@ export default function ListingSyndication() {
     const petFriendly = listing.pet_friendly ? 'Pet Friendly' : 'No Pets';
     const offers = listing.offers || [];
     
-    // Platform-specific formatting
+    // Check if we have AI-generated content for this listing
+    const ai = aiContent[listing.id];
+    const aiDescription = ai?.description || '';
+    const aiHighlights = ai?.highlights || [];
+    const aiNeighborhood = ai?.neighborhood || '';
+    
+    // Platform-specific formatting with AI enhancement
     if (platform === 'facebook') {
       return {
         title: `🏠 ${title} - $${price.toLocaleString()}/month`,
@@ -103,9 +157,11 @@ export default function ListingSyndication() {
 💰 $${price.toLocaleString()}/month
 🛏️ ${beds} Bedroom${beds !== 1 ? 's' : ''} | 🛁 ${baths} Bath${baths !== 1 ? 's' : ''}
 ${sqft ? `📐 ${sqft}\n` : ''}
+${aiDescription ? `\n${aiDescription}\n` : ''}
+${aiNeighborhood ? `\n🏘️ Neighborhood: ${aiNeighborhood}\n` : ''}
 ✨ Features:
-${amenities.length > 0 ? amenities.map(a => `• ${a}`).join('\n') : '• Modern finishes'}
-${petFriendly === 'Pet Friendly' ? '🐾 Pet Friendly!' : ''}
+${aiHighlights.length > 0 ? aiHighlights.map(h => `• ${h}`).join('\n') : (amenities.length > 0 ? amenities.map(a => `• ${a}`).join('\n') : '• Modern finishes')}
+${petFriendly === 'Pet Friendly' ? '\n🐾 Pet Friendly!' : ''}
 
 ${offers.length > 0 ? `🎁 SPECIAL OFFER: ${offers[0]}\n` : ''}
 📱 Contact for viewing!
@@ -128,10 +184,11 @@ ${sqft ? `SIZE: ${sqft}\n` : ''}
 PETS: ${petFriendly}
 
 DESCRIPTION:
-${listing.description || 'Beautiful rental unit available now.'}
+${aiDescription || listing.description || 'Beautiful rental unit available now.'}
 
+${aiNeighborhood ? `NEIGHBORHOOD:\n${aiNeighborhood}\n` : ''}
 AMENITIES:
-${amenities.length > 0 ? amenities.map(a => `- ${a}`).join('\n') : '- Modern appliances\n- Great location'}
+${aiHighlights.length > 0 ? aiHighlights.map(a => `- ${a}`).join('\n') : (amenities.length > 0 ? amenities.map(a => `- ${a}`).join('\n') : '- Modern appliances\n- Great location')}
 
 ${offers.length > 0 ? `SPECIAL OFFER: ${offers[0]}\n` : ''}
 Available: ${listing.available_date || 'Immediately'}
@@ -155,10 +212,11 @@ Bathrooms: ${baths}
 ${sqft ? `Square Feet: ${sqft}\n` : ''}
 Pet Policy: ${petFriendly}
 
-${listing.description || 'Wonderful rental opportunity in a great location.'}
+${aiDescription || listing.description || 'Wonderful rental opportunity in a great location.'}
 
+${aiNeighborhood ? `About the Area:\n${aiNeighborhood}\n` : ''}
 Features & Amenities:
-${amenities.length > 0 ? amenities.map(a => `✓ ${a}`).join('\n') : '✓ Modern finishes\n✓ Great location'}
+${aiHighlights.length > 0 ? aiHighlights.map(a => `✓ ${a}`).join('\n') : (amenities.length > 0 ? amenities.map(a => `✓ ${a}`).join('\n') : '✓ Modern finishes\n✓ Great location')}
 
 ${offers.length > 0 ? `★ MOVE-IN SPECIAL: ${offers[0]}\n` : ''}
 Available: ${listing.available_date || 'Immediately'}
@@ -392,20 +450,47 @@ Contact us today to arrange a viewing!`,
                           {/* Description Section */}
                           <div className="mb-4">
                             <div className="flex items-center justify-between mb-2">
-                              <label className="text-sm font-medium text-gray-700">Description</label>
-                              <button
-                                onClick={() => copyToClipboard(content.body, `${platform.id}-body`)}
-                                className="text-sm text-[#1A2F3A] hover:underline flex items-center gap-1"
-                              >
-                                {copiedField === `${platform.id}-body` ? (
-                                  <><Check size={14} className="text-green-600" /> Copied</>
-                                ) : (
-                                  <><Copy size={14} /> Copy</>
+                              <div className="flex items-center gap-2">
+                                <label className="text-sm font-medium text-gray-700">Description</label>
+                                {generatingAI ? (
+                                  <span className="text-xs text-blue-600 flex items-center gap-1">
+                                    <RefreshCw size={12} className="animate-spin" /> Generating AI content...
+                                  </span>
+                                ) : aiContent[selectedListing?.id]?.generated !== false && (
+                                  <span className="text-xs text-green-600 flex items-center gap-1">
+                                    <Sparkles size={12} /> AI Enhanced
+                                  </span>
                                 )}
-                              </button>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <button
+                                  onClick={regenerateAIContent}
+                                  disabled={generatingAI}
+                                  className="text-sm text-blue-600 hover:underline flex items-center gap-1 disabled:opacity-50"
+                                  title="Regenerate AI content"
+                                >
+                                  <RefreshCw size={14} className={generatingAI ? 'animate-spin' : ''} /> Regenerate
+                                </button>
+                                <button
+                                  onClick={() => copyToClipboard(content.body, `${platform.id}-body`)}
+                                  className="text-sm text-[#1A2F3A] hover:underline flex items-center gap-1"
+                                >
+                                  {copiedField === `${platform.id}-body` ? (
+                                    <><Check size={14} className="text-green-600" /> Copied</>
+                                  ) : (
+                                    <><Copy size={14} /> Copy</>
+                                  )}
+                                </button>
+                              </div>
                             </div>
                             <div className="bg-gray-50 rounded-lg p-3 text-sm text-gray-700 whitespace-pre-wrap max-h-64 overflow-y-auto">
-                              {content.body}
+                              {generatingAI ? (
+                                <div className="flex items-center justify-center py-8">
+                                  <RefreshCw size={24} className="animate-spin text-blue-500" />
+                                </div>
+                              ) : (
+                                content.body
+                              )}
                             </div>
                           </div>
 
