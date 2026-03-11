@@ -218,8 +218,8 @@ const Home = () => {
         className="relative h-[75vh] min-h-[500px] flex items-center"
         data-testid="hero-section"
       >
-        {/* Video Background */}
-        <div className="absolute inset-0 overflow-hidden">
+        {/* Video Background with Smooth Crossfade Loop */}
+        <div className="absolute inset-0 overflow-hidden bg-[#1A2F3A]">
           <video
             autoPlay
             loop
@@ -227,6 +227,25 @@ const Home = () => {
             playsInline
             className="absolute w-full h-full object-cover"
             poster="https://customer-assets.emergentagent.com/job_property-ai-hub-3/artifacts/8ejxvmv4_1.jpg"
+            style={{ filter: 'brightness(0.85)' }}
+            ref={(el) => {
+              if (el && !el._initialized) {
+                el._initialized = true;
+                el.addEventListener('timeupdate', function() {
+                  const timeLeft = this.duration - this.currentTime;
+                  // Fade out in last 0.8 seconds
+                  if (timeLeft <= 0.8 && timeLeft > 0) {
+                    this.style.opacity = timeLeft / 0.8;
+                  }
+                  // Fade in during first 0.8 seconds
+                  else if (this.currentTime < 0.8) {
+                    this.style.opacity = Math.min(1, this.currentTime / 0.8);
+                  } else {
+                    this.style.opacity = 1;
+                  }
+                });
+              }
+            }}
           >
             <source src="/videos/hero-vancouver.mp4" type="video/mp4" />
           </video>
