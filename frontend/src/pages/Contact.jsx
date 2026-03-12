@@ -52,7 +52,8 @@ const Contact = () => {
                 <div className="text-center py-12">
                   <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4"><Check size={32} className="text-green-600" /></div>
                   <h3 className="text-2xl text-[#1A2F3A] mb-2" style={{ fontFamily: 'Cormorant Garamond, serif' }}>Message Sent!</h3>
-                  <p className="text-gray-600">We'll get back to you soon.</p>
+                  <p className="text-gray-600 mb-4">Thank you for reaching out to us.</p>
+                  <p className="text-gray-500 text-sm">Our team is reviewing your request and will get back to you within 3-5 business days.</p>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-6">

@@ -150,6 +150,9 @@ const ContractorMarketplace = () => {
 
   // Load saved postal code from localStorage or user profile
   useEffect(() => {
+    // Scroll to top when page loads
+    window.scrollTo(0, 0);
+    
     // First try user's saved address
     if (user?.address) {
       // Extract postal code from address if it exists

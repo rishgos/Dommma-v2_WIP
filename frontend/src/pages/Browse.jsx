@@ -29,6 +29,7 @@ const Browse = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const novaQuery = searchParams.get('nova');
+  const typeParam = searchParams.get('type'); // Get type from URL (sale or rent)
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedListing, setSelectedListing] = useState(null);
@@ -47,7 +48,7 @@ const Browse = () => {
     petFriendly: false,
     parking: false,
     propertyType: '',
-    listingType: 'rent',
+    listingType: typeParam || 'rent', // Use URL param or default to rent
     leaseDuration: '',
     hasOffers: false
   });
@@ -73,6 +74,13 @@ const Browse = () => {
       map.fitBounds(bounds, { padding: 50 });
     }
   }, [map, listings]);
+
+  // Update listingType when URL param changes
+  useEffect(() => {
+    if (typeParam) {
+      setFilters(prev => ({ ...prev, listingType: typeParam }));
+    }
+  }, [typeParam]);
 
   useEffect(() => {
     fetchListings();
