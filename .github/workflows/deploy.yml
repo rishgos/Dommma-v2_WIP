@@ -26,9 +26,10 @@ jobs:
             # Navigate to project
             cd /home/ubuntu/dommma
             
-            # Pull latest code
+            # Pull latest code (force to handle divergent branches)
             echo "📥 Pulling latest code..."
-            git pull origin main
+            git fetch origin main
+            git reset --hard origin/main
             
             # Backend updates
             echo "🐍 Updating backend..."
