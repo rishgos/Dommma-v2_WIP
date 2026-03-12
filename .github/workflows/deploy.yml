@@ -1,0 +1,57 @@
+name: Deploy to Production
+
+# Trigger on push to main branch
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script_stop: true
+          script: |
+            echo "🚀 Starting deployment..."
+            
+            # Navigate to project
+            cd /home/ubuntu/dommma
+            
+            # Pull latest code
+            echo "📥 Pulling latest code..."
+            git pull origin main
+            
+            # Backend updates
+            echo "🐍 Updating backend..."
+            source backend/venv/bin/activate
+            pip install -r backend/requirements.txt --quiet
+            pm2 restart dommma-backend
+            
+            # Frontend updates
+            echo "⚛️ Building frontend..."
+            cd frontend
+            yarn install --frozen-lockfile --silent
+            
+            # Fix permissions for build
+            sudo chown -R ubuntu:ubuntu build/ 2>/dev/null || true
+            
+            # Build frontend
+            yarn build
+            
+            # Set permissions for Nginx
+            sudo chown -R www-data:www-data build/
+            sudo chmod -R 755 build/
+            
+            # Restart Nginx
+            sudo systemctl restart nginx
+            
+            echo "✅ Deployment complete!"
