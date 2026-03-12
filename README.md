@@ -2,7 +2,7 @@
 
 A complete real estate platform with AI concierge chatbot, property listings, contractor marketplace, e-signing, payments, and more.
 
-**Live Demo:** https://marketplace-prod-1.preview.emergentagent.com
+**Live Website:** https://dommma.com
 
 ## Key Features
 
@@ -103,7 +103,7 @@ Go to: **http://localhost:3000**
 
 ```env
 # Required - Database
-MONGO_URL=mongodb://localhost:27017
+MONGO_URL=mongodb+srv://your_connection_string
 DB_NAME=dommma
 
 # Required - AI Features
@@ -122,8 +122,13 @@ DOCUSIGN_INTEGRATION_KEY=your_integration_key
 DOCUSIGN_CLIENT_SECRET=your_client_secret
 DOCUSIGN_AUTH_SERVER=account-d.docusign.com
 
-# Optional - Email
+# Email (Resend)
 RESEND_API_KEY=your_resend_key
+CONTACT_EMAIL=support@dommma.com
+ADMIN_EMAIL=rgoswami@dommma.com
+
+# Admin Tools
+ADMIN_SECRET_KEY=your_secret_key
 ```
 
 ### frontend/.env

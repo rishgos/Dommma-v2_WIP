@@ -152,6 +152,7 @@ Store it securely and give it only to trusted team members.
 | Admin Email | rgoswami@dommma.com |
 | Contact Form Email | support@dommma.com |
 | Admin Secret Key | pray1234 |
+| Resend Account | rgoswami@dommma.com |
 
 ---
 
