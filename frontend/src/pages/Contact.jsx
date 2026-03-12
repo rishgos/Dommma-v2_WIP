@@ -1,15 +1,31 @@
 import React, { useState } from 'react';
 import MainLayout from '../components/layout/MainLayout';
-import { Mail, Phone, MapPin, Send, Check } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, Check, Loader2 } from 'lucide-react';
+import axios from 'axios';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 const Contact = () => {
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 3000);
+    setLoading(true);
+    setError('');
+    
+    try {
+      await axios.post(`${BACKEND_URL}/api/contact`, formData);
+      setSubmitted(true);
+      setFormData({ name: '', email: '', subject: '', message: '' });
+    } catch (err) {
+      setError('Failed to send message. Please try again or email us directly.');
+      console.error('Contact form error:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -57,13 +73,20 @@ const Contact = () => {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-6">
+                  {error && (
+                    <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
+                      {error}
+                    </div>
+                  )}
                   <div className="grid md:grid-cols-2 gap-4">
                     <div><label className="block text-sm text-gray-600 mb-2">Name</label><input type="text" required value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#1A2F3A] outline-none" placeholder="John Doe" data-testid="contact-name" /></div>
                     <div><label className="block text-sm text-gray-600 mb-2">Email</label><input type="email" required value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#1A2F3A] outline-none" placeholder="you@example.com" data-testid="contact-email" /></div>
                   </div>
                   <div><label className="block text-sm text-gray-600 mb-2">Subject</label><input type="text" required value={formData.subject} onChange={(e) => setFormData({...formData, subject: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#1A2F3A] outline-none" placeholder="How can we help?" data-testid="contact-subject" /></div>
                   <div><label className="block text-sm text-gray-600 mb-2">Message</label><textarea required rows={5} value={formData.message} onChange={(e) => setFormData({...formData, message: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#1A2F3A] outline-none resize-none" placeholder="Your message..." data-testid="contact-message" /></div>
-                  <button type="submit" className="btn-dark w-full flex items-center justify-center gap-2" data-testid="contact-submit">Send Message <Send size={16} /></button>
+                  <button type="submit" disabled={loading} className="btn-dark w-full flex items-center justify-center gap-2 disabled:opacity-50" data-testid="contact-submit">
+                    {loading ? <><Loader2 size={16} className="animate-spin" /> Sending...</> : <>Send Message <Send size={16} /></>}
+                  </button>
                 </form>
               )}
             </div>

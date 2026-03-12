@@ -7941,6 +7941,176 @@ async def get_financing_applications(user_id: str = None, status: str = None):
     return applications
 
 
+# ========== CONTACT FORM ==========
+
+class ContactFormInput(BaseModel):
+    name: str
+    email: str
+    subject: str
+    message: str
+
+@api_router.post("/contact")
+async def submit_contact_form(data: ContactFormInput):
+    """Submit contact form - sends email to admin"""
+    
+    # Store the message in database
+    contact_message = {
+        "id": str(uuid.uuid4()),
+        "name": data.name,
+        "email": data.email,
+        "subject": data.subject,
+        "message": data.message,
+        "status": "new",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.contact_messages.insert_one(contact_message)
+    
+    # Send notification email to admin
+    admin_email = os.environ.get('ADMIN_EMAIL', 'hello@dommma.com')
+    
+    try:
+        await send_email(
+            admin_email,
+            f"New Contact Form: {data.subject}",
+            f"""
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #1A2F3A;">New Contact Form Submission</h2>
+                <p><strong>From:</strong> {data.name} ({data.email})</p>
+                <p><strong>Subject:</strong> {data.subject}</p>
+                <hr style="border: 1px solid #eee;">
+                <p><strong>Message:</strong></p>
+                <p style="background: #f5f5f5; padding: 15px; border-radius: 8px;">{data.message}</p>
+                <hr style="border: 1px solid #eee;">
+                <p style="color: #666; font-size: 12px;">
+                    Received at: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}<br>
+                    Reply directly to: {data.email}
+                </p>
+            </div>
+            """
+        )
+    except Exception as e:
+        logger.warning(f"Failed to send contact form email: {e}")
+    
+    return {"status": "success", "message": "Your message has been received"}
+
+@api_router.get("/admin/contact-messages")
+async def get_contact_messages(status: str = None):
+    """Get all contact form messages (admin only)"""
+    query = {}
+    if status:
+        query["status"] = status
+    
+    messages = await db.contact_messages.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return messages
+
+
+# ========== ADMIN: CLEAR DATA ==========
+
+@api_router.delete("/admin/clear-test-data")
+async def clear_test_data(admin_key: str, clear_users: bool = False, clear_listings: bool = True, 
+                          clear_applications: bool = True, clear_messages: bool = True,
+                          clear_documents: bool = True, clear_jobs: bool = True):
+    """
+    Clear test/mock data from the database.
+    Requires admin_key for security.
+    
+    Parameters:
+    - admin_key: Must match ADMIN_SECRET_KEY env variable
+    - clear_users: If True, deletes all users (careful!)
+    - clear_listings: If True, deletes all listings
+    - clear_applications: If True, deletes all rental applications
+    - clear_messages: If True, deletes all chat messages
+    - clear_documents: If True, deletes all e-sign documents
+    - clear_jobs: If True, deletes all job posts
+    """
+    
+    # Verify admin key
+    expected_key = os.environ.get('ADMIN_SECRET_KEY', 'dommma-admin-2026')
+    if admin_key != expected_key:
+        raise HTTPException(status_code=403, detail="Invalid admin key")
+    
+    results = {}
+    
+    if clear_users:
+        result = await db.users.delete_many({})
+        results["users_deleted"] = result.deleted_count
+    
+    if clear_listings:
+        result = await db.listings.delete_many({})
+        results["listings_deleted"] = result.deleted_count
+    
+    if clear_applications:
+        result = await db.applications.delete_many({})
+        results["applications_deleted"] = result.deleted_count
+        
+        result = await db.financing_applications.delete_many({})
+        results["financing_applications_deleted"] = result.deleted_count
+    
+    if clear_messages:
+        result = await db.messages.delete_many({})
+        results["messages_deleted"] = result.deleted_count
+        
+        result = await db.contact_messages.delete_many({})
+        results["contact_messages_deleted"] = result.deleted_count
+    
+    if clear_documents:
+        result = await db.esign_documents.delete_many({})
+        results["esign_documents_deleted"] = result.deleted_count
+        
+        result = await db.builder_documents.delete_many({})
+        results["builder_documents_deleted"] = result.deleted_count
+        
+        result = await db.documents.delete_many({})
+        results["documents_deleted"] = result.deleted_count
+    
+    if clear_jobs:
+        result = await db.job_posts.delete_many({})
+        results["job_posts_deleted"] = result.deleted_count
+    
+    # Also clear other test data
+    result = await db.lease_assignments.delete_many({})
+    results["lease_assignments_deleted"] = result.deleted_count
+    
+    result = await db.payment_transactions.delete_many({})
+    results["payment_transactions_deleted"] = result.deleted_count
+    
+    result = await db.maintenance_requests.delete_many({})
+    results["maintenance_requests_deleted"] = result.deleted_count
+    
+    logger.info(f"Admin cleared test data: {results}")
+    
+    return {
+        "status": "success",
+        "message": "Test data cleared successfully",
+        "results": results
+    }
+
+@api_router.get("/admin/database-stats")
+async def get_database_stats(admin_key: str):
+    """Get counts of all collections (admin only)"""
+    
+    expected_key = os.environ.get('ADMIN_SECRET_KEY', 'dommma-admin-2026')
+    if admin_key != expected_key:
+        raise HTTPException(status_code=403, detail="Invalid admin key")
+    
+    stats = {
+        "users": await db.users.count_documents({}),
+        "listings": await db.listings.count_documents({}),
+        "applications": await db.applications.count_documents({}),
+        "messages": await db.messages.count_documents({}),
+        "esign_documents": await db.esign_documents.count_documents({}),
+        "job_posts": await db.job_posts.count_documents({}),
+        "lease_assignments": await db.lease_assignments.count_documents({}),
+        "payment_transactions": await db.payment_transactions.count_documents({}),
+        "contractor_profiles": await db.contractor_profiles.count_documents({}),
+        "contact_messages": await db.contact_messages.count_documents({}),
+        "financing_applications": await db.financing_applications.count_documents({})
+    }
+    
+    return stats
+
+
 # Include the router
 app.include_router(api_router)
 
