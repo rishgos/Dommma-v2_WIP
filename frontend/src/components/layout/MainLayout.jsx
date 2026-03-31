@@ -16,6 +16,7 @@ const MainLayout = ({ children, hideNovaButton = false }) => {
     { path: '/', label: t('nav.home') },
     { path: '/about', label: t('nav.about') },
     { path: '/properties', label: t('nav.properties') },
+    { path: '/property-search', label: 'AI Search' },
     { path: '/contractors', label: t('nav.pros') },
     { path: '/contact', label: t('nav.contact') },
   ];

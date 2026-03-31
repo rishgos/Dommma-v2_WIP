@@ -53,6 +53,9 @@ import PropertyValuation from "@/pages/PropertyValuation";
 import NeighborhoodComparison from "@/pages/NeighborhoodComparison";
 import PaymentHistory from "@/pages/PaymentHistory";
 import SmartRentPricing from "@/pages/SmartRentPricing";
+import LandlordEarnings from "@/pages/LandlordEarnings";
+import PropertyChatbot from "@/pages/PropertyChatbot";
+import CreditCheck from "@/pages/CreditCheck";
 
 // Layout
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -186,6 +189,9 @@ function App() {
           <Route path="/neighborhood-compare" element={<DashboardLayout><NeighborhoodComparison /></DashboardLayout>} />
           <Route path="/payment-history" element={<DashboardLayout><PaymentHistory /></DashboardLayout>} />
           <Route path="/smart-pricing" element={<DashboardLayout><SmartRentPricing /></DashboardLayout>} />
+          <Route path="/earnings" element={<DashboardLayout><LandlordEarnings /></DashboardLayout>} />
+          <Route path="/property-search" element={<PropertyChatbot />} />
+          <Route path="/credit-check" element={<DashboardLayout><CreditCheck /></DashboardLayout>} />
           
           {/* Legacy routes - redirect to new paths */}
           <Route path="/dashboard/payments" element={<DashboardLayout><Payments /></DashboardLayout>} />

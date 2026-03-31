@@ -8816,6 +8816,8 @@ from routers.ai_intelligence import router as ai_intelligence_mod_router
 from routers.scheduler import router as scheduler_router
 from routers.receipts import router as receipts_router
 from routers.ai_valuation import router as ai_valuation_router
+from routers.landlord_earnings import router as landlord_earnings_router
+from routers.ai_chatbot import router as ai_chatbot_router
 
 app.include_router(calendar_router, prefix="/api")
 app.include_router(moving_router, prefix="/api")
@@ -8827,6 +8829,8 @@ app.include_router(ai_intelligence_mod_router, prefix="/api")
 app.include_router(scheduler_router, prefix="/api")
 app.include_router(receipts_router, prefix="/api")
 app.include_router(ai_valuation_router, prefix="/api")
+app.include_router(landlord_earnings_router, prefix="/api")
+app.include_router(ai_chatbot_router, prefix="/api")
 
 app.add_middleware(
     CORSMiddleware,

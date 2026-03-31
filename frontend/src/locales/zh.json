@@ -1,0 +1,113 @@
+{
+  "nav": {
+    "home": "首页",
+    "about": "关于",
+    "properties": "房源",
+    "pros": "专业服务",
+    "services": "服务",
+    "contact": "联系我们",
+    "login": "登录",
+    "logout": "退出",
+    "dashboard": "控制面板"
+  },
+  "hero": {
+    "title": "轻松找到理想住所",
+    "subtitle": "完整的房地产平台，涵盖租房、买房、物业管理及可靠承包商服务。",
+    "ourStory": "我们的故事",
+    "browseProperties": "浏览房源",
+    "askNova": "问Nova AI：搜索公寓、计算预算、获取社区建议..."
+  },
+  "chat": {
+    "placeholder": "输入您的消息...",
+    "voiceButton": "点击说话",
+    "voiceListening": "正在聆听...",
+    "send": "发送",
+    "thinking": "Nova正在思考...",
+    "greeting": "您好！我是Nova，您的AI房产助手。有什么可以帮您的吗？",
+    "pickingUp": "继续之前的对话..."
+  },
+  "browse": {
+    "title": "浏览房源",
+    "rent": "租房",
+    "buy": "买房",
+    "search": "按地点、地址搜索...",
+    "filters": "筛选",
+    "bedrooms": "卧室",
+    "bathrooms": "浴室",
+    "priceRange": "价格范围",
+    "propertyType": "房屋类型",
+    "petFriendly": "允许宠物",
+    "parking": "停车位",
+    "apply": "应用筛选",
+    "clear": "清除",
+    "noResults": "未找到房源",
+    "propertiesFound": "个房源"
+  },
+  "property": {
+    "perMonth": "/月",
+    "beds": "卧",
+    "baths": "浴",
+    "sqft": "平方英尺",
+    "pets": "宠物",
+    "parking": "停车",
+    "amenities": "设施",
+    "description": "描述",
+    "contactLandlord": "联系房东",
+    "scheduleViewing": "预约看房",
+    "makeOffer": "出价"
+  },
+  "contractors": {
+    "title": "寻找可靠承包商",
+    "subtitle": "与经过验证的家庭服务专业人员联系",
+    "search": "按服务类型搜索...",
+    "hourlyRate": "时薪",
+    "reviews": "评价",
+    "viewProfile": "查看资料",
+    "bookNow": "立即预约",
+    "verified": "已验证",
+    "specialties": "专长"
+  },
+  "auth": {
+    "login": "登录",
+    "signup": "注册",
+    "email": "邮箱",
+    "password": "密码",
+    "confirmPassword": "确认密码",
+    "fullName": "全名",
+    "userType": "我是...",
+    "renter": "租客",
+    "landlord": "房东",
+    "contractor": "承包商",
+    "buyer": "买家",
+    "seller": "卖家",
+    "forgotPassword": "忘记密码？",
+    "noAccount": "没有账户？",
+    "haveAccount": "已有账户？"
+  },
+  "footer": {
+    "about": "关于DOMMMA",
+    "aboutText": "大温哥华地区完整的房地产平台，涵盖租赁、购买及物业服务。",
+    "quickLinks": "快速链接",
+    "support": "支持",
+    "legal": "法律",
+    "privacy": "隐私政策",
+    "terms": "服务条款",
+    "contact": "联系我们",
+    "faq": "常见问题",
+    "copyright": "© 2026 DOMMMA. 保留所有权利。"
+  },
+  "common": {
+    "loading": "加载中...",
+    "error": "发生错误",
+    "save": "保存",
+    "cancel": "取消",
+    "delete": "删除",
+    "edit": "编辑",
+    "close": "关闭",
+    "back": "返回",
+    "next": "下一步",
+    "submit": "提交",
+    "yes": "是",
+    "no": "否"
+  }
+}

@@ -75,6 +75,7 @@ async def send_payment_reminders():
         if not tenant or not tenant.get("email"):
             continue
         
+        # Create in-app notification
         reminder = {
             "id": str(uuid.uuid4()),
             "user_id": agreement["tenant_id"],
@@ -85,6 +86,35 @@ async def send_payment_reminders():
             "created_at": today.isoformat()
         }
         await db.notifications.insert_one(reminder)
+        
+        # Send email via Resend
+        try:
+            from services.email import send_email as resend_send
+            html = f"""
+            <div style="font-family:'Georgia',serif;max-width:600px;margin:0 auto;background:#F5F5F0;padding:40px;">
+              <div style="background:#1A2F3A;padding:30px;border-radius:16px 16px 0 0;text-align:center;">
+                <h1 style="color:white;margin:0;font-size:28px;">DOMMMA</h1>
+                <p style="color:rgba(255,255,255,0.7);margin:8px 0 0;font-size:14px;">Rent Payment Reminder</p>
+              </div>
+              <div style="background:white;padding:30px;border-radius:0 0 16px 16px;">
+                <h2 style="color:#1A2F3A;margin:0 0 16px;">Hi {tenant.get('name', 'Tenant')}!</h2>
+                <p style="color:#555;line-height:1.6;">This is a friendly reminder that your rent payment of <strong>${agreement['monthly_rent']:,.2f}</strong> is due on the <strong>{agreement['due_day']}th</strong> of this month.</p>
+                <div style="background:#F5F5F0;border-radius:12px;padding:20px;margin:20px 0;text-align:center;">
+                  <p style="color:#1A2F3A;font-size:28px;font-weight:bold;margin:0;">${agreement['monthly_rent']:,.2f}</p>
+                  <p style="color:#888;font-size:14px;margin:8px 0 0;">Due on the {agreement['due_day']}th</p>
+                  <p style="color:#888;font-size:12px;margin:4px 0 0;">Grace period: {agreement.get('grace_period_days', 3)} days</p>
+                </div>
+                <div style="text-align:center;margin:20px 0;">
+                  <a href="https://dommma.com/rent-agreements" style="background:#1A2F3A;color:white;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;">Pay Now</a>
+                </div>
+                <p style="color:#888;font-size:12px;text-align:center;">Late fees of {('$'+str(agreement.get('late_fee_amount',0))) if agreement.get('late_fee_type')=='flat' else (str(agreement.get('late_fee_amount',0))+'%')} will apply after the grace period.</p>
+              </div>
+            </div>"""
+            import asyncio as aio
+            aio.create_task(resend_send(tenant["email"], "DOMMMA - Rent Payment Due Soon", html))
+        except Exception as email_err:
+            logger.warning(f"Email reminder failed: {email_err}")
+        
         sent += 1
     
     logger.info(f"Sent {sent} payment reminders")
