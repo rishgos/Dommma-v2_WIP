@@ -11,7 +11,7 @@ export default defineConfig({
     ['json', { outputFile: '/root/.emergent/automation_output/20260310_024258/results.json' }],
   ],
   use: {
-    baseURL: 'https://marketplace-prod-1.preview.emergentagent.com',
+    baseURL: 'https://dommma-rent-pay.preview.emergentagent.com',
     screenshot: 'only-on-failure',
     trace: 'off',
     headless: true,

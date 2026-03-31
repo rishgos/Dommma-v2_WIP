@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { waitForAppReady, dismissToasts, loginAsTestUser } from '../fixtures/helpers';
 
-const BASE_URL = process.env.REACT_APP_BACKEND_URL || 'https://marketplace-prod-1.preview.emergentagent.com';
+const BASE_URL = process.env.REACT_APP_BACKEND_URL || 'https://dommma-rent-pay.preview.emergentagent.com';
 
 test.describe('Financing Page', () => {
   test.beforeEach(async ({ page }) => {

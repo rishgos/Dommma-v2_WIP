@@ -518,7 +518,7 @@ class AIToolsService:
                 import asyncio
                 
                 # Build claim link
-                claim_link = f"https://marketplace-prod-1.preview.emergentagent.com/claim-listing?token={claim_token}"
+                claim_link = f"https://dommma-rent-pay.preview.emergentagent.com/claim-listing?token={claim_token}"
                 
                 email_html = f"""
                 <div style="font-family:'Georgia',serif;max-width:600px;margin:0 auto;background:#F5F5F0;padding:40px;">
