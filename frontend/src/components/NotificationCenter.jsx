@@ -44,34 +44,61 @@ export default function NotificationCenter({ userId, onCountUpdate }) {
   // WebSocket for real-time updates
   useEffect(() => {
     if (!userId || !WS_URL) return;
+    let ws = null;
+    let reconnectTimer = null;
+    let isMounted = true;
 
     const connect = () => {
+      if (!isMounted) return;
       try {
-        const ws = new WebSocket(`${WS_URL}/ws/${userId}`);
+        ws = new WebSocket(`${WS_URL}/ws/${userId}`);
         wsRef.current = ws;
 
+        ws.onopen = () => {
+          // Send ping to keep alive
+          const pingInterval = setInterval(() => {
+            if (ws?.readyState === WebSocket.OPEN) {
+              ws.send(JSON.stringify({ type: 'ping' }));
+            } else {
+              clearInterval(pingInterval);
+            }
+          }, 30000);
+        };
+
         ws.onmessage = (event) => {
-          const data = JSON.parse(event.data);
-          if (data.type === 'notification') {
-            setNotifications(prev => [data.notification, ...prev]);
-            setUnreadCount(prev => prev + 1);
-            onCountUpdate?.(unreadCount + 1);
-          } else if (data.type === 'notification_count') {
-            setUnreadCount(data.count);
-            onCountUpdate?.(data.count);
-          }
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'notification') {
+              setNotifications(prev => [data.notification, ...prev]);
+              setUnreadCount(prev => prev + 1);
+            } else if (data.type === 'notification_count') {
+              setUnreadCount(data.count);
+            }
+          } catch (e) { /* ignore parse errors */ }
         };
 
         ws.onclose = () => {
-          setTimeout(connect, 5000);
+          if (isMounted) {
+            reconnectTimer = setTimeout(connect, 10000);
+          }
+        };
+
+        ws.onerror = () => {
+          ws?.close();
         };
       } catch (e) {
-        console.error('WebSocket error:', e);
+        if (isMounted) {
+          reconnectTimer = setTimeout(connect, 10000);
+        }
       }
     };
 
     connect();
-    return () => wsRef.current?.close();
+    return () => {
+      isMounted = false;
+      clearTimeout(reconnectTimer);
+      ws?.close();
+    };
   }, [userId]);
 
   // Close on outside click

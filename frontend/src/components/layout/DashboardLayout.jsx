@@ -50,6 +50,7 @@ const DashboardLayout = ({ children }) => {
       { icon: Scale, label: 'Lease Analyzer', path: '/document-analyzer' },
       { icon: Shield, label: 'AI Doc Review', path: '/document-review' },
       { icon: Navigation, label: 'Commute Search', path: '/commute-optimizer' },
+      { icon: BarChart3, label: 'Analytics & Export', path: '/analytics' },
       { icon: MessageSquare, label: 'Messages', path: '/messages' },
     ],
     landlord: [
@@ -64,6 +65,7 @@ const DashboardLayout = ({ children }) => {
       { icon: MapPin, label: 'Compare Neighborhoods', path: '/neighborhood-compare' },
       { icon: Shield, label: 'Credit Check', path: '/credit-check' },
       { icon: Wand2, label: 'Virtual Staging', path: '/virtual-staging' },
+      { icon: BarChart2, label: 'Analytics & Export', path: '/analytics' },
       { icon: FileText, label: 'Document Builder', path: '/document-builder' },
       { icon: Share2, label: 'Syndication', path: '/syndication' },
       { icon: Zap, label: 'AI Optimizer', path: '/listing-optimizer' },
@@ -84,6 +86,7 @@ const DashboardLayout = ({ children }) => {
       { icon: Briefcase, label: 'Jobs', path: '/jobs' },
       { icon: Calendar, label: 'My Calendar', path: '/calendar' },
       { icon: BarChart2, label: 'Nova Insights', path: '/nova-insights' },
+      { icon: BarChart3, label: 'Analytics & Export', path: '/analytics' },
       { icon: MessageSquare, label: 'Messages', path: '/messages' },
     ],
   };
