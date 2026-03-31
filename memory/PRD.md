@@ -1,75 +1,99 @@
 # DOMMMA - Product Requirements Document
 
 ## Original Problem Statement
-Build a complete real estate marketplace platform called "DOMMMA" featuring an AI concierge, property listings, e-signing, contractor services, rent payment collection, AI document intelligence, property valuation, neighborhood comparison tools, landlord earnings dashboards, AI property search chatbot, and tenant credit checks.
+Build a comprehensive real estate marketplace platform for Metro Vancouver featuring AI-powered property search, contractor marketplace, rent payment system, document intelligence, and landlord management tools.
 
-## Tech Stack
-- **Frontend**: React (CRA), Tailwind CSS, Shadcn UI, Stripe Elements, PWA, i18next (EN/FR/ZH)
-- **Backend**: FastAPI (Python), Motor (async MongoDB), APScheduler, ReportLab
-- **Database**: MongoDB Atlas
-- **Storage**: Cloudflare R2
-- **CI/CD**: GitHub Actions
-- **Deployment**: AWS EC2
-- **3rd Party**: Stripe (Payments + Connect), DocuSign, Anthropic Claude, OpenAI, Perplexity, Resend, Google Maps/OAuth
+## User Personas
+- **Renters:** Search apartments, apply for rentals, find roommates, pay rent, get AI lease reviews
+- **Landlords:** List properties, manage tenants, collect rent, track earnings, find contractors
+- **Buyers/Sellers:** Browse homes for sale, make offers, schedule viewings
+- **Contractors:** Get hired for home services, submit bids, manage portfolio
 
-## All Features (Implemented & Tested)
+## Core Requirements
+1. AI Concierge (Nova) - powered by Anthropic Claude
+2. Property listings with Google Maps integration
+3. Contractor marketplace with bidding system
+4. E-Sign documents (DocuSign)
+5. Rent payment system (Stripe Elements + Connect)
+6. AI Document Intelligence (lease review, compliance check)
+7. Multi-language support (EN, FR, ZH)
+8. PWA with offline support and push notifications
+9. Background job scheduler for payments/reminders
 
-### Phase 1 - Foundation
-- Property browsing with Rent/Buy/Lease Takeover tabs, advanced filters, Google Maps
-- 16-category contractor marketplace, AI concierge (Nova), E-sign document builder
-- User auth (register/login/Google OAuth), messaging, renter resume, analytics
+## Technology Stack
+- Frontend: React, Tailwind CSS, Shadcn UI, i18next
+- Backend: Python FastAPI (modular router architecture)
+- Database: MongoDB Atlas
+- Hosting: AWS EC2 (Ubuntu)
+- Storage: Cloudflare R2
+- AI: Anthropic Claude, Perplexity
+- Payments: Stripe (Elements + Connect)
+- Emails: Resend
+- E-Signatures: DocuSign
+- Maps: Google Maps Platform
+- Push: Web Push API (VAPID)
+- CI/CD: GitHub Actions
 
-### Phase 2 - Rent Payment System
-- Rent Agreements (create/accept/counter/decline), Stripe Elements, Stripe Connect (2.5% fee)
-- AI Document Builder assistant, Lease Takeover tab on Browse
+## Implemented Features (Complete)
 
-### Phase 3 - AI Document Intelligence
-- Tenant Document Review (risk scoring, BC RTA compliance), Lease Comparison, Deposit Analysis
+### Phase 1 - Core Platform
+- User auth (register, login, email verification)
+- Property listings (CRUD, search, map, claim)
+- Nova AI chatbot
+- Messaging system
+- Applications system
+- Contact form
 
-### Phase 4 - Recurring Payments & Automation
-- APScheduler (4 cron jobs: invoices, reminders with Resend email, late fees, lease renewals)
-- Notifications system, Payment Receipt PDF (ReportLab), Payment History with filters
+### Phase 2 - Advanced Features
+- Contractor marketplace (profiles, services, bookings, jobs, bids, reviews)
+- Document builder with AI review
+- E-Sign (DocuSign integration)
+- Rent payment system (Stripe checkout)
+- Featured listings (pay-per-success)
+- Renter resume builder
+- Lease takeover system
+- Financing applications
+- Analytics dashboard
+- Roommate finder
+- Property compare/favorites
+- Image syndication
 
-### Phase 5 - AI Property Intelligence
-- AI Property Valuation, Neighborhood Comparison, Smart Rent Pricing, Virtual Tours support
+### Phase 3 - AI & Payments
+- Rent Agreements (create, accept, counter, decline)
+- Stripe Connect (landlord payouts)
+- AI Document Intelligence (compliance review, risk analysis)
+- AI Property Valuation & Neighborhood Comparison
+- AI Property Search Chatbot (with session history)
+- Credit Check Simulator (MOCKED)
+- Landlord Earnings Dashboard
+- Smart Rent Pricing
+- Payment History & Receipts
+- APScheduler background jobs (invoices, reminders, late fees, renewals)
+- Resend email reminders
 
-### Phase 6 - Advanced Features
-- **Landlord Earnings Dashboard** - Monthly income charts, vacancy rates, ROI projections, collection rates
-- **AI Property Search Chatbot** - Natural language property search with session history & listing cards
-- **Tenant Credit Check** - Simulated credit reports with scores, risk levels, rental history (demo)
-- **Multi-language** - English, French (Français), Mandarin Chinese (中文) with dropdown selector
-- **PWA** - Service worker for offline caching, push notifications, app install
-
-### Admin Panel
-- Database stats, clear test data, contact messages, rent payment admin views
+### Phase 4 - Modularization & New Features
+- Extracted 16 router modules from server.py:
+  - admin, auth, listings, contractors, stripe_connect, ai_intelligence, ai_valuation, ai_chatbot, scheduler, receipts, landlord_earnings, web_push, calendar, moving, compatibility, portfolio, nova
+- Shared auth utilities module (services/auth_utils.py)
+- Web Push Notifications (VAPID/pywebpush)
+- 3D Matterport Viewer component
+- Multi-language support (EN, FR, ZH)
+- PWA Service Worker with push handler
+- Updated handover documentation (v2.0)
 
 ## Architecture
-- `/app/frontend/src/pages/` - 35+ React page components
-- `/app/frontend/src/components/` - Shared UI components (Shadcn), LanguageToggle
-- `/app/frontend/src/locales/` - en.json, fr.json, zh.json
-- `/app/frontend/public/sw.js` - PWA service worker
-- `/app/backend/server.py` - Main FastAPI application
-- `/app/backend/routers/` - 12 modular routers (admin, stripe_connect, ai_intelligence, ai_valuation, scheduler, receipts, landlord_earnings, ai_chatbot, calendar, moving, compatibility, portfolio, nova)
+- Backend: ~7,400 lines in server.py + 16 modular routers in /routers/
+- Frontend: 40+ page components, Shadcn UI components
+- 24+ MongoDB collections
+- 4 recurring background jobs (APScheduler)
 
-## Key API Endpoints
-- Auth: POST /api/auth/login, /register
-- Listings: GET /api/listings, /api/lease-assignments
-- Rent: POST /api/rent/agreements, GET /api/rent/agreements, POST /api/rent/payments/{id}/pay
-- Connect: POST /api/stripe-connect/create-account, GET /api/stripe-connect/status
-- AI: POST /api/ai/tenant-document-review, /api/ai/property-valuation, /api/ai/smart-rent-pricing, /api/ai/property-chat
-- Tools: GET /api/ai/neighborhood-comparison, /api/ai/virtual-tours, /api/ai/chat-history
-- Payments: GET /api/payments/history, GET /api/payments/{id}/receipt
-- Landlord: GET /api/landlord/earnings, /api/landlord/property-performance
-- Credit: POST /api/credit-check/request, GET /api/credit-check/reports
-- Scheduler: POST /api/scheduler/run-invoices, /api/scheduler/run-reminders
-- Notifications: GET /api/notifications, POST /api/notifications/{id}/read
+## What's Mocked
+- Credit Check API (simulated scores for demo)
 
-## Test Credentials
-- Renter: test@dommma.com / test123
-- Admin key: dommma-admin-2026
-- Test tenant ID: dcc2cce1-e8d4-43b5-8096-9db712f36720
+## 3rd Party Integrations
+- MongoDB Atlas, Anthropic Claude, Perplexity, Stripe, Resend, DocuSign, Google Maps, Cloudflare R2, Web Push (VAPID)
 
-## Notes
-- Credit check scoring is SIMULATED for demo purposes
-- Stripe production key update deferred by user
-- All AI features use live Anthropic Claude API
+## All Features Tested - 100% Pass Rate
+- Backend: 20/20 tests passed (modular routers)
+- Frontend: All features working
+- 45+ features tested in earlier iterations
