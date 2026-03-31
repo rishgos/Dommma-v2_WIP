@@ -534,6 +534,105 @@ class RoommateProfileCreate(BaseModel):
     smoking: bool = False
     bio: str = ""
 
+
+# ========== RENT PAYMENT MODELS ==========
+
+class RentAgreement(BaseModel):
+    """Rent payment agreement between landlord and tenant"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    listing_id: str
+    landlord_id: str
+    tenant_id: str
+    
+    # Rent details
+    monthly_rent: float
+    due_day: int = 1  # Day of month rent is due (1-28)
+    grace_period_days: int = 3  # Days before late fee applies
+    
+    # Late fee settings (set by landlord)
+    late_fee_type: str = "flat"  # "flat" or "percentage"
+    late_fee_amount: float = 50.0  # Flat amount or percentage
+    max_late_fee: Optional[float] = None  # Cap for percentage-based fees
+    
+    # E-transfer option
+    etransfer_email: Optional[str] = None  # Landlord's e-transfer email
+    
+    # Status
+    status: str = "pending"  # pending, active, completed, cancelled
+    landlord_signed: bool = False
+    tenant_signed: bool = False
+    tenant_accepted_terms: bool = False
+    
+    # Stripe
+    stripe_customer_id: Optional[str] = None  # Tenant's Stripe customer ID
+    stripe_payment_method_id: Optional[str] = None  # Tenant's saved card
+    
+    # Dates
+    start_date: str
+    end_date: Optional[str] = None
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    updated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+
+class RentAgreementCreate(BaseModel):
+    listing_id: str
+    tenant_id: str
+    monthly_rent: float
+    due_day: int = 1
+    grace_period_days: int = 3
+    late_fee_type: str = "flat"
+    late_fee_amount: float = 50.0
+    max_late_fee: Optional[float] = None
+    etransfer_email: Optional[str] = None
+    start_date: str
+    end_date: Optional[str] = None
+
+
+class RentAgreementTerms(BaseModel):
+    """Terms proposed/countered by tenant"""
+    due_day: Optional[int] = None
+    grace_period_days: Optional[int] = None
+    late_fee_type: Optional[str] = None
+    late_fee_amount: Optional[float] = None
+
+
+class RentPayment(BaseModel):
+    """Individual rent payment record"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    agreement_id: str
+    tenant_id: str
+    landlord_id: str
+    
+    # Payment details
+    amount: float  # Base rent amount
+    late_fee: float = 0.0
+    total_amount: float  # amount + late_fee
+    
+    # Period
+    payment_month: str  # Format: "2026-04"
+    due_date: str
+    
+    # Status
+    status: str = "pending"  # pending, processing, paid, failed, overdue
+    payment_method: str = "card"  # card, etransfer
+    
+    # Stripe details
+    stripe_payment_intent_id: Optional[str] = None
+    stripe_charge_id: Optional[str] = None
+    failure_reason: Optional[str] = None
+    
+    # Timestamps
+    paid_at: Optional[str] = None
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+
+class SavePaymentMethod(BaseModel):
+    """Save tenant's payment method"""
+    payment_method_id: str  # Stripe payment method ID
+
+
 # ========== ROUTES ==========
 
 @api_router.get("/")
@@ -2217,6 +2316,156 @@ async def list_builder_documents(user_id: str):
         {"_id": 0}
     ).sort("created_at", -1).to_list(50)
     return docs
+
+
+# ========== AI DOCUMENT ASSISTANT ==========
+
+@api_router.post("/document-builder/ai-prompts")
+async def get_lease_prompts(landlord_id: str, listing_id: str = None):
+    """Get AI-generated prompts and suggestions for lease agreement creation"""
+    
+    # Get landlord info
+    landlord = await db.users.find_one({"id": landlord_id})
+    
+    # Get listing info if provided
+    listing = None
+    if listing_id:
+        listing = await db.listings.find_one({"id": listing_id})
+    
+    # BC Residential Tenancy Act requirements
+    prompts = {
+        "required_clauses": [
+            {
+                "title": "Rent Payment Terms",
+                "description": "Specify the monthly rent amount, due date, and acceptable payment methods",
+                "legal_note": "Under BC RTA, rent increases are limited to once per year with proper notice",
+                "ai_suggestion": f"Recommended due date: 1st of month. Consider grace period of 3-5 days before late fees."
+            },
+            {
+                "title": "Late Payment Fees",
+                "description": "Define late fee structure - flat rate or percentage",
+                "legal_note": "Late fees must be reasonable and disclosed upfront. Courts may reject excessive fees.",
+                "ai_suggestion": "Industry standard: $50 flat fee OR 3-5% of monthly rent after grace period. Stripe charges 2.9% + $0.30 per transaction.",
+                "options": [
+                    {"type": "flat", "amount": 50, "label": "$50 flat fee"},
+                    {"type": "flat", "amount": 75, "label": "$75 flat fee"},
+                    {"type": "percentage", "amount": 3, "label": "3% of rent"},
+                    {"type": "percentage", "amount": 5, "label": "5% of rent"}
+                ]
+            },
+            {
+                "title": "Security Deposit",
+                "description": "Maximum allowed is half month's rent for damage deposit",
+                "legal_note": "BC law limits security deposit to maximum 1/2 month rent. Pet deposit max is also 1/2 month rent.",
+                "ai_suggestion": f"For rent of ${listing.get('price', 2000)}, max deposit is ${listing.get('price', 2000) / 2:.2f}" if listing else "Set deposit based on monthly rent"
+            },
+            {
+                "title": "Lease Term",
+                "description": "Fixed term or month-to-month tenancy",
+                "legal_note": "Fixed-term leases cannot include 'vacate clauses' requiring tenant to move at end of term.",
+                "options": [
+                    {"months": 12, "label": "12 months (standard)"},
+                    {"months": 6, "label": "6 months"},
+                    {"months": 0, "label": "Month-to-month"}
+                ]
+            },
+            {
+                "title": "Pet Policy",
+                "description": "Specify if pets are allowed and any restrictions",
+                "legal_note": "Landlords can restrict pets but cannot charge pet rent. Pet damage deposit is separate.",
+                "ai_suggestion": "Be specific about pet types, sizes, and number allowed."
+            },
+            {
+                "title": "Utilities",
+                "description": "Clarify which utilities are included in rent",
+                "legal_note": "Must clearly state if tenant is responsible for BC Hydro, FortisBC, internet, etc.",
+                "checklist": ["Electricity", "Gas", "Water", "Internet", "Cable", "Garbage"]
+            },
+            {
+                "title": "Move-in/Move-out Inspection",
+                "description": "Schedule condition inspection",
+                "legal_note": "BC RTA requires written condition inspection report at move-in and move-out.",
+                "ai_suggestion": "Use DOMMMA's inspection checklist template."
+            }
+        ],
+        "ai_tips": [
+            "Always use the official BC RTB Form for residential tenancy agreements",
+            "Keep copies of all signed documents for at least 2 years",
+            "Take photos during move-in inspection as evidence",
+            "Set up automatic rent collection to avoid payment delays",
+            "Clearly communicate late fee policy before signing"
+        ],
+        "tenant_disclosure": {
+            "title": "Important Information for Tenants",
+            "items": [
+                f"Monthly rent: ${listing.get('price', 'TBD')}" if listing else "Monthly rent: To be specified",
+                "Late fees will apply after grace period",
+                "Rent is collected automatically via credit card on the due date",
+                "You can dispute charges within 30 days",
+                "Contact the Residential Tenancy Branch for disputes"
+            ]
+        }
+    }
+    
+    return prompts
+
+
+@api_router.post("/document-builder/ai-review")
+async def ai_review_document(content: str, document_type: str = "lease"):
+    """AI reviews a document and highlights important terms for tenants"""
+    
+    anthropic_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not anthropic_key:
+        raise HTTPException(status_code=500, detail="AI service not configured")
+    
+    client = AsyncAnthropic(api_key=anthropic_key)
+    
+    prompt = f"""You are a helpful AI assistant reviewing a {document_type} agreement for a tenant in British Columbia, Canada.
+
+Review the following document and:
+1. Highlight any unusual or concerning clauses
+2. Identify the late fee structure and payment terms
+3. Note any terms that deviate from standard BC residential tenancy practices
+4. Summarize key financial obligations
+5. Flag any potentially illegal clauses under BC RTA
+
+Document content:
+{content}
+
+Respond in JSON format:
+{{
+    "summary": "Brief 2-3 sentence summary",
+    "monthly_obligations": {{
+        "rent": "$X",
+        "late_fee": "$X after X days",
+        "other_fees": []
+    }},
+    "highlights": [
+        {{"type": "info/warning/alert", "clause": "quote from doc", "explanation": "why this matters"}}
+    ],
+    "concerns": [
+        {{"severity": "low/medium/high", "issue": "description", "recommendation": "what to do"}}
+    ],
+    "tenant_checklist": ["items tenant should verify before signing"]
+}}"""
+
+    try:
+        response = await client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=2000,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        
+        result = response.content[0].text
+        # Try to parse as JSON
+        try:
+            import json
+            return json.loads(result)
+        except:
+            return {"raw_analysis": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI analysis failed: {str(e)}")
+
 
 # ========== POST-RESERVATION UPSELLS ==========
 
@@ -7939,6 +8188,412 @@ async def get_financing_applications(user_id: str = None, status: str = None):
     
     applications = await db.financing_applications.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
     return applications
+
+
+# ========== RENT PAYMENT SYSTEM ==========
+
+@api_router.post("/rent/agreements")
+async def create_rent_agreement(data: RentAgreementCreate, landlord_id: str):
+    """Landlord creates a rent payment agreement for a tenant"""
+    
+    # Verify the listing belongs to this landlord
+    listing = await db.listings.find_one({"id": data.listing_id})
+    if not listing:
+        raise HTTPException(status_code=404, detail="Listing not found")
+    
+    if listing.get("landlord_id") != landlord_id and listing.get("user_id") != landlord_id:
+        raise HTTPException(status_code=403, detail="Not authorized to create agreement for this listing")
+    
+    # Get tenant info
+    tenant = await db.users.find_one({"id": data.tenant_id})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    
+    # Create the agreement
+    agreement = RentAgreement(
+        **data.model_dump(),
+        landlord_id=landlord_id,
+        landlord_signed=True  # Landlord signs by creating
+    )
+    
+    await db.rent_agreements.insert_one(agreement.model_dump())
+    
+    # Send notification to tenant
+    try:
+        landlord = await db.users.find_one({"id": landlord_id})
+        await send_email(
+            tenant.get("email"),
+            "Rent Payment Agreement - Action Required",
+            f"""
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #1A2F3A;">Rent Payment Agreement</h2>
+                <p>Hi {tenant.get('name', 'there')},</p>
+                <p>{landlord.get('name', 'Your landlord')} has created a rent payment agreement for you.</p>
+                <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                    <p><strong>Property:</strong> {listing.get('title', 'N/A')}</p>
+                    <p><strong>Monthly Rent:</strong> ${data.monthly_rent:,.2f}</p>
+                    <p><strong>Due Day:</strong> {data.due_day} of each month</p>
+                    <p><strong>Grace Period:</strong> {data.grace_period_days} days</p>
+                    <p><strong>Late Fee:</strong> {'$' + str(data.late_fee_amount) if data.late_fee_type == 'flat' else str(data.late_fee_amount) + '%'}</p>
+                </div>
+                <p>Please log in to DOMMMA to review and accept these terms.</p>
+                <a href="https://dommma.com/rent-agreements" style="background: #1A2F3A; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; display: inline-block;">Review Agreement</a>
+            </div>
+            """
+        )
+    except Exception as e:
+        logger.warning(f"Failed to send rent agreement email: {e}")
+    
+    return {"status": "success", "agreement_id": agreement.id, "message": "Agreement created and sent to tenant"}
+
+
+@api_router.get("/rent/agreements")
+async def get_rent_agreements(user_id: str, role: str = "tenant"):
+    """Get rent agreements for a user (as landlord or tenant)"""
+    if role == "landlord":
+        query = {"landlord_id": user_id}
+    else:
+        query = {"tenant_id": user_id}
+    
+    agreements = await db.rent_agreements.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
+    
+    # Enrich with listing and user info
+    for agreement in agreements:
+        listing = await db.listings.find_one({"id": agreement.get("listing_id")}, {"_id": 0, "id": 1, "title": 1, "address": 1})
+        agreement["listing"] = listing
+        
+        if role == "landlord":
+            tenant = await db.users.find_one({"id": agreement.get("tenant_id")}, {"_id": 0, "id": 1, "name": 1, "email": 1})
+            agreement["tenant"] = tenant
+        else:
+            landlord = await db.users.find_one({"id": agreement.get("landlord_id")}, {"_id": 0, "id": 1, "name": 1, "email": 1})
+            agreement["landlord"] = landlord
+    
+    return agreements
+
+
+@api_router.get("/rent/agreements/{agreement_id}")
+async def get_rent_agreement(agreement_id: str, user_id: str):
+    """Get a specific rent agreement"""
+    agreement = await db.rent_agreements.find_one(
+        {"id": agreement_id, "$or": [{"landlord_id": user_id}, {"tenant_id": user_id}]},
+        {"_id": 0}
+    )
+    if not agreement:
+        raise HTTPException(status_code=404, detail="Agreement not found")
+    
+    # Enrich with related data
+    listing = await db.listings.find_one({"id": agreement.get("listing_id")}, {"_id": 0})
+    tenant = await db.users.find_one({"id": agreement.get("tenant_id")}, {"_id": 0, "id": 1, "name": 1, "email": 1, "phone": 1})
+    landlord = await db.users.find_one({"id": agreement.get("landlord_id")}, {"_id": 0, "id": 1, "name": 1, "email": 1, "phone": 1})
+    
+    agreement["listing"] = listing
+    agreement["tenant"] = tenant
+    agreement["landlord"] = landlord
+    
+    return agreement
+
+
+@api_router.post("/rent/agreements/{agreement_id}/accept")
+async def accept_rent_agreement(agreement_id: str, tenant_id: str):
+    """Tenant accepts the rent agreement terms"""
+    agreement = await db.rent_agreements.find_one({"id": agreement_id, "tenant_id": tenant_id})
+    if not agreement:
+        raise HTTPException(status_code=404, detail="Agreement not found")
+    
+    if agreement.get("status") != "pending":
+        raise HTTPException(status_code=400, detail="Agreement is not pending")
+    
+    await db.rent_agreements.update_one(
+        {"id": agreement_id},
+        {"$set": {
+            "tenant_signed": True,
+            "tenant_accepted_terms": True,
+            "status": "active",
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    # Notify landlord
+    try:
+        landlord = await db.users.find_one({"id": agreement.get("landlord_id")})
+        tenant = await db.users.find_one({"id": tenant_id})
+        await send_email(
+            landlord.get("email"),
+            "Rent Agreement Accepted",
+            f"""
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #1A2F3A;">Good News!</h2>
+                <p>{tenant.get('name', 'Your tenant')} has accepted the rent payment agreement.</p>
+                <p>Automatic rent collection is now active.</p>
+            </div>
+            """
+        )
+    except Exception as e:
+        logger.warning(f"Failed to send acceptance email: {e}")
+    
+    return {"status": "success", "message": "Agreement accepted"}
+
+
+@api_router.post("/rent/agreements/{agreement_id}/counter")
+async def counter_rent_agreement(agreement_id: str, tenant_id: str, terms: RentAgreementTerms):
+    """Tenant proposes counter-terms"""
+    agreement = await db.rent_agreements.find_one({"id": agreement_id, "tenant_id": tenant_id})
+    if not agreement:
+        raise HTTPException(status_code=404, detail="Agreement not found")
+    
+    if agreement.get("status") != "pending":
+        raise HTTPException(status_code=400, detail="Agreement is not pending")
+    
+    # Store counter-proposal
+    counter_terms = {k: v for k, v in terms.model_dump().items() if v is not None}
+    
+    await db.rent_agreements.update_one(
+        {"id": agreement_id},
+        {"$set": {
+            "counter_proposal": counter_terms,
+            "counter_proposal_by": tenant_id,
+            "counter_proposal_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    # Notify landlord
+    try:
+        landlord = await db.users.find_one({"id": agreement.get("landlord_id")})
+        tenant = await db.users.find_one({"id": tenant_id})
+        await send_email(
+            landlord.get("email"),
+            "Rent Agreement - Counter Proposal",
+            f"""
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #1A2F3A;">Counter Proposal Received</h2>
+                <p>{tenant.get('name', 'Your tenant')} has proposed changes to the rent agreement.</p>
+                <p>Please log in to review and respond.</p>
+                <a href="https://dommma.com/rent-agreements/{agreement_id}" style="background: #1A2F3A; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; display: inline-block;">Review Proposal</a>
+            </div>
+            """
+        )
+    except Exception as e:
+        logger.warning(f"Failed to send counter proposal email: {e}")
+    
+    return {"status": "success", "message": "Counter proposal submitted"}
+
+
+@api_router.post("/rent/agreements/{agreement_id}/decline")
+async def decline_rent_agreement(agreement_id: str, tenant_id: str, reason: str = ""):
+    """Tenant declines the rent agreement"""
+    agreement = await db.rent_agreements.find_one({"id": agreement_id, "tenant_id": tenant_id})
+    if not agreement:
+        raise HTTPException(status_code=404, detail="Agreement not found")
+    
+    await db.rent_agreements.update_one(
+        {"id": agreement_id},
+        {"$set": {
+            "status": "declined",
+            "decline_reason": reason,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"status": "success", "message": "Agreement declined"}
+
+
+@api_router.post("/rent/save-payment-method")
+async def save_payment_method(tenant_id: str, data: SavePaymentMethod):
+    """Save tenant's payment method (credit card) via Stripe"""
+    import stripe
+    stripe.api_key = os.environ.get("STRIPE_API_KEY")
+    
+    # Get or create Stripe customer
+    tenant = await db.users.find_one({"id": tenant_id})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    
+    stripe_customer_id = tenant.get("stripe_customer_id")
+    
+    if not stripe_customer_id:
+        # Create Stripe customer
+        customer = stripe.Customer.create(
+            email=tenant.get("email"),
+            name=tenant.get("name"),
+            metadata={"dommma_user_id": tenant_id}
+        )
+        stripe_customer_id = customer.id
+        await db.users.update_one(
+            {"id": tenant_id},
+            {"$set": {"stripe_customer_id": stripe_customer_id}}
+        )
+    
+    # Attach payment method to customer
+    try:
+        stripe.PaymentMethod.attach(
+            data.payment_method_id,
+            customer=stripe_customer_id
+        )
+        
+        # Set as default payment method
+        stripe.Customer.modify(
+            stripe_customer_id,
+            invoice_settings={"default_payment_method": data.payment_method_id}
+        )
+        
+        # Update user record
+        await db.users.update_one(
+            {"id": tenant_id},
+            {"$set": {"default_payment_method_id": data.payment_method_id}}
+        )
+        
+        return {"status": "success", "message": "Payment method saved"}
+    except stripe.error.StripeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@api_router.get("/rent/payments")
+async def get_rent_payments(user_id: str, role: str = "tenant"):
+    """Get rent payment history"""
+    if role == "landlord":
+        query = {"landlord_id": user_id}
+    else:
+        query = {"tenant_id": user_id}
+    
+    payments = await db.rent_payments.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return payments
+
+
+@api_router.post("/rent/payments/{agreement_id}/pay")
+async def process_rent_payment(agreement_id: str, tenant_id: str, payment_method: str = "card"):
+    """Process a rent payment manually (or triggered by cron)"""
+    import stripe
+    stripe.api_key = os.environ.get("STRIPE_API_KEY")
+    
+    agreement = await db.rent_agreements.find_one({"id": agreement_id, "tenant_id": tenant_id, "status": "active"})
+    if not agreement:
+        raise HTTPException(status_code=404, detail="Active agreement not found")
+    
+    tenant = await db.users.find_one({"id": tenant_id})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    
+    # Calculate amount (check if late fee applies)
+    today = datetime.now(timezone.utc)
+    current_month = today.strftime("%Y-%m")
+    due_day = agreement.get("due_day", 1)
+    due_date = datetime(today.year, today.month, due_day, tzinfo=timezone.utc)
+    grace_end = due_date + timedelta(days=agreement.get("grace_period_days", 3))
+    
+    base_amount = agreement.get("monthly_rent")
+    late_fee = 0.0
+    
+    if today > grace_end:
+        # Apply late fee
+        if agreement.get("late_fee_type") == "flat":
+            late_fee = agreement.get("late_fee_amount", 0)
+        else:
+            late_fee = base_amount * (agreement.get("late_fee_amount", 0) / 100)
+            if agreement.get("max_late_fee"):
+                late_fee = min(late_fee, agreement.get("max_late_fee"))
+    
+    total_amount = base_amount + late_fee
+    
+    # Check if already paid this month
+    existing = await db.rent_payments.find_one({"agreement_id": agreement_id, "payment_month": current_month, "status": "paid"})
+    if existing:
+        raise HTTPException(status_code=400, detail="Rent already paid for this month")
+    
+    # Create payment record
+    payment = RentPayment(
+        agreement_id=agreement_id,
+        tenant_id=tenant_id,
+        landlord_id=agreement.get("landlord_id"),
+        amount=base_amount,
+        late_fee=late_fee,
+        total_amount=total_amount,
+        payment_month=current_month,
+        due_date=due_date.isoformat(),
+        status="processing",
+        payment_method=payment_method
+    )
+    
+    await db.rent_payments.insert_one(payment.model_dump())
+    
+    if payment_method == "card":
+        # Process via Stripe
+        try:
+            stripe_customer_id = tenant.get("stripe_customer_id")
+            payment_method_id = tenant.get("default_payment_method_id")
+            
+            if not stripe_customer_id or not payment_method_id:
+                raise HTTPException(status_code=400, detail="No payment method on file. Please add a credit card.")
+            
+            # Create payment intent
+            intent = stripe.PaymentIntent.create(
+                amount=int(total_amount * 100),  # Stripe uses cents
+                currency="cad",
+                customer=stripe_customer_id,
+                payment_method=payment_method_id,
+                off_session=True,
+                confirm=True,
+                description=f"DOMMMA Rent Payment - {current_month}",
+                metadata={
+                    "agreement_id": agreement_id,
+                    "payment_id": payment.id,
+                    "tenant_id": tenant_id
+                }
+            )
+            
+            # Update payment record
+            await db.rent_payments.update_one(
+                {"id": payment.id},
+                {"$set": {
+                    "status": "paid",
+                    "stripe_payment_intent_id": intent.id,
+                    "paid_at": datetime.now(timezone.utc).isoformat()
+                }}
+            )
+            
+            # TODO: Transfer to landlord via Stripe Connect
+            
+            return {"status": "success", "message": f"Payment of ${total_amount:.2f} processed successfully", "payment_id": payment.id}
+            
+        except stripe.error.CardError as e:
+            await db.rent_payments.update_one(
+                {"id": payment.id},
+                {"$set": {
+                    "status": "failed",
+                    "failure_reason": str(e)
+                }}
+            )
+            raise HTTPException(status_code=400, detail=f"Card declined: {e.user_message}")
+    else:
+        # E-transfer - just record it as pending
+        return {
+            "status": "pending", 
+            "message": f"Please send ${total_amount:.2f} via e-transfer to: {agreement.get('etransfer_email')}",
+            "payment_id": payment.id
+        }
+
+
+@api_router.get("/rent/late-fee-calculator")
+async def calculate_late_fee(rent_amount: float, late_fee_type: str = "flat", late_fee_amount: float = 50, max_late_fee: float = None):
+    """Calculate late fee for AI to display to user"""
+    if late_fee_type == "flat":
+        late_fee = late_fee_amount
+    else:
+        late_fee = rent_amount * (late_fee_amount / 100)
+        if max_late_fee:
+            late_fee = min(late_fee, max_late_fee)
+    
+    # Stripe fee estimation (2.9% + $0.30)
+    stripe_fee = (rent_amount + late_fee) * 0.029 + 0.30
+    
+    return {
+        "rent_amount": rent_amount,
+        "late_fee": round(late_fee, 2),
+        "total_with_late_fee": round(rent_amount + late_fee, 2),
+        "estimated_stripe_fee": round(stripe_fee, 2),
+        "landlord_receives": round(rent_amount + late_fee - stripe_fee, 2)
+    }
 
 
 # ========== CONTACT FORM ==========

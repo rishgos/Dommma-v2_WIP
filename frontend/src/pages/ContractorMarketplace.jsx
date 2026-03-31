@@ -4,7 +4,8 @@ import {
   Search, Star, MapPin, Clock, DollarSign, Shield,
   Phone, Mail, ChevronRight, Filter, Wrench, Zap, Droplets,
   Paintbrush, Hammer, Leaf, Sparkles, Calendar, Send, X, MessageSquare, Plus, Briefcase,
-  ArrowLeft, Loader2, Check, User, AlertCircle, Navigation
+  ArrowLeft, Loader2, Check, User, AlertCircle, Navigation, Truck, Home, TreePine, Bug,
+  Key, Snowflake, Trash2, Sofa
 } from 'lucide-react';
 import { useAuth } from '../App';
 import axios from 'axios';
@@ -21,7 +22,10 @@ const API = `${BACKEND_URL}/api`;
 const categoryIcons = {
   plumbing: Droplets, electrical: Zap, painting: Paintbrush,
   renovation: Hammer, carpentry: Hammer, landscaping: Leaf,
-  cleaning: Sparkles, general: Wrench
+  cleaning: Sparkles, general: Wrench, moving: Truck,
+  housekeeping: Home, security: Shield, yardwork: TreePine,
+  pestcontrol: Bug, appliance: Wrench, locksmith: Key,
+  snowremoval: Snowflake, junkremoval: Trash2, homestaging: Sofa
 };
 
 // Service categories with their icons and sub-services
@@ -74,6 +78,95 @@ const serviceCategories = {
     services: [
       'House Cleaning', 'Deep Cleaning', 'Move-in/Move-out Cleaning',
       'Carpet Cleaning', 'Window Cleaning', 'Office Cleaning'
+    ]
+  },
+  moving: {
+    icon: Truck,
+    label: 'Moving Services',
+    services: [
+      'Local Moving', 'Long Distance Moving', 'Furniture Moving',
+      'Piano Moving', 'Packing Services', 'Storage Services',
+      'Office Relocation', 'Senior Moving'
+    ]
+  },
+  housekeeping: {
+    icon: Home,
+    label: 'Housekeeping',
+    services: [
+      'Regular Housekeeping', 'Laundry Services', 'Ironing Services',
+      'Organizing Services', 'Meal Preparation', 'Grocery Shopping',
+      'Pet Sitting', 'House Sitting'
+    ]
+  },
+  security: {
+    icon: Shield,
+    label: 'Security Services',
+    services: [
+      'Security System Installation', 'Camera Installation', 'Alarm Systems',
+      'Smart Lock Installation', 'Security Patrol', 'Access Control Systems',
+      'Intercom Installation', 'Security Consultation'
+    ]
+  },
+  yardwork: {
+    icon: TreePine,
+    label: 'Yard Work',
+    services: [
+      'Lawn Mowing', 'Hedge Trimming', 'Leaf Removal', 'Weed Control',
+      'Mulching', 'Spring/Fall Cleanup', 'Irrigation Systems', 'Sod Installation'
+    ]
+  },
+  pestcontrol: {
+    icon: Bug,
+    label: 'Pest Control',
+    services: [
+      'General Pest Control', 'Rodent Control', 'Insect Extermination',
+      'Bed Bug Treatment', 'Termite Control', 'Wildlife Removal',
+      'Preventive Treatment', 'Commercial Pest Control'
+    ]
+  },
+  appliance: {
+    icon: Wrench,
+    label: 'Appliance Repair',
+    services: [
+      'Refrigerator Repair', 'Washer/Dryer Repair', 'Dishwasher Repair',
+      'Oven/Stove Repair', 'Microwave Repair', 'HVAC Repair',
+      'Garbage Disposal Repair', 'Appliance Installation'
+    ]
+  },
+  locksmith: {
+    icon: Key,
+    label: 'Locksmith',
+    services: [
+      'Lock Installation', 'Lock Repair', 'Key Duplication',
+      'Lockout Services', 'Rekeying', 'Safe Services',
+      'Car Key Replacement', 'Master Key Systems'
+    ]
+  },
+  snowremoval: {
+    icon: Snowflake,
+    label: 'Snow Removal',
+    services: [
+      'Driveway Snow Removal', 'Sidewalk Clearing', 'Roof Snow Removal',
+      'Ice Control', 'Salting Services', 'Commercial Snow Removal',
+      'Emergency Snow Removal', 'Seasonal Contracts'
+    ]
+  },
+  junkremoval: {
+    icon: Trash2,
+    label: 'Junk Removal',
+    services: [
+      'Furniture Removal', 'Appliance Disposal', 'Construction Debris',
+      'Estate Cleanouts', 'Garage Cleanouts', 'Yard Waste Removal',
+      'E-Waste Disposal', 'Donation Pickup'
+    ]
+  },
+  homestaging: {
+    icon: Sofa,
+    label: 'Home Staging',
+    services: [
+      'Full Home Staging', 'Partial Staging', 'Virtual Staging',
+      'Furniture Rental', 'Consultation', 'Occupied Home Staging',
+      'Vacant Home Staging', 'Model Home Design'
     ]
   }
 };
@@ -146,7 +239,11 @@ const ContractorMarketplace = () => {
   const [error, setError] = useState(null);
   const [detectingLocation, setDetectingLocation] = useState(false);
 
-  const categories = ['plumbing', 'electrical', 'painting', 'renovation', 'landscaping', 'cleaning'];
+  const categories = [
+    'plumbing', 'electrical', 'painting', 'renovation', 'landscaping', 'cleaning',
+    'moving', 'housekeeping', 'security', 'yardwork', 'pestcontrol', 'appliance',
+    'locksmith', 'snowremoval', 'junkremoval', 'homestaging'
+  ];
 
   // Load saved postal code from localStorage or user profile
   useEffect(() => {
@@ -552,7 +649,7 @@ const ContractorMarketplace = () => {
               {/* Popular Services */}
               <div className="mt-4 text-sm text-white/50">
                 <span>Popular: </span>
-                {['House Cleaning', 'Plumber', 'Electrician'].map((service) => (
+                {['House Cleaning', 'Plumber', 'Moving', 'Locksmith', 'Snow Removal'].map((service) => (
                   <button
                     key={service}
                     onClick={() => {
