@@ -47,6 +47,8 @@ import DocumentBuilder from "@/pages/DocumentBuilder";
 import ServiceRequestWizard from "@/pages/ServiceRequestWizard";
 import Financing from "@/pages/Financing";
 import FindTenants from "@/pages/FindTenants";
+import RentAgreements from "@/pages/RentAgreements";
+import TenantDocReview from "@/pages/TenantDocReview";
 
 // Layout
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -174,6 +176,8 @@ function App() {
           <Route path="/listing-optimizer" element={<DashboardLayout><ListingOptimizer /></DashboardLayout>} />
           <Route path="/settings" element={<DashboardLayout><SettingsPage /></DashboardLayout>} />
           <Route path="/find-tenants" element={<DashboardLayout><FindTenants /></DashboardLayout>} />
+          <Route path="/rent-agreements" element={<RentAgreements />} />
+          <Route path="/document-review" element={<TenantDocReview />} />
           
           {/* Legacy routes - redirect to new paths */}
           <Route path="/dashboard/payments" element={<DashboardLayout><Payments /></DashboardLayout>} />

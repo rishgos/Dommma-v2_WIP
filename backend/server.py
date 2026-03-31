@@ -6436,6 +6436,22 @@ async def get_contractor_bids(contractor_id: str, status: Optional[str] = None):
 
 # ========== USER PROFILE ==========
 
+@api_router.get("/users/search")
+async def search_users(q: str = "", type: str = None):
+    """Search users by name or email"""
+    if len(q) < 2:
+        return []
+    query = {
+        "$or": [
+            {"name": {"$regex": q, "$options": "i"}},
+            {"email": {"$regex": q, "$options": "i"}}
+        ]
+    }
+    if type:
+        query["user_type"] = type
+    users = await db.users.find(query, {"_id": 0, "id": 1, "name": 1, "email": 1, "user_type": 1}).to_list(20)
+    return users
+
 @api_router.get("/users/{user_id}")
 async def get_user(user_id: str):
     """Get user by ID"""
@@ -8552,7 +8568,31 @@ async def process_rent_payment(agreement_id: str, tenant_id: str, payment_method
                 }}
             )
             
-            # TODO: Transfer to landlord via Stripe Connect
+            # Transfer to landlord via Stripe Connect
+            try:
+                landlord = await db.users.find_one({"id": agreement.get("landlord_id")})
+                connect_id = landlord.get("stripe_connect_id") if landlord else None
+                if connect_id and landlord.get("stripe_connect_payouts_enabled"):
+                    platform_fee = int(total_amount * 100 * PLATFORM_FEE_PERCENT / 100)
+                    transfer_amount = int(total_amount * 100) - platform_fee
+                    transfer = stripe.Transfer.create(
+                        amount=transfer_amount,
+                        currency="cad",
+                        destination=connect_id,
+                        description=f"DOMMMA Rent - {current_month}",
+                        metadata={"payment_id": payment.id, "agreement_id": agreement_id}
+                    )
+                    await db.rent_payments.update_one(
+                        {"id": payment.id},
+                        {"$set": {
+                            "stripe_transfer_id": transfer.id,
+                            "platform_fee": platform_fee / 100,
+                            "landlord_payout": transfer_amount / 100
+                        }}
+                    )
+                    logger.info(f"Transfer {transfer.id} to landlord {connect_id}: ${transfer_amount/100:.2f}")
+            except Exception as transfer_err:
+                logger.warning(f"Stripe Connect transfer failed: {transfer_err}")
             
             return {"status": "success", "message": f"Payment of ${total_amount:.2f} processed successfully", "payment_id": payment.id}
             
@@ -8771,11 +8811,16 @@ app.include_router(api_router)
 
 # Include new modular routers
 from routers import calendar_router, moving_router, compatibility_router, portfolio_router, nova_router
+from routers.stripe_connect import router as stripe_connect_mod_router
+from routers.ai_intelligence import router as ai_intelligence_mod_router
+
 app.include_router(calendar_router, prefix="/api")
 app.include_router(moving_router, prefix="/api")
 app.include_router(compatibility_router, prefix="/api")
 app.include_router(portfolio_router, prefix="/api")
 app.include_router(nova_router, prefix="/api")
+app.include_router(stripe_connect_mod_router, prefix="/api")
+app.include_router(ai_intelligence_mod_router, prefix="/api")
 
 app.add_middleware(
     CORSMiddleware,

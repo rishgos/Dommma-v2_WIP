@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { 
   FileText, Download, Send, Save, Eye, Edit, 
   ChevronLeft, ChevronRight, Plus, Trash2, User, 
-  Home, Calendar, DollarSign, Check, Loader2, Printer
+  Home, Calendar, DollarSign, Check, Loader2, Printer,
+  Sparkles, Bot, Lightbulb, X
 } from 'lucide-react';
 import { useAuth } from '../App';
 import DashboardLayout from '../components/layout/DashboardLayout';
@@ -261,6 +262,10 @@ export default function DocumentBuilder() {
   const [sending, setSending] = useState(false);
   const [recipientEmail, setRecipientEmail] = useState('');
   const [savedDocId, setSavedDocId] = useState(null);
+  const [showAIPanel, setShowAIPanel] = useState(false);
+  const [aiPrompts, setAiPrompts] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiReview, setAiReview] = useState(null);
   const printRef = useRef();
 
   useEffect(() => {
@@ -295,6 +300,29 @@ export default function DocumentBuilder() {
         setFormData(prev => ({ ...prev, increase_percent: `${increase}%` }));
       }
     }
+  };
+
+  const fetchAIPrompts = async () => {
+    setAiLoading(true);
+    try {
+      const res = await axios.post(`${API}/api/document-builder/ai-prompts?landlord_id=${user.id}`);
+      setAiPrompts(res.data);
+    } catch (error) {
+      console.error('Error fetching AI prompts:', error);
+    } finally { setAiLoading(false); }
+  };
+
+  const fetchAIReview = async () => {
+    setAiLoading(true);
+    try {
+      const contentStr = Object.entries(formData).map(([k, v]) => `${k}: ${v}`).join('\n');
+      const res = await axios.post(`${API}/api/document-builder/ai-review`, null, {
+        params: { content: contentStr, document_type: selectedTemplate?.id || 'lease' }
+      });
+      setAiReview(res.data);
+    } catch (error) {
+      console.error('Error getting AI review:', error);
+    } finally { setAiLoading(false); }
   };
 
   const handleSaveDocument = async () => {
@@ -522,6 +550,88 @@ export default function DocumentBuilder() {
               />
             </div>
           </div>
+
+          {/* AI Assistant Toggle */}
+          <button
+            onClick={() => { setShowAIPanel(!showAIPanel); if (!aiPrompts) fetchAIPrompts(); }}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all"
+            data-testid="ai-assistant-toggle"
+          >
+            <Sparkles size={18} />
+            {showAIPanel ? 'Hide' : 'Show'} AI Assistant
+          </button>
+
+          {/* AI Assistant Panel */}
+          {showAIPanel && (
+            <div className="bg-white rounded-2xl border border-purple-200 shadow-sm overflow-hidden" data-testid="ai-assistant-panel">
+              <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-4 border-b border-purple-100">
+                <div className="flex items-center gap-2">
+                  <Bot size={20} className="text-purple-600" />
+                  <h3 className="font-semibold text-purple-900">AI Lease Assistant</h3>
+                </div>
+                <p className="text-sm text-purple-600 mt-1">BC Residential Tenancy Act guidance</p>
+              </div>
+              <div className="p-4 space-y-4 max-h-96 overflow-y-auto">
+                {aiLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 size={24} className="animate-spin text-purple-600" />
+                  </div>
+                ) : aiPrompts ? (
+                  <>
+                    {aiPrompts.required_clauses?.map((clause, idx) => (
+                      <div key={idx} className="p-3 bg-gray-50 rounded-xl space-y-2">
+                        <div className="flex items-start gap-2">
+                          <Lightbulb size={16} className="text-yellow-500 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <h4 className="font-medium text-sm text-[#1A2F3A]">{clause.title}</h4>
+                            <p className="text-xs text-gray-500 mt-0.5">{clause.description}</p>
+                          </div>
+                        </div>
+                        {clause.legal_note && (
+                          <div className="ml-6 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <p className="text-xs text-yellow-800">
+                              <strong>Legal:</strong> {clause.legal_note}
+                            </p>
+                          </div>
+                        )}
+                        {clause.ai_suggestion && (
+                          <p className="ml-6 text-xs text-purple-700 italic">{clause.ai_suggestion}</p>
+                        )}
+                        {clause.options && (
+                          <div className="ml-6 flex flex-wrap gap-2">
+                            {clause.options.map((opt, oi) => (
+                              <button key={oi} type="button" onClick={() => {
+                                if (clause.title.includes('Late')) {
+                                  handleFieldChange('late_fee_type', opt.type || 'flat');
+                                  handleFieldChange('late_fee_amount', opt.amount?.toString() || '');
+                                }
+                              }} className="px-3 py-1 text-xs bg-purple-100 text-purple-700 rounded-full hover:bg-purple-200">
+                                {opt.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    {aiPrompts.ai_tips?.length > 0 && (
+                      <div className="p-3 bg-blue-50 rounded-xl">
+                        <h4 className="font-medium text-sm text-blue-900 mb-2">Quick Tips</h4>
+                        <ul className="space-y-1">
+                          {aiPrompts.ai_tips.map((tip, i) => (
+                            <li key={i} className="text-xs text-blue-700 flex items-start gap-2">
+                              <Check size={12} className="mt-0.5 flex-shrink-0" />{tip}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-sm text-gray-500 text-center py-4">Click to load AI suggestions</p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </DashboardLayout>
     );
@@ -628,6 +738,52 @@ export default function DocumentBuilder() {
               The recipient will receive an email with a link to review and sign the document.
             </p>
           </div>
+
+          {/* AI Review Button */}
+          <button
+            onClick={fetchAIReview}
+            disabled={aiLoading}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700"
+            data-testid="ai-review-btn"
+          >
+            {aiLoading ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
+            AI Review Document
+          </button>
+
+          {aiReview && (
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-purple-200" data-testid="ai-review-panel">
+              <div className="flex items-center gap-2 mb-4">
+                <Bot size={20} className="text-purple-600" />
+                <h3 className="font-semibold text-purple-900">AI Document Review</h3>
+              </div>
+              {aiReview.summary && (
+                <p className="text-sm text-gray-700 mb-4 p-3 bg-purple-50 rounded-lg">{aiReview.summary}</p>
+              )}
+              {aiReview.highlights?.length > 0 && (
+                <div className="space-y-2 mb-4">
+                  <h4 className="text-sm font-medium text-[#1A2F3A]">Key Highlights</h4>
+                  {aiReview.highlights.map((h, i) => (
+                    <div key={i} className={`p-2 rounded-lg text-xs ${h.type === 'alert' ? 'bg-red-50 text-red-800' : h.type === 'warning' ? 'bg-yellow-50 text-yellow-800' : 'bg-blue-50 text-blue-800'}`}>
+                      <p className="font-medium">{h.clause}</p>
+                      <p className="mt-1 opacity-80">{h.explanation}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {aiReview.concerns?.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-red-700">Concerns</h4>
+                  {aiReview.concerns.map((c, i) => (
+                    <div key={i} className="p-2 bg-red-50 rounded-lg text-xs text-red-800">
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-medium mr-2 ${c.severity === 'high' ? 'bg-red-200' : c.severity === 'medium' ? 'bg-yellow-200 text-yellow-800' : 'bg-gray-200 text-gray-700'}`}>{c.severity}</span>
+                      {c.issue}
+                      {c.recommendation && <p className="mt-1 text-red-600">Recommendation: {c.recommendation}</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </DashboardLayout>
     );

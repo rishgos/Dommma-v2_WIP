@@ -55,6 +55,7 @@ const Browse = () => {
   });
   const [showFilters, setShowFilters] = useState(false);
   const [showViewingScheduler, setShowViewingScheduler] = useState(false);
+  const [leaseAssignments, setLeaseAssignments] = useState([]);
   
   const propertyTypes = ['House', 'Apartment', 'Townhouse', 'Condo', 'Studio', 'Duplex', 'Penthouse'];
   const leaseDurations = [
@@ -84,7 +85,11 @@ const Browse = () => {
   }, [typeParam]);
 
   useEffect(() => {
-    fetchListings();
+    if (filters.listingType === 'lease_takeover') {
+      fetchLeaseAssignments();
+    } else {
+      fetchListings();
+    }
     seedData();
     if (user) fetchFavoriteIds();
   }, []);
@@ -120,6 +125,40 @@ const Browse = () => {
     }
   };
 
+  const fetchLeaseAssignments = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get(`${API}/lease-assignments`);
+      const mapped = (res.data || []).map(a => ({
+        id: a.id,
+        title: a.title || `Lease Takeover - ${a.address}`,
+        address: a.address || '',
+        city: a.city || 'Vancouver',
+        price: a.current_rent || a.monthly_rent || 0,
+        bedrooms: a.bedrooms || 0,
+        bathrooms: a.bathrooms || 1,
+        sqft: a.sqft || 0,
+        property_type: a.property_type || 'Apartment',
+        listing_type: 'lease_takeover',
+        images: a.images || [],
+        pet_friendly: a.pet_friendly || false,
+        lat: a.lat || 49.2827,
+        lng: a.lng || -123.1207,
+        lease_end: a.lease_end_date,
+        savings: a.savings || 0,
+        description: a.description || '',
+        amenities: a.amenities || [],
+        original_id: a.id,
+        is_lease_takeover: true
+      }));
+      setLeaseAssignments(mapped);
+      setListings(mapped);
+    } catch (error) {
+      console.error('Error fetching lease assignments:', error);
+      setListings([]);
+    } finally { setLoading(false); }
+  };
+
   const fetchListings = async () => {
     try {
       setLoading(true);
@@ -143,7 +182,13 @@ const Browse = () => {
   };
 
   useEffect(() => {
-    const debounce = setTimeout(() => fetchListings(), 500);
+    const debounce = setTimeout(() => {
+      if (filters.listingType === 'lease_takeover') {
+        fetchLeaseAssignments();
+      } else {
+        fetchListings();
+      }
+    }, 500);
     return () => clearTimeout(debounce);
   }, [filters]);
 
@@ -174,12 +219,15 @@ const Browse = () => {
                 <button onClick={() => setFilters({...filters, listingType: 'sale'})}
                   className={`px-4 py-1.5 rounded-full text-sm transition-colors ${filters.listingType === 'sale' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'}`}
                   data-testid="filter-buy">Buy</button>
+                <button onClick={() => setFilters({...filters, listingType: 'lease_takeover'})}
+                  className={`px-4 py-1.5 rounded-full text-sm transition-colors ${filters.listingType === 'lease_takeover' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'}`}
+                  data-testid="filter-lease-takeover">Lease Takeover</button>
               </div>
               <div className="relative flex-1">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                 <input
                   type="text"
-                  placeholder={filters.listingType === 'sale' ? "Search properties for sale..." : "Search rental properties..."}
+                  placeholder={filters.listingType === 'sale' ? "Search properties for sale..." : filters.listingType === 'lease_takeover' ? "Search lease takeovers..." : "Search rental properties..."}
                   value={filters.search}
                   onChange={(e) => setFilters({...filters, search: e.target.value})}
                   className="w-full pl-12 pr-4 py-2.5 rounded-full bg-white/10 border border-white/10 text-white placeholder-gray-400 focus:bg-white/20 focus:outline-none text-sm"

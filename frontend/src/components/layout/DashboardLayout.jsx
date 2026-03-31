@@ -4,7 +4,7 @@ import {
   Home, Building2, Users, Wrench, FileText, DollarSign, MessageSquare, 
   Settings, LogOut, Search, Menu, X, Calendar,
   Heart, Sparkles, Scale, Navigation, Users2, 
-  Truck, Briefcase, Image, BarChart2, ClipboardList, Share2, BarChart3, Zap
+  Truck, Briefcase, Image, BarChart2, ClipboardList, Share2, BarChart3, Zap, CreditCard, Shield
 } from 'lucide-react';
 import { useAuth } from '../../App';
 import NotificationBell from '../notifications/NotificationBell';
@@ -33,6 +33,7 @@ const DashboardLayout = ({ children }) => {
       { icon: Home, label: 'Dashboard', path: '/dashboard' },
       { icon: Search, label: 'Browse Properties', path: '/browse' },
       { icon: Heart, label: 'Saved Properties', path: '/favorites' },
+      { icon: CreditCard, label: 'Rent Agreements', path: '/rent-agreements' },
       { icon: DollarSign, label: 'Pay & Invoices', path: '/payments' },
       { icon: ClipboardList, label: 'My Resume', path: '/my-resume' },
       { icon: Users2, label: 'Roommate Finder', path: '/roommates' },
@@ -43,12 +44,14 @@ const DashboardLayout = ({ children }) => {
       { icon: Wrench, label: 'Find Contractors', path: '/contractors' },
       { icon: Sparkles, label: 'Report Issue', path: '/report-issue' },
       { icon: Scale, label: 'Lease Analyzer', path: '/document-analyzer' },
+      { icon: Shield, label: 'AI Doc Review', path: '/document-review' },
       { icon: Navigation, label: 'Commute Search', path: '/commute-optimizer' },
       { icon: MessageSquare, label: 'Messages', path: '/messages' },
     ],
     landlord: [
       { icon: Home, label: 'Dashboard', path: '/dashboard' },
       { icon: Building2, label: 'My Properties', path: '/my-properties' },
+      { icon: CreditCard, label: 'Rent Agreements', path: '/rent-agreements' },
       { icon: DollarSign, label: 'Pay & Invoices', path: '/payments' },
       { icon: FileText, label: 'Document Builder', path: '/document-builder' },
       { icon: Share2, label: 'Syndication', path: '/syndication' },
