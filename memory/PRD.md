@@ -64,6 +64,11 @@ Build a comprehensive real estate marketplace platform for Metro Vancouver featu
 - Virtual Staging & AI Description require API keys
 - Campaigns currently track but don't charge (Stripe integration pending)
 
+### Landing Page
+- Animated 4-column Service Showcase (Rentals, Buy/Sell, Lease, Services)
+  - 3D tilt cards with glassmorphism, live data, staggered entrance animations
+  - Integrated between Nova Search and Featured Properties sections
+
 ## Testing: 100% Pass Rate
 - Iteration 27: Backend 20/20
 - Iteration 28: Backend 18/18

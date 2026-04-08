@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Search, Sparkles, Bot, MapPin, Bed, Bath, Star, Shield, Trophy, Square, Building2, DollarSign, FileText, Briefcase, Users, Image, TrendingUp, Zap, Wand2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import MainLayout from '../components/layout/MainLayout';
+import ServiceShowcase from '../components/ServiceShowcase';
 import NovaChat from '../components/chat/NovaChat';
 import { useAuth } from '../App';
 import axios from 'axios';
@@ -423,6 +424,9 @@ const Home = () => {
           </div>
         </section>
       )}
+
+      {/* Service Showcase */}
+      <ServiceShowcase />
 
       {/* Featured Properties Grid */}
       <section className="section-md bg-[#F5F5F0] pt-12" data-testid="featured-properties">
