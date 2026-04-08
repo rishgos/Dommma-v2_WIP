@@ -48,7 +48,7 @@ const CATEGORIES = [
   },
 ];
 
-function TiltCard({ children, className = '' }) {
+function TiltCard({ children, className = '', style = {} }) {
   const cardRef = useRef(null);
 
   const handleMouseMove = useCallback((e) => {
@@ -81,8 +81,8 @@ function TiltCard({ children, className = '' }) {
       ref={cardRef}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className={`transition-transform duration-200 ease-out ${className}`}
-      style={{ transformStyle: 'preserve-3d', willChange: 'transform' }}
+      className={`transition-all duration-200 ease-out ${className}`}
+      style={{ transformStyle: 'preserve-3d', willChange: 'transform', ...style }}
     >
       {children}
     </div>
@@ -92,8 +92,8 @@ function TiltCard({ children, className = '' }) {
 function ListingMiniCard({ item, type }) {
   if (type === 'services') {
     return (
-      <Link to="/contractors" className="flex items-center gap-3 p-3.5 rounded-xl bg-white/[0.06] border border-white/[0.12] hover:bg-white/[0.14] transition-colors cursor-pointer">
-        <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0">
+      <Link to="/contractors" className="flex items-center gap-2 sm:gap-3 p-3 sm:p-3.5 rounded-xl bg-white/[0.06] border border-white/[0.12] hover:bg-white/[0.14] transition-colors cursor-pointer overflow-hidden">
+        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0">
           <Users size={16} className="text-white/70" />
         </div>
         <div className="min-w-0 flex-1">
@@ -111,8 +111,8 @@ function ListingMiniCard({ item, type }) {
   }
 
   return (
-    <Link to={`/browse?property=${item.id}`} className="flex items-center gap-3 p-3.5 rounded-xl bg-white/[0.06] border border-white/[0.12] hover:bg-white/[0.14] transition-colors cursor-pointer">
-      <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-white/10">
+    <Link to={`/browse?property=${item.id}`} className="flex items-center gap-2 sm:gap-3 p-3 sm:p-3.5 rounded-xl bg-white/[0.06] border border-white/[0.12] hover:bg-white/[0.14] transition-colors cursor-pointer overflow-hidden">
+      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden flex-shrink-0 bg-white/10">
         {item.images?.[0] ? (
           <img src={item.images[0]} alt="" className="w-full h-full object-cover" loading="lazy" />
         ) : (
@@ -122,14 +122,14 @@ function ListingMiniCard({ item, type }) {
         )}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-white truncate">{item.title}</p>
+        <p className="text-xs sm:text-sm font-medium text-white truncate">{item.title}</p>
         <div className="flex items-center gap-2 text-xs text-white/50 mt-0.5">
           {item.bedrooms != null && <span className="flex items-center gap-0.5"><Bed size={10} />{item.bedrooms}</span>}
           {item.bathrooms != null && <span className="flex items-center gap-0.5"><Bath size={10} />{item.bathrooms}</span>}
-          {item.city && <span className="flex items-center gap-0.5"><MapPin size={10} />{item.city}</span>}
+          {item.city && <span className="flex items-center gap-0.5 truncate"><MapPin size={10} />{item.city}</span>}
         </div>
       </div>
-      <p className="text-sm font-bold text-white flex-shrink-0">
+      <p className="text-xs sm:text-sm font-bold text-white flex-shrink-0">
         ${item.price?.toLocaleString()}
         <span className="text-[10px] font-normal text-white/40">{item.listing_type !== 'sale' ? '/mo' : ''}</span>
       </p>
@@ -187,7 +187,7 @@ export default function ServiceShowcase() {
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-500/[0.06] rounded-full blur-[120px]" />
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-500/[0.06] rounded-full blur-[120px]" />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6">
         {/* Section Header */}
         <div className={`text-center mb-14 transition-all duration-700 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
           <p className="text-xs text-white/40 uppercase tracking-[0.3em] mb-3">What We Offer</p>
