@@ -7,6 +7,10 @@ import ServiceShowcase from '../components/ServiceShowcase';
 import NovaChat from '../components/chat/NovaChat';
 import { useAuth } from '../App';
 import axios from 'axios';
+import HeroSection from '../components/home/HeroSection';
+import StatsSection from '../components/home/StatsSection';
+import FeaturedGrid from '../components/home/FeaturedGrid';
+import { FadeIn, ScrollReveal, StaggerChildren, TiltCard, GradientOrbs } from '../components/motion';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -216,69 +220,8 @@ const Home = () => {
         />
       )}
 
-      {/* Hero Section */}
-      <section 
-        className="relative h-[75vh] min-h-[500px] flex items-center"
-        data-testid="hero-section"
-      >
-        {/* Video Background with Smooth Crossfade Loop */}
-        <div className="absolute inset-0 overflow-hidden bg-[#1A2F3A]">
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="absolute w-full h-full object-cover"
-            poster="https://customer-assets.emergentagent.com/job_property-ai-hub-3/artifacts/8ejxvmv4_1.jpg"
-            style={{ filter: 'brightness(0.85)' }}
-            ref={(el) => {
-              if (el && !el._initialized) {
-                el._initialized = true;
-                el.addEventListener('timeupdate', function() {
-                  const timeLeft = this.duration - this.currentTime;
-                  // Fade out in last 0.8 seconds
-                  if (timeLeft <= 0.8 && timeLeft > 0) {
-                    this.style.opacity = timeLeft / 0.8;
-                  }
-                  // Fade in during first 0.8 seconds
-                  else if (this.currentTime < 0.8) {
-                    this.style.opacity = Math.min(1, this.currentTime / 0.8);
-                  } else {
-                    this.style.opacity = 1;
-                  }
-                });
-              }
-            }}
-          >
-            <source src="/videos/hero-vancouver.mp4" type="video/mp4" />
-          </video>
-          {/* Gradient overlay for text readability */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#1A2F3A]/90 via-[#1A2F3A]/70 to-[#1A2F3A]/40" />
-        </div>
-
-        <div className="relative z-10 max-w-7xl mx-auto px-6 py-24 lg:py-28">
-          <div className="max-w-2xl">
-            <h1 
-              className="display-xl text-white mb-6 uppercase"
-              data-testid="hero-title"
-            >
-              {t('hero.title')}
-            </h1>
-            <p className="text-lg text-white/70 mb-8 max-w-md leading-relaxed">
-              {t('hero.subtitle')}
-            </p>
-            <div className="flex items-center gap-6">
-              <Link 
-                to="/browse"
-                className="px-6 py-3 bg-white text-[#1A2F3A] rounded-full text-sm font-medium hover:bg-white/90 transition-colors"
-                data-testid="hero-cta"
-              >
-                {t('hero.browseProperties')}
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Hero Section — Parallax + TextReveal */}
+      <HeroSection />
 
       {/* Nova AI Search Bar Section */}
       <section className="relative -mt-16 z-20 px-6 mb-8" data-testid="nova-search-section">
@@ -428,176 +371,11 @@ const Home = () => {
       {/* Service Showcase */}
       <ServiceShowcase />
 
-      {/* Featured Properties Grid */}
-      <section className="section-md bg-[#F5F5F0] pt-12" data-testid="featured-properties">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Featured Listings</p>
-              <h2 
-                className="text-xl md:text-2xl text-[#1A2F3A]"
-                style={{ fontFamily: 'Cormorant Garamond, serif' }}
-              >
-                Discover Your Next Home
-              </h2>
-            </div>
-            <Link 
-              to="/browse"
-              className="hidden md:flex items-center gap-2 text-[#1A2F3A] font-medium hover:gap-3 transition-all"
-            >
-              <span className="text-sm">View All</span>
-              <ArrowRight size={16} />
-            </Link>
-          </div>
+      {/* Featured Properties Grid — Staggered + Shimmer */}
+      <FeaturedGrid properties={featuredProperties} loading={loadingListings} />
 
-          {/* Property Grid - 5 columns */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
-            {loadingListings ? (
-              // Loading skeleton
-              Array.from({ length: 20 }).map((_, i) => (
-                <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-sm animate-pulse">
-                  <div className="h-40 bg-gray-200" />
-                  <div className="p-3 space-y-2">
-                    <div className="h-4 bg-gray-200 rounded w-3/4" />
-                    <div className="h-3 bg-gray-200 rounded w-1/2" />
-                    <div className="h-3 bg-gray-200 rounded w-2/3" />
-                  </div>
-                </div>
-              ))
-            ) : (
-              featuredProperties.map((property) => {
-                // Handle both real listings and sample data formats
-                const isSample = property.isSample;
-                const propertyId = property.id;
-                const title = property.title;
-                const location = isSample 
-                  ? `${property.address}, ${property.city}`
-                  : `${property.address || ''}, ${property.city || ''}`;
-                const propertyType = property.property_type || 'Apartment';
-                const image = isSample 
-                  ? property.images?.[0] 
-                  : (property.images?.[0] || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600');
-                const price = property.price;
-                const beds = property.bedrooms ?? property.beds ?? 0;
-                const baths = property.bathrooms ?? property.baths ?? 1;
-                const sqft = property.sqft || 0;
-
-                return (
-                  <Link
-                    key={propertyId}
-                    to={isSample ? "/browse" : `/browse?property=${propertyId}`}
-                    className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 relative"
-                    data-testid={`property-card-${propertyId}`}
-                  >
-                    {/* Sample Badge */}
-                    {isSample && (
-                      <div className="absolute top-0 left-0 right-0 bg-amber-500 text-white text-xs text-center py-1 z-10">
-                        Sample - Add your own!
-                      </div>
-                    )}
-                    
-                    {/* Image */}
-                    <div className={`relative h-36 overflow-hidden ${isSample ? 'mt-5' : ''}`}>
-                      <img 
-                        src={image}
-                        alt={title}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                      />
-                      <div className="absolute top-2 left-2">
-                        <span className="px-2 py-0.5 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium text-[#1A2F3A]">
-                          {propertyType}
-                        </span>
-                      </div>
-                      <div className="absolute top-2 right-2">
-                        <span className="px-2 py-0.5 bg-[#1A2F3A] rounded-full text-xs font-medium text-white">
-                          ${price?.toLocaleString()}/mo
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Content */}
-                    <div className="p-3">
-                      <h3 className="font-medium text-sm text-[#1A2F3A] mb-1 group-hover:text-[#2C4A52] transition-colors line-clamp-1">
-                        {title}
-                      </h3>
-                      <p className="text-xs text-gray-500 flex items-center gap-1 mb-2">
-                        <MapPin size={10} />
-                        <span className="truncate">{location}</span>
-                      </p>
-                      
-                      {/* Stats */}
-                      <div className="flex items-center gap-3 text-xs text-gray-600">
-                        <span className="flex items-center gap-1">
-                          <Bed size={12} /> {beds}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Bath size={12} /> {baths}
-                        </span>
-                        {sqft > 0 && (
-                          <span className="flex items-center gap-1">
-                            <Square size={12} /> {sqft}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })
-            )}
-          </div>
-
-          {/* Mobile View All Button */}
-          <div className="mt-8 text-center md:hidden">
-            <Link 
-              to="/browse"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-[#1A2F3A] text-white rounded-full"
-            >
-              View All Properties
-              <ArrowRight size={16} />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Architecture in Motion */}
-      <section className="section-lg bg-white" data-testid="about-section">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid lg:grid-cols-2 gap-16">
-            {/* Left Content */}
-            <div>
-              <h2 
-                className="display-lg text-[#1A2F3A] mb-6"
-                style={{ fontFamily: 'Cormorant Garamond, serif' }}
-              >
-                Architecture<br />in Motion
-              </h2>
-              <p className="text-gray-600 mb-8 leading-relaxed">
-                Your complete real estate platform - from finding your perfect home to managing properties and connecting with trusted contractors. We bring innovation to every aspect of real estate.
-              </p>
-              <Link 
-                to="/about"
-                className="flex items-center gap-2 text-[#1A2F3A] font-medium hover:gap-4 transition-all"
-              >
-                <span className="text-sm tracking-wider uppercase">Our Services</span>
-                <ArrowRight size={16} />
-              </Link>
-            </div>
-
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 gap-8">
-              {stats.map((stat, i) => (
-                <div key={i} className="stat-card">
-                  <p className="stat-number">{stat.number}</p>
-                  <p className="text-sm font-semibold text-[#1A2F3A] uppercase tracking-wider mb-1">
-                    {stat.label}
-                  </p>
-                  <p className="text-sm text-gray-500">{stat.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Architecture in Motion — Animated Counters */}
+      <StatsSection />
 
       {/* Properties For Sale Section */}
       {saleListings.length > 0 && (
@@ -643,21 +421,23 @@ const Home = () => {
       )}
 
       {/* Contractor Services Section */}
-      <section className="section-md bg-white" data-testid="contractors-section">
+      <section className="section-md bg-white dark:bg-[#151B22]" data-testid="contractors-section">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-end justify-between mb-12">
-            <div>
-              <p className="text-xs text-gray-500 uppercase tracking-widest mb-4">Home Services</p>
-              <h2 className="text-4xl text-[#1A2F3A]" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
-                Trusted Contractors
-              </h2>
-              <p className="text-gray-500 mt-2">Find verified professionals for every job</p>
+          <FadeIn>
+            <div className="flex items-end justify-between mb-12">
+              <div>
+                <p className="text-xs text-gray-500 uppercase tracking-widest mb-4">Home Services</p>
+                <h2 className="text-4xl text-[#1A2F3A] dark:text-white" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+                  Trusted Contractors
+                </h2>
+                <p className="text-gray-500 mt-2">Find verified professionals for every job</p>
+              </div>
+              <Link to="/contractors" className="flex items-center gap-2 text-[#1A2F3A] dark:text-[#C4A962] font-medium hover:gap-4 transition-all text-sm uppercase tracking-wider">
+                Browse All <ArrowRight size={16} />
+              </Link>
             </div>
-            <Link to="/contractors" className="flex items-center gap-2 text-[#1A2F3A] font-medium hover:gap-4 transition-all text-sm uppercase tracking-wider">
-              Browse All <ArrowRight size={16} />
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          </FadeIn>
+          <StaggerChildren staggerDelay={0.06} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {[
               { name: 'Plumbing', icon: '🔧' },
               { name: 'Electrical', icon: '⚡' },
@@ -667,12 +447,12 @@ const Home = () => {
               { name: 'Cleaning', icon: '✨' },
             ].map((svc, i) => (
               <Link key={i} to={`/contractors?category=${svc.name.toLowerCase()}`}
-                className="bg-[#F5F5F0] rounded-2xl p-6 text-center hover:bg-[#1A2F3A] hover:text-white transition-all group cursor-pointer">
+                className="bg-[#F5F5F0] dark:bg-[#1A2332] rounded-2xl p-6 text-center hover:bg-[#1A2F3A] hover:text-white transition-all group cursor-pointer hover:-translate-y-1">
                 <p className="text-3xl mb-3">{svc.icon}</p>
-                <p className="font-medium text-sm group-hover:text-white text-[#1A2F3A]">{svc.name}</p>
+                <p className="font-medium text-sm group-hover:text-white text-[#1A2F3A] dark:text-white">{svc.name}</p>
               </Link>
             ))}
-          </div>
+          </StaggerChildren>
         </div>
       </section>
 
@@ -734,58 +514,60 @@ const Home = () => {
       )}
 
       {/* AI Tools Section */}
-      <section className="section-md bg-[#1A2F3A]" data-testid="ai-tools-section">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-12">
+      <section className="section-md bg-[#1A2F3A] relative overflow-hidden" data-testid="ai-tools-section">
+        <GradientOrbs
+          orbs={[
+            { color: 'rgba(196, 169, 98, 0.1)', size: 400, x: '80%', y: '10%', delay: 0 },
+            { color: 'rgba(44, 74, 82, 0.15)', size: 350, x: '10%', y: '80%', delay: 2 },
+          ]}
+        />
+        <div className="max-w-7xl mx-auto px-6 relative z-10">
+          <FadeIn className="text-center mb-12">
             <p className="text-xs text-white/50 uppercase tracking-widest mb-4">Powered by AI</p>
             <h2 className="text-4xl text-white" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
               Smart Tools for Smarter Living
             </h2>
             <p className="text-white/60 mt-2">Nova AI helps you at every step of your journey</p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-6">
-            <Link to="/report-issue" className="bg-white/5 border border-white/10 rounded-2xl p-8 hover:bg-white/10 transition-all group">
-              <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center mb-4 group-hover:bg-white/20 transition-colors">
-                <span className="text-2xl">📸</span>
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-2">Smart Issue Reporter</h3>
-              <p className="text-white/60 text-sm">Upload a photo of any issue — our AI identifies the problem and matches you with the right contractor instantly.</p>
-            </Link>
-            <Link to="/document-analyzer" className="bg-white/5 border border-white/10 rounded-2xl p-8 hover:bg-white/10 transition-all group">
-              <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center mb-4 group-hover:bg-white/20 transition-colors">
-                <span className="text-2xl">📄</span>
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-2">Lease Analyzer</h3>
-              <p className="text-white/60 text-sm">Paste your lease agreement and get an instant fairness score, red flags, and negotiation tips powered by AI.</p>
-            </Link>
-            <Link to="/commute-optimizer" className="bg-white/5 border border-white/10 rounded-2xl p-8 hover:bg-white/10 transition-all group">
-              <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center mb-4 group-hover:bg-white/20 transition-colors">
-                <span className="text-2xl">🚇</span>
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-2">Commute Optimizer</h3>
-              <p className="text-white/60 text-sm">Enter your workplace addresses and find properties ranked by commute time. No more guessing.</p>
-            </Link>
-          </div>
+          </FadeIn>
+          <StaggerChildren staggerDelay={0.1} className="grid md:grid-cols-3 gap-6">
+            {[
+              { to: '/report-issue', icon: '📸', title: 'Smart Issue Reporter', desc: 'Upload a photo of any issue — our AI identifies the problem and matches you with the right contractor instantly.' },
+              { to: '/document-analyzer', icon: '📄', title: 'Lease Analyzer', desc: 'Paste your lease agreement and get an instant fairness score, red flags, and negotiation tips powered by AI.' },
+              { to: '/commute-optimizer', icon: '🚇', title: 'Commute Optimizer', desc: 'Enter your workplace addresses and find properties ranked by commute time. No more guessing.' },
+            ].map((tool, i) => (
+              <TiltCard key={i} tiltAmount={8} className="rounded-2xl">
+                <Link to={tool.to} className="block bg-white/5 border border-white/10 rounded-2xl p-8 hover:bg-white/10 transition-all group h-full">
+                  <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center mb-4 group-hover:bg-white/20 transition-colors">
+                    <span className="text-2xl">{tool.icon}</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-white mb-2">{tool.title}</h3>
+                  <p className="text-white/60 text-sm">{tool.desc}</p>
+                </Link>
+              </TiltCard>
+            ))}
+          </StaggerChildren>
         </div>
       </section>
 
       {/* Team Section */}
-      <section className="section-md bg-[#F5F5F0]" data-testid="team-section">
+      <section className="section-md bg-[#F5F5F0] dark:bg-[#0F1419]" data-testid="team-section">
         <div className="max-w-7xl mx-auto px-6">
-          <p className="text-xs text-gray-500 uppercase tracking-widest mb-4">Our Team</p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <FadeIn>
+            <p className="text-xs text-gray-500 uppercase tracking-widest mb-4">Our Team</p>
+          </FadeIn>
+          <StaggerChildren staggerDelay={0.1} className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {team.map((member, i) => (
-              <div key={i} className="bg-white rounded-xl p-4 text-center hover:shadow-lg transition-shadow">
-                <img 
-                  src={member.image} 
-                  alt={member.name} 
-                  className="w-20 h-20 rounded-full mx-auto mb-3 object-cover"
+              <div key={i} className="bg-white dark:bg-[#1A2332] rounded-xl p-4 text-center hover:shadow-lg hover:-translate-y-1 transition-all">
+                <img
+                  src={member.image}
+                  alt={member.name}
+                  className="w-20 h-20 rounded-full mx-auto mb-3 object-cover ring-2 ring-[#1A2F3A]/10"
                 />
-                <p className="font-semibold text-[#1A2F3A]">{member.name}</p>
+                <p className="font-semibold text-[#1A2F3A] dark:text-white">{member.name}</p>
                 <p className="text-sm text-gray-500">{member.role}</p>
               </div>
             ))}
-          </div>
+          </StaggerChildren>
         </div>
       </section>
     </MainLayout>

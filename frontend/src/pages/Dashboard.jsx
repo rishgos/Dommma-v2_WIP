@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { 
-  Home, Building2, Users, Wrench, FileText, DollarSign, 
+import {
+  Home, Building2, Users, Wrench, FileText, DollarSign,
   Search, Plus, Calendar, TrendingUp,
-  ChevronRight, Heart, MapPin, Clock, Sparkles, 
+  ChevronRight, Heart, MapPin, Clock, Sparkles,
   Briefcase, BarChart2, MessageSquare
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useAuth } from '../App';
 import axios from 'axios';
 import PendingReviews from '../components/reviews/PendingReviews';
 import NotificationPrompt from '../components/notifications/NotificationPrompt';
 import UserRatingCard from '../components/ratings/UserRatingCard';
+import AnimatedStatCard from '../components/dashboard/AnimatedStatCard';
+import ActivityFeed from '../components/dashboard/ActivityFeed';
+import { FadeIn } from '../components/motion';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -55,48 +59,12 @@ const RenterDashboard = ({ userId }) => {
         </div>
       </div>
       
-      {/* Quick Stats */}
+      {/* Quick Stats — Animated */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-6 rounded-2xl">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-10 h-10 rounded-xl bg-[#1A2F3A]/10 flex items-center justify-center">
-              <Search size={20} className="text-[#1A2F3A]" />
-            </div>
-            <span className="text-xs text-gray-500">Active</span>
-          </div>
-          <p className="text-2xl font-semibold text-[#1A2F3A]">12</p>
-          <p className="text-sm text-gray-500">Saved Searches</p>
-        </div>
-        <div className="bg-white p-6 rounded-2xl">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-10 h-10 rounded-xl bg-[#1A2F3A]/10 flex items-center justify-center">
-              <Heart size={20} className="text-[#1A2F3A]" />
-            </div>
-            <span className="text-xs text-gray-500">Total</span>
-          </div>
-          <p className="text-2xl font-semibold text-[#1A2F3A]">8</p>
-          <p className="text-sm text-gray-500">Favorites</p>
-        </div>
-        <div className="bg-white p-6 rounded-2xl">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-10 h-10 rounded-xl bg-[#1A2F3A]/10 flex items-center justify-center">
-              <FileText size={20} className="text-[#1A2F3A]" />
-            </div>
-            <span className="text-xs text-green-500">Pending</span>
-          </div>
-          <p className="text-2xl font-semibold text-[#1A2F3A]">3</p>
-          <p className="text-sm text-gray-500">Applications</p>
-        </div>
-        <div className="bg-white p-6 rounded-2xl">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-10 h-10 rounded-xl bg-[#1A2F3A]/10 flex items-center justify-center">
-              <Calendar size={20} className="text-[#1A2F3A]" />
-            </div>
-            <span className="text-xs text-gray-500">Upcoming</span>
-          </div>
-          <p className="text-2xl font-semibold text-[#1A2F3A]">2</p>
-          <p className="text-sm text-gray-500">Viewings</p>
-        </div>
+        <AnimatedStatCard icon={Search} label="Saved Searches" value={12} badge="Active" index={0} />
+        <AnimatedStatCard icon={Heart} label="Favorites" value={8} badge="Total" index={1} />
+        <AnimatedStatCard icon={FileText} label="Applications" value={3} badge="Pending" badgeColor="text-green-500" index={2} />
+        <AnimatedStatCard icon={Calendar} label="Viewings" value={2} badge="Upcoming" index={3} />
       </div>
 
       {/* Recent Properties */}
@@ -144,74 +112,24 @@ const RenterDashboard = ({ userId }) => {
 const LandlordDashboard = ({ userId }) => {
   return (
     <div className="space-y-8">
-      {/* Quick Stats */}
+      {/* Quick Stats — Animated */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-6 rounded-2xl">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-10 h-10 rounded-xl bg-[#1A2F3A]/10 flex items-center justify-center">
-              <Building2 size={20} className="text-[#1A2F3A]" />
-            </div>
-            <span className="text-xs text-green-500">+2 this month</span>
-          </div>
-          <p className="text-2xl font-semibold text-[#1A2F3A]">12</p>
-          <p className="text-sm text-gray-500">Properties</p>
-        </div>
-        <div className="bg-white p-6 rounded-2xl">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-10 h-10 rounded-xl bg-[#1A2F3A]/10 flex items-center justify-center">
-              <Users size={20} className="text-[#1A2F3A]" />
-            </div>
-            <span className="text-xs text-gray-500">Active</span>
-          </div>
-          <p className="text-2xl font-semibold text-[#1A2F3A]">24</p>
-          <p className="text-sm text-gray-500">Tenants</p>
-        </div>
-        <div className="bg-white p-6 rounded-2xl">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
-              <DollarSign size={20} className="text-green-600" />
-            </div>
-            <span className="text-xs text-green-500">+12%</span>
-          </div>
-          <p className="text-2xl font-semibold text-[#1A2F3A]">$34,500</p>
-          <p className="text-sm text-gray-500">Monthly Revenue</p>
-        </div>
-        <div className="bg-white p-6 rounded-2xl">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
-              <Wrench size={20} className="text-orange-600" />
-            </div>
-            <span className="text-xs text-orange-500">3 pending</span>
-          </div>
-          <p className="text-2xl font-semibold text-[#1A2F3A]">7</p>
-          <p className="text-sm text-gray-500">Maintenance</p>
-        </div>
+        <AnimatedStatCard icon={Building2} label="Properties" value={12} badge="+2 this month" badgeColor="text-green-500" index={0} />
+        <AnimatedStatCard icon={Users} label="Tenants" value={24} badge="Active" index={1} />
+        <AnimatedStatCard icon={DollarSign} label="Monthly Revenue" value={34500} prefix="$" badge="+12%" badgeColor="text-green-500" iconBg="bg-green-100" iconColor="text-green-600" index={2} />
+        <AnimatedStatCard icon={Wrench} label="Maintenance" value={7} badge="3 pending" badgeColor="text-orange-500" iconBg="bg-orange-100" iconColor="text-orange-600" index={3} />
       </div>
 
-      {/* Recent Activity */}
-      <div className="bg-white rounded-2xl p-6">
-        <h2 className="text-xl font-semibold text-[#1A2F3A] mb-4" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
-          Recent Activity
-        </h2>
-        <div className="space-y-4">
-          {[
-            { icon: DollarSign, text: 'Rent payment received from Unit 204', time: '2 hours ago', color: 'green' },
-            { icon: FileText, text: 'New application for Ocean Wave Condo', time: '5 hours ago', color: 'blue' },
-            { icon: Wrench, text: 'Maintenance request completed', time: '1 day ago', color: 'orange' },
-            { icon: MessageSquare, text: 'New message from tenant John D.', time: '2 days ago', color: 'purple' },
-          ].map((item, i) => (
-            <div key={i} className="flex items-center gap-4 py-3 border-b border-gray-100 last:border-0">
-              <div className={`w-10 h-10 rounded-xl bg-${item.color}-100 flex items-center justify-center`}>
-                <item.icon size={18} className={`text-${item.color}-600`} />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm text-[#1A2F3A]">{item.text}</p>
-                <p className="text-xs text-gray-400">{item.time}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* Recent Activity — Animated Feed */}
+      <ActivityFeed
+        title="Recent Activity"
+        items={[
+          { icon: DollarSign, text: 'Rent payment received from Unit 204', time: '2 hours ago', color: 'green' },
+          { icon: FileText, text: 'New application for Ocean Wave Condo', time: '5 hours ago', color: 'blue' },
+          { icon: Wrench, text: 'Maintenance request completed', time: '1 day ago', color: 'orange' },
+          { icon: MessageSquare, text: 'New message from tenant John D.', time: '2 days ago', color: 'purple' },
+        ]}
+      />
       
       {/* Your Rating Section */}
       <UserRatingCard userId={userId} showReviews={true} limit={3} />
@@ -223,48 +141,12 @@ const LandlordDashboard = ({ userId }) => {
 const ContractorDashboard = ({ userId }) => {
   return (
     <div className="space-y-8">
-      {/* Quick Stats */}
+      {/* Quick Stats — Animated */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-6 rounded-2xl">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-10 h-10 rounded-xl bg-[#1A2F3A]/10 flex items-center justify-center">
-              <Wrench size={20} className="text-[#1A2F3A]" />
-            </div>
-            <span className="text-xs text-green-500">Active</span>
-          </div>
-          <p className="text-2xl font-semibold text-[#1A2F3A]">5</p>
-          <p className="text-sm text-gray-500">Current Jobs</p>
-        </div>
-        <div className="bg-white p-6 rounded-2xl">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
-              <FileText size={20} className="text-blue-600" />
-            </div>
-            <span className="text-xs text-blue-500">New</span>
-          </div>
-          <p className="text-2xl font-semibold text-[#1A2F3A]">12</p>
-          <p className="text-sm text-gray-500">Job Requests</p>
-        </div>
-        <div className="bg-white p-6 rounded-2xl">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
-              <DollarSign size={20} className="text-green-600" />
-            </div>
-            <span className="text-xs text-green-500">+8%</span>
-          </div>
-          <p className="text-2xl font-semibold text-[#1A2F3A]">$12,400</p>
-          <p className="text-sm text-gray-500">This Month</p>
-        </div>
-        <div className="bg-white p-6 rounded-2xl">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-10 h-10 rounded-xl bg-yellow-100 flex items-center justify-center">
-              <TrendingUp size={20} className="text-yellow-600" />
-            </div>
-            <span className="text-xs text-yellow-600">4.9/5</span>
-          </div>
-          <p className="text-2xl font-semibold text-[#1A2F3A]">98%</p>
-          <p className="text-sm text-gray-500">Satisfaction</p>
-        </div>
+        <AnimatedStatCard icon={Wrench} label="Current Jobs" value={5} badge="Active" badgeColor="text-green-500" index={0} />
+        <AnimatedStatCard icon={FileText} label="Job Requests" value={12} badge="New" badgeColor="text-blue-500" iconBg="bg-blue-100" iconColor="text-blue-600" index={1} />
+        <AnimatedStatCard icon={DollarSign} label="This Month" value={12400} prefix="$" badge="+8%" badgeColor="text-green-500" iconBg="bg-green-100" iconColor="text-green-600" index={2} />
+        <AnimatedStatCard icon={TrendingUp} label="Satisfaction" value={98} suffix="%" badge="4.9/5" badgeColor="text-yellow-600" iconBg="bg-yellow-100" iconColor="text-yellow-600" index={3} />
       </div>
 
       {/* Job Requests */}

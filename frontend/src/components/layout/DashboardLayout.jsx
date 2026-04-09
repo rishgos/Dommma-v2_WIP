@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { 
-  Home, Building2, Users, Wrench, FileText, DollarSign, MessageSquare, 
+import {
+  Home, Building2, Users, Wrench, FileText, DollarSign, MessageSquare,
   Settings, LogOut, Search, Menu, X, Calendar,
-  Heart, Sparkles, Scale, Navigation, Users2, 
+  Heart, Sparkles, Scale, Navigation, Users2,
   Truck, Briefcase, Image, BarChart2, ClipboardList, Share2, BarChart3, Zap, CreditCard, Shield,
   TrendingUp, MapPin, Receipt, Calculator, Wand2
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useAuth } from '../../App';
 import NotificationCenter from '../NotificationCenter';
+import ThemeToggle from '../ui/ThemeToggle';
 
 const DashboardLayout = ({ children }) => {
   const { user, logout } = useAuth();
@@ -107,7 +109,7 @@ const DashboardLayout = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F5F0] flex">
+    <div className="min-h-screen bg-[#F5F5F0] dark:bg-[#0F1419] flex transition-colors">
       {/* Sidebar */}
       <aside 
         className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-[#1A2F3A] text-white transform transition-transform lg:transform-none ${
@@ -130,15 +132,24 @@ const DashboardLayout = ({ children }) => {
             <Link
               key={item.path}
               to={item.path}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+              className={`relative flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
                 isActivePath(item.path)
-                  ? 'bg-white/20 text-white'
+                  ? 'text-white'
                   : 'text-gray-300 hover:bg-white/10 hover:text-white'
               }`}
               data-testid={`nav-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
             >
-              <item.icon size={20} />
-              <span className="text-sm">{item.label}</span>
+              {isActivePath(item.path) && (
+                <motion.div
+                  layoutId="sidebar-active"
+                  className="absolute inset-0 bg-white/20 rounded-xl"
+                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                />
+              )}
+              <span className="relative z-10 flex items-center gap-3">
+                <item.icon size={20} />
+                <span className="text-sm">{item.label}</span>
+              </span>
             </Link>
           ))}
         </nav>
@@ -172,7 +183,7 @@ const DashboardLayout = ({ children }) => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-h-screen">
         {/* Header */}
-        <header className="bg-white px-6 py-4 flex items-center justify-between sticky top-0 z-40 shadow-sm">
+        <header className="bg-white dark:bg-[#151B22] px-6 py-4 flex items-center justify-between sticky top-0 z-40 shadow-sm transition-colors">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -182,17 +193,18 @@ const DashboardLayout = ({ children }) => {
               {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
             <div>
-              <h1 
-                className="text-xl lg:text-2xl text-[#1A2F3A]"
+              <h1
+                className="text-xl lg:text-2xl text-[#1A2F3A] dark:text-white"
                 style={{ fontFamily: 'Cormorant Garamond, serif' }}
               >
                 Welcome back, {user.name}!
               </h1>
-              <p className="text-sm text-gray-500 capitalize">{user.user_type} Dashboard</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">{user.user_type} Dashboard</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <ThemeToggle className="text-[#1A2F3A] dark:text-white" />
             <NotificationCenter userId={user.id} />
             <div className="w-10 h-10 rounded-full bg-[#1A2F3A] flex items-center justify-center text-white font-medium">
               {user.name?.charAt(0) || 'U'}

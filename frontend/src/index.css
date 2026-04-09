@@ -17,6 +17,23 @@
   --footer-dark: #0D0D0D;
 }
 
+/* Dark Mode */
+.dark {
+  --primary-dark: #C8D6DB;
+  --primary-teal: #8AB4BF;
+  --background-light: #0F1419;
+  --background-cream: #151B22;
+  --text-dark: #E8E6E3;
+  --text-light: #E8E6E3;
+  --text-muted: #8B9DAF;
+  --footer-dark: #080B0E;
+}
+
+.dark body {
+  background-color: #0F1419;
+  color: #E8E6E3;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -239,6 +256,82 @@ h1, h2, h3, h4, h5, h6, .heading-font {
   .section-lg {
     padding: 60px 0;
   }
+}
+
+/* Glassmorphism utilities */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.glass-dark {
+  background: rgba(15, 20, 25, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Gradient text */
+.text-gradient {
+  background: linear-gradient(135deg, #1A2F3A 0%, #2C4A52 50%, #C4A962 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-gold {
+  background: linear-gradient(135deg, #C4A962 0%, #E8D5A3 50%, #C4A962 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Shimmer skeleton */
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #e5e5e5 25%, #f0f0f0 50%, #e5e5e5 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite linear;
+}
+
+.dark .skeleton-shimmer {
+  background: linear-gradient(90deg, #1A2332 25%, #253040 50%, #1A2332 75%);
+  background-size: 200% 100%;
+}
+
+/* Glow border effect */
+.glow-border {
+  position: relative;
+}
+
+.glow-border::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, #1A2F3A, #C4A962, #2C4A52);
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.glow-border:hover::after {
+  opacity: 1;
+}
+
+/* Smooth theme transition */
+html {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-track {
+  background: #1A2332;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #3A5A6A;
 }
 
 @layer base {

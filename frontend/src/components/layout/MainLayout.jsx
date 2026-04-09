@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../App';
 import NovaChat from '../chat/NovaChat';
 import LanguageToggle from '../LanguageToggle';
+import ThemeToggle from '../ui/ThemeToggle';
 
 const MainLayout = ({ children, hideNovaButton = false }) => {
   const location = useLocation();
@@ -42,7 +43,7 @@ const MainLayout = ({ children, hideNovaButton = false }) => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F5F5F0]">
+    <div className="min-h-screen flex flex-col bg-[#F5F5F0] dark:bg-[#0F1419] transition-colors">
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0D0D0D] text-white" data-testid="main-navigation">
         <div className="max-w-7xl mx-auto px-6 py-4">
@@ -73,8 +74,9 @@ const MainLayout = ({ children, hideNovaButton = false }) => {
               ))}
             </div>
 
-            {/* Auth Button + Language Toggle */}
-            <div className="hidden md:flex items-center gap-4">
+            {/* Auth Button + Language Toggle + Theme */}
+            <div className="hidden md:flex items-center gap-3">
+              <ThemeToggle className="text-gray-300 hover:text-white" />
               <LanguageToggle className="text-gray-300 hover:text-white" />
               {user ? (
                 <Link 
@@ -141,10 +143,10 @@ const MainLayout = ({ children, hideNovaButton = false }) => {
       {!hideNovaButton && <NovaChat />}
 
       {/* CTA Section */}
-      <section className="bg-white py-20 text-center" data-testid="footer-cta">
+      <section className="bg-white dark:bg-[#151B22] py-20 text-center" data-testid="footer-cta">
         <p className="text-sm text-gray-500 uppercase tracking-widest mb-4">Contact</p>
-        <h2 
-          className="display-lg text-[#1A2F3A] mb-8"
+        <h2
+          className="display-lg text-[#1A2F3A] dark:text-white mb-8"
           style={{ fontFamily: 'Cormorant Garamond, serif' }}
         >
           Curious about what we<br />can do for you?

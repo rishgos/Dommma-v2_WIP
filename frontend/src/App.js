@@ -3,6 +3,10 @@ import "@/App.css";
 import "./i18n"; // i18n initialization
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { useState, useEffect, createContext, useContext } from "react";
+import { AnimatePresence } from "framer-motion";
+import { ThemeProvider } from "@/contexts/ThemeContext";
+import ScrollProgressBar from "@/components/layout/ScrollProgressBar";
+import { PageTransition } from "@/components/motion";
 
 // Pages
 import Home from "@/pages/Home";
@@ -124,8 +128,10 @@ function App() {
   };
 
   return (
+    <ThemeProvider>
     <AuthContext.Provider value={{ user, login, logout }}>
       <BrowserRouter>
+        <ScrollProgressBar />
         <AnalyticsTracker />
         <Routes>
           {/* Public Routes */}
@@ -209,6 +215,7 @@ function App() {
         </Routes>
       </BrowserRouter>
     </AuthContext.Provider>
+    </ThemeProvider>
   );
 }
 
