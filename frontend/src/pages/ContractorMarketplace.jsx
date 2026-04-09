@@ -322,19 +322,49 @@ const ContractorMarketplace = () => {
       });
 
       const { latitude, longitude } = position.coords;
-      
-      // Use Google Maps Geocoding API to get postal code
-      const response = await axios.get(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${process.env.REACT_APP_GOOGLE_MAPS_KEY || ''}`
-      );
+      let found = false;
 
-      if (response.data.results && response.data.results.length > 0) {
-        const addressComponents = response.data.results[0].address_components;
-        const postalComponent = addressComponents.find(c => c.types.includes('postal_code'));
-        if (postalComponent) {
-          setPostcode(postalComponent.short_name);
-          localStorage.setItem('dommma_postcode', postalComponent.short_name);
+      // Try Google Maps Geocoding API first (if key available)
+      const gmapsKey = process.env.REACT_APP_GOOGLE_MAPS_KEY;
+      if (gmapsKey) {
+        try {
+          const response = await axios.get(
+            `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${gmapsKey}`
+          );
+          if (response.data.results && response.data.results.length > 0) {
+            const addressComponents = response.data.results[0].address_components;
+            const postalComponent = addressComponents.find(c => c.types.includes('postal_code'));
+            if (postalComponent) {
+              setPostcode(postalComponent.short_name);
+              localStorage.setItem('dommma_postcode', postalComponent.short_name);
+              found = true;
+            }
+          }
+        } catch (e) {
+          console.log('Google geocode failed, trying fallback');
         }
+      }
+
+      // Fallback: free reverse geocoding API
+      if (!found) {
+        try {
+          const response = await axios.get(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1`,
+            { headers: { 'Accept-Language': 'en' } }
+          );
+          const postal = response.data?.address?.postcode;
+          if (postal) {
+            setPostcode(postal);
+            localStorage.setItem('dommma_postcode', postal);
+            found = true;
+          }
+        } catch (e) {
+          console.log('Fallback geocode also failed');
+        }
+      }
+
+      if (!found) {
+        setError('Could not detect your postal code. Please enter it manually.');
       }
     } catch (err) {
       console.log('Location detection failed:', err);
@@ -681,27 +711,7 @@ const ContractorMarketplace = () => {
               </div>
             </div>
             
-            {/* Category Quick Links */}
-            <div className="mt-10 flex flex-wrap justify-center gap-4">
-              {Object.entries(serviceCategories).map(([key, data]) => {
-                const Icon = data.icon;
-                return (
-                  <button
-                    key={key}
-                    onClick={() => {
-                      setServiceQuery(data.label);
-                      setShowSuggestions(true);
-                    }}
-                    className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-white/10 transition-colors"
-                  >
-                    <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
-                      <Icon size={22} className="text-white/80" />
-                    </div>
-                    <span className="text-sm text-white/70">{data.label}</span>
-                  </button>
-                );
-              })}
-            </div>
+            {/* Category Quick Links - removed, using filter pills below instead */}
           </div>
         </header>
 
