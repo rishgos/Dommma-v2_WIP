@@ -209,7 +209,7 @@ export default function ServiceShowcase() {
             const Icon = cat.icon;
 
             return (
-              <TiltCard
+              <div
                 key={cat.id}
                 className={`transition-all duration-700 ${
                   visible
@@ -218,6 +218,7 @@ export default function ServiceShowcase() {
                 }`}
                 style={{ transitionDelay: `${idx * 120}ms` }}
               >
+              <TiltCard>
                 <div
                   className="relative rounded-2xl overflow-hidden h-full"
                   style={{
@@ -288,6 +289,7 @@ export default function ServiceShowcase() {
                   </div>
                 </div>
               </TiltCard>
+              </div>
             );
           })}
         </div>
