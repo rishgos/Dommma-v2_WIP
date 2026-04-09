@@ -421,23 +421,23 @@ const Home = () => {
       )}
 
       {/* Contractor Services Section */}
-      <section className="section-md bg-white dark:bg-[#151B22]" data-testid="contractors-section">
+      <section className="section-md bg-[#F5F5F0] dark:bg-[#0F1419]" data-testid="contractors-section">
         <div className="max-w-7xl mx-auto px-6">
           <FadeIn>
             <div className="flex items-end justify-between mb-12">
               <div>
-                <p className="text-xs text-gray-500 uppercase tracking-widest mb-4">Home Services</p>
+                <p className="text-xs text-[#C4A962] uppercase tracking-widest mb-4">Home Services</p>
                 <h2 className="text-4xl text-[#1A2F3A] dark:text-white" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
                   Trusted Contractors
                 </h2>
-                <p className="text-gray-500 mt-2">Find verified professionals for every job</p>
+                <p className="text-gray-500 dark:text-gray-400 mt-2">Find verified professionals for every job</p>
               </div>
               <Link to="/contractors" className="flex items-center gap-2 text-[#1A2F3A] dark:text-[#C4A962] font-medium hover:gap-4 transition-all text-sm uppercase tracking-wider">
                 Browse All <ArrowRight size={16} />
               </Link>
             </div>
           </FadeIn>
-          <StaggerChildren staggerDelay={0.06} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <StaggerChildren staggerDelay={0.06} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-5">
             {[
               { name: 'Plumbing', icon: '🔧' },
               { name: 'Electrical', icon: '⚡' },
@@ -447,9 +447,9 @@ const Home = () => {
               { name: 'Cleaning', icon: '✨' },
             ].map((svc, i) => (
               <Link key={i} to={`/contractors?category=${svc.name.toLowerCase()}`}
-                className="bg-[#F5F5F0] dark:bg-[#1A2332] rounded-2xl p-6 text-center hover:bg-[#1A2F3A] hover:text-white transition-all group cursor-pointer hover:-translate-y-1">
-                <p className="text-3xl mb-3">{svc.icon}</p>
-                <p className="font-medium text-sm group-hover:text-white text-[#1A2F3A] dark:text-white">{svc.name}</p>
+                className="bg-white dark:bg-white/[0.06] dark:border dark:border-white/[0.1] rounded-2xl p-8 text-center hover:bg-[#1A2F3A] hover:text-white hover:shadow-xl hover:shadow-[#1A2F3A]/20 transition-all group cursor-pointer hover:-translate-y-2">
+                <p className="text-4xl mb-4 group-hover:scale-110 transition-transform">{svc.icon}</p>
+                <p className="font-semibold text-sm group-hover:text-white text-[#1A2F3A] dark:text-white">{svc.name}</p>
               </Link>
             ))}
           </StaggerChildren>

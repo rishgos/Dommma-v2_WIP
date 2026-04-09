@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Search, Star, MapPin, Clock, DollarSign, Shield,
   Phone, Mail, ChevronRight, Filter, Wrench, Zap, Droplets,
@@ -198,13 +198,14 @@ const questionFlows = {
 const ContractorMarketplace = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const searchInputRef = useRef(null);
-  
+
   // Contractor browsing states
   const [contractors, setContractors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [contractorSearchQuery, setContractorSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '');
   const [selectedContractor, setSelectedContractor] = useState(null);
   const [showBooking, setShowBooking] = useState(false);
   const [bookingService, setBookingService] = useState(null);
@@ -273,7 +274,15 @@ const ContractorMarketplace = () => {
     }
   }, [postcode]);
 
-  useEffect(() => { 
+  // Read category from URL params on mount and when URL changes
+  useEffect(() => {
+    const catParam = searchParams.get('category');
+    if (catParam && catParam !== selectedCategory) {
+      setSelectedCategory(catParam);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
     fetchContractors();
     fetchJobs();
   }, [contractorSearchQuery, selectedCategory]);
