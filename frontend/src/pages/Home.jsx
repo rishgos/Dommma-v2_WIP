@@ -437,7 +437,7 @@ const Home = () => {
               </Link>
             </div>
           </FadeIn>
-          <StaggerChildren staggerDelay={0.06} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-5">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-5">
             {[
               { name: 'Plumbing', icon: '🔧' },
               { name: 'Electrical', icon: '⚡' },
@@ -452,7 +452,7 @@ const Home = () => {
                 <p className="font-semibold text-sm group-hover:text-white text-[#1A2F3A] dark:text-white">{svc.name}</p>
               </Link>
             ))}
-          </StaggerChildren>
+          </div>
         </div>
       </section>
 
