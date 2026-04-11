@@ -4755,8 +4755,54 @@ async def create_contractor_job(landlord_id: str, job: ContractorJobCreate):
     )
     
     await db.contractor_jobs.insert_one(job_obj.model_dump())
-    
-    return {"id": job_obj.id, "status": "created"}
+
+    # Lead matching: notify contractors whose specialties match the job category
+    try:
+        matching_contractors = await db.contractor_profiles.find(
+            {"specialties": {"$regex": job.category, "$options": "i"}},
+            {"_id": 0}
+        ).to_list(50)
+
+        for contractor in matching_contractors:
+            # Create in-app notification
+            notification = {
+                "id": str(uuid.uuid4()),
+                "user_id": contractor.get("user_id"),
+                "title": f"New Job: {job.title}",
+                "body": f"New {job.category} job in {job.location}. Budget: ${job.budget_min}-${job.budget_max}",
+                "type": "job_post",
+                "data": {"job_id": job_obj.id, "category": job.category},
+                "read": False,
+                "created_at": datetime.utcnow().isoformat()
+            }
+            await db.notifications.insert_one(notification)
+
+            # Send email notification
+            contractor_user = await db.users.find_one({"id": contractor.get("user_id")}, {"_id": 0})
+            if contractor_user and contractor_user.get("email"):
+                html = email_new_lead_notification(
+                    contractor_name=contractor.get("business_name", contractor_user.get("name", "Contractor")),
+                    service_title=job.title,
+                    location=job.location,
+                    description=job.description or "",
+                    job_id=job_obj.id
+                )
+                asyncio.create_task(send_email(contractor_user["email"], f"New Job Lead: {job.title}", html))
+
+        # Send confirmation to landlord
+        landlord = await db.users.find_one({"id": landlord_id}, {"_id": 0})
+        if landlord and landlord.get("email"):
+            html = email_job_request_confirmation(
+                customer_name=landlord.get("name", "Landlord"),
+                service_title=job.title,
+                location=job.location,
+                answers={"category": job.category, "budget": f"${job.budget_min}-${job.budget_max}"}
+            )
+            asyncio.create_task(send_email(landlord["email"], f"Job Posted: {job.title}", html))
+    except Exception as e:
+        print(f"Lead notification error: {e}")
+
+    return {"id": job_obj.id, "status": "created", "contractors_notified": len(matching_contractors) if 'matching_contractors' in dir() else 0}
 
 @api_router.get("/contractor-jobs")
 async def get_contractor_jobs(

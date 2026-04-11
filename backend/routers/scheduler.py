@@ -219,6 +219,76 @@ async def trigger_reminders(admin_key: str):
     return {"reminders_sent": reminders, "late_fees_applied": late, "renewal_reminders": renewals}
 
 
+async def check_stale_jobs():
+    """Re-notify contractors about open jobs with 0 bids after 24 hours.
+    Also notify landlords when their jobs have no responses."""
+    from services.email import send_email, email_new_lead_notification
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+    cutoff_iso = cutoff.isoformat()
+
+    # Find open jobs older than 24h with no bids
+    stale_jobs = await db.contractor_jobs.find({
+        "status": "open",
+        "created_at": {"$lt": cutoff_iso},
+    }).to_list(50)
+
+    re_notified = 0
+    landlord_alerts = 0
+
+    for job in stale_jobs:
+        bids = await db.contractor_bids.count_documents({"job_id": job["id"]})
+        if bids > 0:
+            continue
+
+        # Re-notify matching contractors
+        matching = await db.contractor_profiles.find(
+            {"specialties": {"$regex": job.get("category", ""), "$options": "i"}},
+            {"_id": 0}
+        ).to_list(20)
+
+        for contractor in matching:
+            contractor_user = await db.users.find_one({"id": contractor.get("user_id")}, {"_id": 0})
+            if contractor_user and contractor_user.get("email"):
+                html = email_new_lead_notification(
+                    contractor_name=contractor.get("business_name", "Contractor"),
+                    service_title=job.get("title", "Job"),
+                    location=job.get("location", ""),
+                    description=job.get("description", ""),
+                    job_id=job["id"]
+                )
+                try:
+                    await send_email(contractor_user["email"], f"Reminder: {job['title']} still needs quotes", html)
+                    re_notified += 1
+                except Exception:
+                    pass
+
+        # Alert landlord that job has no bids yet
+        landlord = await db.users.find_one({"id": job.get("landlord_id")}, {"_id": 0})
+        if landlord and landlord.get("email"):
+            try:
+                await send_email(
+                    landlord["email"],
+                    f"Your job '{job['title']}' has no bids yet",
+                    f"<h2>No Bids Yet</h2><p>Your job posting <strong>{job['title']}</strong> hasn't received any bids in the last 24 hours.</p><p><strong>Tips to get more responses:</strong></p><ul><li>Add more details to the job description</li><li>Consider increasing the budget range</li><li>Make sure the location is accurate</li></ul><p><a href='https://dommma.com/jobs'>View Your Jobs</a></p>"
+                )
+                landlord_alerts += 1
+            except Exception:
+                pass
+
+    logger.info(f"Stale jobs check: {re_notified} contractor re-notifications, {landlord_alerts} landlord alerts")
+    return {"re_notified": re_notified, "landlord_alerts": landlord_alerts}
+
+
+@router.post("/scheduler/check-stale-jobs")
+async def trigger_stale_jobs(admin_key: str):
+    """Manually trigger stale job re-notification"""
+    expected = os.environ.get('ADMIN_SECRET_KEY', 'dommma-admin-2026')
+    if admin_key != expected:
+        raise HTTPException(status_code=403, detail="Invalid admin key")
+    result = await check_stale_jobs()
+    return {"status": "success", **result}
+
+
 @router.get("/notifications")
 async def get_notifications(user_id: str, unread_only: bool = False, limit: int = 50):
     """Get user notifications"""

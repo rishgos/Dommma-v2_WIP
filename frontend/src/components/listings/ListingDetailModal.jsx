@@ -87,7 +87,7 @@ const ListingDetailModal = ({
           <div className="mb-6" />
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
             <div className="text-center p-4 bg-[#F5F5F0] dark:bg-white/5 rounded-xl">
               <Bed className="mx-auto mb-1 text-[#1A2F3A] dark:text-[#C4A962]" size={24} />
               <p className="font-semibold dark:text-white">{listing.bedrooms === 0 ? 'Studio' : listing.bedrooms}</p>
@@ -194,7 +194,7 @@ const ListingDetailModal = ({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             {listing.listing_type === 'sale' ? (
               <>
                 <button onClick={() => {

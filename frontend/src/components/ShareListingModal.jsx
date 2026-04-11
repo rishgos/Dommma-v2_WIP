@@ -86,14 +86,14 @@ export default function ShareListingModal({ listing, isOpen, onClose }) {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-2 gap-2 mb-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4 max-h-[300px] overflow-y-auto">
                 {platforms.map(p => (
                   <a
                     key={p.key}
                     href={links?.platforms?.[p.key] || p.fallbackUrl || '#'}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`${p.color} ${p.textDark ? 'text-black' : 'text-white'} rounded-xl py-3 px-4 flex items-center gap-2.5 text-sm font-medium hover:opacity-90 transition-opacity`}
+                    className={`${p.color} ${p.textDark ? 'text-black' : 'text-white'} rounded-xl py-2.5 px-3 flex items-center gap-2 text-xs sm:text-sm font-medium hover:opacity-90 transition-opacity`}
                     data-testid={`share-${p.key}`}
                   >
                     <p.icon size={16} />

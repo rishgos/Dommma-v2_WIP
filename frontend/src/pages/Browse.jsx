@@ -261,7 +261,7 @@ const Browse = () => {
 
         {showFilters && (
           <div className="border-t border-white/10 p-4">
-            <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-5 lg:grid-cols-10 gap-3">
+            <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-10 gap-3">
               <select value={filters.propertyType} onChange={(e) => setFilters({...filters, propertyType: e.target.value})} className="px-4 py-2 rounded-lg bg-white/10 border border-white/10 text-white text-sm" data-testid="filter-property-type">
                 <option value="">All Types</option>
                 {propertyTypes.map(t => <option key={t} value={t}>{t}</option>)}
