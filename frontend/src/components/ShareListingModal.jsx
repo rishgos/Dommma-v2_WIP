@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Facebook, Twitter, Linkedin, Mail, Link2, Copy, Check, Share2, X, MessageCircle, Globe, Building2 } from 'lucide-react';
+import { Facebook, Twitter, Linkedin, Mail, Link2, Copy, Check, Share2, X, MessageCircle, Globe, Building2, Camera, Ghost, Pin, Music } from 'lucide-react';
 import axios from 'axios';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -41,6 +41,10 @@ export default function ShareListingModal({ listing, isOpen, onClose }) {
     { key: 'linkedin', label: 'LinkedIn', icon: Linkedin, color: 'bg-[#0A66C2]', fallbackUrl: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(listingUrl)}` },
     { key: 'whatsapp', label: 'WhatsApp', icon: MessageCircle, color: 'bg-[#25D366]', fallbackUrl: `https://wa.me/?text=${encodeURIComponent(listingTitle + ' ' + listingPrice + ' - ' + listingUrl)}` },
     { key: 'craigslist', label: 'Craigslist', icon: Link2, color: 'bg-[#5F2DA8]', fallbackUrl: `https://vancouver.craigslist.org/` },
+    { key: 'snapchat', label: 'Snapchat', icon: Ghost, color: 'bg-[#FFFC00] !text-black', textDark: true, fallbackUrl: `https://www.snapchat.com/scan?attachmentUrl=${encodeURIComponent(listingUrl)}` },
+    { key: 'pinterest', label: 'Pinterest', icon: Pin, color: 'bg-[#E60023]', fallbackUrl: `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(listingUrl)}&description=${encodeURIComponent(listingTitle + ' ' + listingPrice)}` },
+    { key: 'instagram', label: 'Instagram', icon: Camera, color: 'bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#F77737]', fallbackUrl: `https://www.instagram.com/` },
+    { key: 'tiktok', label: 'TikTok', icon: Music, color: 'bg-[#010101]', fallbackUrl: `https://www.tiktok.com/` },
     { key: 'email', label: 'Send via Email', icon: Mail, color: 'bg-gray-600', fallbackUrl: `mailto:?subject=${emailSubject}&body=${emailBody}` },
     { key: 'google_business', label: 'Google Business', icon: Globe, color: 'bg-[#4285F4]', fallbackUrl: `https://business.google.com/` },
   ];
@@ -89,7 +93,7 @@ export default function ShareListingModal({ listing, isOpen, onClose }) {
                     href={links?.platforms?.[p.key] || p.fallbackUrl || '#'}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`${p.color} text-white rounded-xl py-3 px-4 flex items-center gap-2.5 text-sm font-medium hover:opacity-90 transition-opacity`}
+                    className={`${p.color} ${p.textDark ? 'text-black' : 'text-white'} rounded-xl py-3 px-4 flex items-center gap-2.5 text-sm font-medium hover:opacity-90 transition-opacity`}
                     data-testid={`share-${p.key}`}
                   >
                     <p.icon size={16} />
