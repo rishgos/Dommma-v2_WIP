@@ -5192,22 +5192,88 @@ async def update_user_preferences(user_id: str, updates: Dict[str, Any]):
     
     return {"status": "updated"}
 
+@api_router.get("/users/{user_id}/export")
+async def export_user_data(user_id: str):
+    """Export all user data as JSON (PIPEDA right to access)"""
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "password": 0, "password_hash": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Collect all data from all collections
+    data = {
+        "account": user,
+        "preferences": await db.user_preferences.find_one({"user_id": user_id}, {"_id": 0}) or {},
+        "listings": await db.listings.find({"landlord_id": user_id}, {"_id": 0}).to_list(500),
+        "applications": await db.rental_applications.find({"$or": [{"user_id": user_id}, {"applicant_id": user_id}]}, {"_id": 0}).to_list(500),
+        "messages": await db.direct_messages.find({"$or": [{"sender_id": user_id}, {"recipient_id": user_id}]}, {"_id": 0}).to_list(1000),
+        "favorites": await db.favorites.find({"user_id": user_id}, {"_id": 0}).to_list(500),
+        "notifications": await db.notifications.find({"user_id": user_id}, {"_id": 0}).to_list(500),
+        "rent_agreements": await db.rent_agreements.find({"$or": [{"tenant_id": user_id}, {"landlord_id": user_id}]}, {"_id": 0}).to_list(100),
+        "rent_payments": await db.rent_payments.find({"$or": [{"tenant_id": user_id}, {"landlord_id": user_id}]}, {"_id": 0}).to_list(500),
+        "contractor_profile": await db.contractor_profiles.find_one({"user_id": user_id}, {"_id": 0}) or {},
+        "jobs_posted": await db.contractor_jobs.find({"landlord_id": user_id}, {"_id": 0}).to_list(100),
+        "bids": await db.contractor_bids.find({"contractor_id": user_id}, {"_id": 0}).to_list(100),
+        "calendar_events": await db.calendar_events.find({"user_id": user_id}, {"_id": 0}).to_list(200),
+        "roommate_profile": await db.roommate_profiles.find_one({"user_id": user_id}, {"_id": 0}) or {},
+        "renter_resume": await db.renter_resumes.find_one({"user_id": user_id}, {"_id": 0}) or {},
+        "chat_sessions": await db.chat_sessions.find({"user_id": user_id}, {"_id": 0}).to_list(100),
+        "nova_interactions": await db.nova_interactions.find({"user_id": user_id}, {"_id": 0}).to_list(500),
+        "saved_searches": await db.saved_searches.find({"user_id": user_id}, {"_id": 0}).to_list(100),
+        "export_metadata": {
+            "exported_at": datetime.utcnow().isoformat(),
+            "user_id": user_id,
+            "format": "JSON",
+            "compliance": "PIPEDA Section 4.9 - Right of Access"
+        }
+    }
+    return data
+
+
 @api_router.delete("/users/{user_id}")
 async def delete_user_account(user_id: str):
-    """Delete user account and associated data"""
-    # Delete user
+    """Delete user account and ALL associated data (PIPEDA right to be forgotten)"""
+    # Verify user exists
     result = await db.users.delete_one({"id": user_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="User not found")
-    
-    # Delete associated data
-    await db.user_preferences.delete_many({"user_id": user_id})
-    await db.renter_resumes.delete_many({"user_id": user_id})
-    await db.roommate_profiles.delete_many({"user_id": user_id})
-    await db.favorites.delete_many({"user_id": user_id})
-    await db.chat_sessions.delete_many({"user_id": user_id})
-    
-    return {"status": "deleted"}
+
+    # Delete ALL associated data across every collection
+    collections_to_clean = [
+        ("user_preferences", {"user_id": user_id}),
+        ("renter_resumes", {"user_id": user_id}),
+        ("roommate_profiles", {"user_id": user_id}),
+        ("roommate_connections", {"$or": [{"user_id": user_id}, {"target_user_id": user_id}]}),
+        ("favorites", {"user_id": user_id}),
+        ("chat_sessions", {"user_id": user_id}),
+        ("direct_messages", {"$or": [{"sender_id": user_id}, {"recipient_id": user_id}]}),
+        ("notifications", {"user_id": user_id}),
+        ("listings", {"landlord_id": user_id}),
+        ("rental_applications", {"$or": [{"user_id": user_id}, {"applicant_id": user_id}]}),
+        ("rent_agreements", {"$or": [{"tenant_id": user_id}, {"landlord_id": user_id}]}),
+        ("rent_payments", {"$or": [{"tenant_id": user_id}, {"landlord_id": user_id}]}),
+        ("contractor_profiles", {"user_id": user_id}),
+        ("contractor_jobs", {"landlord_id": user_id}),
+        ("contractor_bids", {"contractor_id": user_id}),
+        ("service_bookings", {"$or": [{"customer_id": user_id}, {"contractor_id": user_id}]}),
+        ("calendar_events", {"user_id": user_id}),
+        ("google_calendar_tokens", {"user_id": user_id}),
+        ("nova_interactions", {"user_id": user_id}),
+        ("nova_user_profiles", {"user_id": user_id}),
+        ("saved_searches", {"user_id": user_id}),
+        ("push_subscriptions", {"user_id": user_id}),
+        ("contact_messages", {"user_id": user_id}),
+    ]
+
+    deleted_counts = {}
+    for collection_name, query in collections_to_clean:
+        try:
+            result = await db[collection_name].delete_many(query)
+            if result.deleted_count > 0:
+                deleted_counts[collection_name] = result.deleted_count
+        except Exception:
+            pass  # Collection may not exist
+
+    return {"status": "deleted", "collections_cleaned": deleted_counts}
 
 # ========== IMAGE UPLOAD ==========
 

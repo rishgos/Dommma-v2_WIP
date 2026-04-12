@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { 
+import {
   Settings, User, Bell, Shield, Globe, Moon, Sun,
   Mail, Phone, Lock, Eye, EyeOff, Save, Check,
-  CreditCard, Trash2, LogOut, ChevronRight, Plus, Star, Loader2, CheckCircle, X, Home
+  CreditCard, Trash2, LogOut, ChevronRight, Plus, Star, Loader2, CheckCircle, X, Home, Download, AlertTriangle
 } from 'lucide-react';
 import { useAuth } from '../App';
 import axios from 'axios';
@@ -835,11 +835,49 @@ export default function SettingsPage() {
                   </button>
                 </div>
                 
+                {/* Data Export */}
+                <div className="bg-white dark:bg-[#1A2332] rounded-2xl p-6 shadow-sm">
+                  <h2 className="text-xl font-semibold text-[#1A2F3A] dark:text-white mb-2 flex items-center gap-2">
+                    <Download size={20} /> Download My Data
+                  </h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                    Download a copy of all your personal data stored on DOMMMA, including your profile, listings, applications, messages, payments, and more. This is your right under Canadian privacy law (PIPEDA).
+                  </p>
+                  <button
+                    onClick={async () => {
+                      try {
+                        setSaving(true);
+                        const res = await axios.get(`${API}/api/users/${user.id}/export`);
+                        const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `dommma-data-export-${new Date().toISOString().split('T')[0]}.json`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                        setSaving(false);
+                        alert('Your data has been downloaded successfully.');
+                      } catch (error) {
+                        setSaving(false);
+                        alert('Failed to download data. Please try again.');
+                      }
+                    }}
+                    disabled={saving}
+                    className="px-6 py-2 bg-[#1A2F3A] text-white rounded-lg hover:bg-[#2C4A52] transition-colors flex items-center gap-2 disabled:opacity-50"
+                    data-testid="download-data-btn"
+                  >
+                    <Download size={18} />
+                    {saving ? 'Preparing Download...' : 'Download All My Data'}
+                  </button>
+                </div>
+
                 {/* Danger Zone */}
-                <div className="bg-red-50 rounded-2xl p-6 border border-red-200">
-                  <h2 className="text-xl font-semibold text-red-700 mb-2">Danger Zone</h2>
-                  <p className="text-sm text-red-600 mb-4">
-                    Once you delete your account, there is no going back. Please be certain.
+                <div className="bg-red-50 dark:bg-red-950/30 rounded-2xl p-6 border border-red-200 dark:border-red-800">
+                  <h2 className="text-xl font-semibold text-red-700 dark:text-red-400 mb-2 flex items-center gap-2">
+                    <AlertTriangle size={20} /> Danger Zone
+                  </h2>
+                  <p className="text-sm text-red-600 dark:text-red-400 mb-4">
+                    Permanently delete your account and all associated data. This removes your profile, listings, applications, messages, payments, favorites, and all other data from DOMMMA. This action cannot be undone.
                   </p>
                   <button
                     onClick={handleDeleteAccount}
@@ -847,8 +885,11 @@ export default function SettingsPage() {
                     data-testid="delete-account-btn"
                   >
                     <Trash2 size={18} />
-                    Delete Account
+                    Delete My Account
                   </button>
+                  <p className="text-xs text-red-400 dark:text-red-500 mt-3">
+                    You will be asked to confirm twice. All data will be permanently removed in compliance with PIPEDA.
+                  </p>
                 </div>
               </div>
             )}
