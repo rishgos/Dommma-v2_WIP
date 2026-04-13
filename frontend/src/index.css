@@ -61,9 +61,27 @@
   border-color: #C4A962;
 }
 
-/* Dark mode labels */
+/* Dark mode labels, headings, and text in forms */
 .dark label {
   color: #C8D6DB;
+}
+
+.dark h2, .dark h3, .dark h4 {
+  color: #E8E6E3;
+}
+
+.dark p {
+  color: #A0B0C0;
+}
+
+.dark a {
+  color: #C4A962;
+}
+
+/* Dark mode select dropdown options */
+.dark select option {
+  background-color: #1A2332;
+  color: #E8E6E3;
 }
 
 /* Dark mode: make ALL form inputs readable */

@@ -532,7 +532,7 @@ const MyProperties = () => {
         <div className="fixed inset-0 z-[9000] flex items-center justify-center p-4 overflow-y-auto">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowModal(false)} />
           <div className="relative bg-white dark:bg-[#1A2332] rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8 my-8">
-            <h2 className="text-2xl font-semibold text-[#1A2F3A] mb-6" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+            <h2 className="text-2xl font-semibold text-[#1A2F3A] dark:text-white mb-6" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
               {editingListing ? 'Edit Property' : 'Add New Property'}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-5">
