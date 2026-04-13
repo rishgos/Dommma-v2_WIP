@@ -41,7 +41,8 @@ const Login = () => {
     email: '',
     password: '',
     name: '',
-    phone: ''
+    phone: '',
+    rememberMe: false,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -79,7 +80,7 @@ const Login = () => {
           user_type: response.data.user_type,
           created_at: new Date().toISOString()
         };
-        login(userData);
+        login(userData, formData.rememberMe);
         navigate('/dashboard');
       } else {
         // Registration successful - show verification message
@@ -255,6 +256,25 @@ const Login = () => {
                 </div>
               )}
             </div>
+
+            {/* Remember Me + Forgot Password (login only) */}
+            {isLogin && (
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.rememberMe}
+                    onChange={(e) => setFormData({...formData, rememberMe: e.target.checked})}
+                    className="w-4 h-4 rounded border-gray-300 text-[#1A2F3A] focus:ring-[#1A2F3A]"
+                    data-testid="remember-me"
+                  />
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Remember me</span>
+                </label>
+                <a href="/forgot-password" className="text-sm text-[#1A2F3A] dark:text-[#C4A962] hover:underline">
+                  Forgot password?
+                </a>
+              </div>
+            )}
 
             <button
               type="submit"

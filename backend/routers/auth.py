@@ -88,11 +88,37 @@ async def register_user(request: Request, user_data: UserCreate):
     }
 
 
+# In-memory rate limiter (resets on server restart — use Redis for production)
+_login_attempts = {}
+MAX_LOGIN_ATTEMPTS = 5
+LOCKOUT_MINUTES = 15
+
+
 @router.post("/login")
-async def login_user(login_data: UserLogin):
+async def login_user(login_data: UserLogin, request: Request):
+    email_lower = login_data.email.lower().strip()
+    client_ip = request.client.host if request.client else "unknown"
+    rate_key = f"{email_lower}:{client_ip}"
+
+    # Rate limiting — check if locked out
+    if rate_key in _login_attempts:
+        attempts, locked_until = _login_attempts[rate_key]
+        if locked_until and datetime.now(timezone.utc) < locked_until:
+            remaining = int((locked_until - datetime.now(timezone.utc)).total_seconds() / 60) + 1
+            raise HTTPException(status_code=429, detail=f"Account temporarily locked. Too many failed attempts. Try again in {remaining} minutes.")
+        # Reset if lockout expired
+        if locked_until and datetime.now(timezone.utc) >= locked_until:
+            _login_attempts[rate_key] = (0, None)
+
     # Case-insensitive email lookup
-    user = await db.users.find_one({"email": {"$regex": f"^{login_data.email}$", "$options": "i"}}, {"_id": 0})
+    user = await db.users.find_one({"email": {"$regex": f"^{email_lower}$", "$options": "i"}}, {"_id": 0})
     if not user:
+        # Track failed attempt
+        attempts = _login_attempts.get(rate_key, (0, None))[0] + 1
+        locked = datetime.now(timezone.utc) + timedelta(minutes=LOCKOUT_MINUTES) if attempts >= MAX_LOGIN_ATTEMPTS else None
+        _login_attempts[rate_key] = (attempts, locked)
+        if locked:
+            raise HTTPException(status_code=429, detail=f"Account locked after {MAX_LOGIN_ATTEMPTS} failed attempts. Try again in {LOCKOUT_MINUTES} minutes.")
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     if 'email_verified' in user and not user.get('email_verified'):
@@ -100,15 +126,148 @@ async def login_user(login_data: UserLogin):
 
     stored_password = user.get('password_hash') or user.get('password', '')
     if not verify_password(login_data.password, stored_password):
+        # Track failed attempt
+        attempts = _login_attempts.get(rate_key, (0, None))[0] + 1
+        locked = datetime.now(timezone.utc) + timedelta(minutes=LOCKOUT_MINUTES) if attempts >= MAX_LOGIN_ATTEMPTS else None
+        _login_attempts[rate_key] = (attempts, locked)
+        if locked:
+            # Send lockout notification email
+            try:
+                lockout_html = f"""<div style="font-family:Georgia,serif;max-width:600px;margin:0 auto;padding:40px;">
+                    <h2 style="color:#C62828;">Security Alert</h2>
+                    <p>Hi {user.get('name', 'User')},</p>
+                    <p>Your DOMMMA account has been temporarily locked due to {MAX_LOGIN_ATTEMPTS} failed login attempts.</p>
+                    <p>If this wasn't you, we recommend changing your password immediately after the lockout expires in {LOCKOUT_MINUTES} minutes.</p>
+                    <p>IP Address: {client_ip}</p>
+                    <p>Time: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}</p>
+                    <p><a href="https://dommma.com/forgot-password">Reset Your Password</a></p>
+                </div>"""
+                asyncio.create_task(send_email(user.get('email'), "DOMMMA Security Alert: Account Locked", lockout_html))
+            except Exception:
+                pass
+            raise HTTPException(status_code=429, detail=f"Account locked after {MAX_LOGIN_ATTEMPTS} failed attempts. Try again in {LOCKOUT_MINUTES} minutes. A security alert has been sent to your email.")
         raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    # Successful login — clear rate limiter
+    _login_attempts.pop(rate_key, None)
 
     if 'password' in user and 'password_hash' not in user:
         await db.users.update_one(
-            {"email": login_data.email},
+            {"email": email_lower},
             {"$set": {"password_hash": hash_password(login_data.password)}, "$unset": {"password": ""}}
         )
 
-    return {"id": user.get('id'), "email": user.get('email'), "name": user.get('name'), "user_type": user.get('user_type')}
+    # Record login session
+    import uuid
+    session_id = str(uuid.uuid4())
+    await db.user_sessions.insert_one({
+        "id": session_id,
+        "user_id": user.get('id'),
+        "ip": client_ip,
+        "user_agent": request.headers.get('user-agent', 'unknown'),
+        "login_at": datetime.now(timezone.utc).isoformat(),
+        "active": True
+    })
+
+    return {
+        "id": user.get('id'),
+        "email": user.get('email'),
+        "name": user.get('name'),
+        "user_type": user.get('user_type'),
+        "session_id": session_id
+    }
+
+
+@router.post("/forgot-password")
+async def forgot_password(email: str = Body(..., embed=True)):
+    """Send password reset email"""
+    email_lower = email.lower().strip()
+    user = await db.users.find_one({"email": {"$regex": f"^{email_lower}$", "$options": "i"}}, {"_id": 0})
+
+    # Always return success to prevent email enumeration
+    if not user:
+        return {"status": "success", "message": "If an account exists with this email, a reset link has been sent."}
+
+    reset_token = generate_verification_token()
+    reset_expires = (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat()
+
+    await db.users.update_one(
+        {"email": {"$regex": f"^{email_lower}$", "$options": "i"}},
+        {"$set": {"reset_token": reset_token, "reset_token_expires": reset_expires}}
+    )
+
+    reset_link = f"https://dommma.com/reset-password?token={reset_token}"
+    reset_html = f"""<div style="font-family:Georgia,serif;max-width:600px;margin:0 auto;background:#F5F5F0;padding:40px;">
+        <div style="background:#1A2F3A;padding:30px;border-radius:16px 16px 0 0;text-align:center;">
+            <h1 style="color:white;font-size:28px;margin:0;">DOMMMA</h1>
+            <p style="color:rgba(255,255,255,0.7);margin:8px 0 0;font-size:14px;">Password Reset</p>
+        </div>
+        <div style="background:white;padding:30px;border-radius:0 0 16px 16px;">
+            <h2 style="color:#1A2F3A;">Reset Your Password</h2>
+            <p style="color:#555;">Hi {user.get('name', 'there')}, we received a request to reset your password.</p>
+            <div style="text-align:center;margin:30px 0;">
+                <a href="{reset_link}" style="background:#1A2F3A;color:white;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;">Reset Password</a>
+            </div>
+            <p style="color:#888;font-size:12px;">This link expires in 1 hour. If you didn't request this, ignore this email.</p>
+            <p style="color:#888;font-size:11px;margin-top:20px;">Or copy: {reset_link}</p>
+        </div>
+    </div>"""
+
+    asyncio.create_task(send_email(user.get('email'), "DOMMMA: Reset Your Password", reset_html))
+    return {"status": "success", "message": "If an account exists with this email, a reset link has been sent."}
+
+
+@router.post("/reset-password")
+async def reset_password(token: str = Body(...), new_password: str = Body(...)):
+    """Reset password using token from email"""
+    import re
+    # Validate new password strength
+    if len(new_password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+    if not re.search(r'[A-Z]', new_password):
+        raise HTTPException(status_code=400, detail="Password must contain an uppercase letter")
+    if not re.search(r'[a-z]', new_password):
+        raise HTTPException(status_code=400, detail="Password must contain a lowercase letter")
+    if not re.search(r'[0-9]', new_password):
+        raise HTTPException(status_code=400, detail="Password must contain a number")
+
+    user = await db.users.find_one({"reset_token": token}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+
+    expires = user.get('reset_token_expires')
+    if expires:
+        expires_dt = datetime.fromisoformat(expires.replace('Z', '+00:00'))
+        if datetime.now(timezone.utc) > expires_dt:
+            raise HTTPException(status_code=400, detail="Reset token has expired. Please request a new one.")
+
+    await db.users.update_one(
+        {"reset_token": token},
+        {"$set": {"password_hash": hash_password(new_password)},
+         "$unset": {"reset_token": "", "reset_token_expires": "", "password": ""}}
+    )
+
+    return {"status": "success", "message": "Password has been reset. You can now log in."}
+
+
+@router.get("/sessions/{user_id}")
+async def get_user_sessions(user_id: str):
+    """Get active login sessions for a user"""
+    sessions = await db.user_sessions.find(
+        {"user_id": user_id, "active": True},
+        {"_id": 0}
+    ).sort("login_at", -1).to_list(20)
+    return sessions
+
+
+@router.post("/sessions/logout-all")
+async def logout_all_sessions(user_id: str = Body(..., embed=True)):
+    """Logout from all devices"""
+    result = await db.user_sessions.update_many(
+        {"user_id": user_id},
+        {"$set": {"active": False, "logout_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    return {"status": "success", "sessions_closed": result.modified_count}
 
 
 @router.get("/verify-email")

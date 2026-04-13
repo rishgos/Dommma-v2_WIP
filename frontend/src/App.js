@@ -89,12 +89,28 @@ function AnalyticsTracker() {
   return null;
 }
 
+const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes inactivity timeout
+
 function App() {
-  // Synchronous init from localStorage — prevents redirect flash on page refresh
+  // Synchronous init: check sessionStorage first (default), then localStorage (remember me)
   const [user, setUser] = useState(() => {
     try {
-      const saved = localStorage.getItem('dommma_user');
-      return saved ? JSON.parse(saved) : null;
+      const session = sessionStorage.getItem('dommma_user');
+      if (session) return JSON.parse(session);
+      const remembered = localStorage.getItem('dommma_user');
+      if (remembered) {
+        // Check if session has expired (24hr max for remembered sessions)
+        const loginTime = localStorage.getItem('dommma_login_time');
+        if (loginTime && Date.now() - parseInt(loginTime) > 24 * 60 * 60 * 1000) {
+          localStorage.removeItem('dommma_user');
+          localStorage.removeItem('dommma_login_time');
+          return null;
+        }
+        // Restore to sessionStorage for this browser session
+        sessionStorage.setItem('dommma_user', remembered);
+        return JSON.parse(remembered);
+      }
+      return null;
     } catch { return null; }
   });
 
@@ -114,16 +130,47 @@ function App() {
     }
   }, []);
 
-  const login = (userData) => {
+  // Inactivity timeout — auto-logout after 30 minutes of no activity
+  useEffect(() => {
+    if (!user) return;
+    let timeoutId;
+    const resetTimer = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        logout();
+        window.location.href = '/login?reason=timeout';
+      }, SESSION_TIMEOUT_MS);
+    };
+    // Reset on any user activity
+    const events = ['mousedown', 'keydown', 'scroll', 'touchstart'];
+    events.forEach(e => window.addEventListener(e, resetTimer));
+    resetTimer(); // Start the timer
+    return () => {
+      clearTimeout(timeoutId);
+      events.forEach(e => window.removeEventListener(e, resetTimer));
+    };
+  }, [user]);
+
+  const login = (userData, rememberMe = false) => {
     setUser(userData);
-    localStorage.setItem('dommma_user', JSON.stringify(userData));
+    const userJson = JSON.stringify(userData);
+    sessionStorage.setItem('dommma_user', userJson);
+    if (rememberMe) {
+      localStorage.setItem('dommma_user', userJson);
+      localStorage.setItem('dommma_login_time', Date.now().toString());
+    } else {
+      localStorage.removeItem('dommma_user');
+      localStorage.removeItem('dommma_login_time');
+    }
     // Track login event
     trackLogin('email', userData.user_type);
   };
 
   const logout = () => {
     setUser(null);
+    sessionStorage.removeItem('dommma_user');
     localStorage.removeItem('dommma_user');
+    localStorage.removeItem('dommma_login_time');
   };
 
   return (
