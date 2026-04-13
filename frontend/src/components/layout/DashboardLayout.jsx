@@ -29,7 +29,17 @@ const DashboardLayout = ({ children }) => {
     setSidebarOpen(false);
   }, [location.pathname]);
 
-  if (!user) return null;
+  if (!user) {
+    // Show loading state while redirecting to login (prevents blank screen)
+    return (
+      <div className="min-h-screen bg-[#F5F5F0] dark:bg-[#0F1419] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-[#1A2F3A] dark:border-[#C4A962] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Redirecting to login...</p>
+        </div>
+      </div>
+    );
+  }
 
   const navItems = {
     renter: [
