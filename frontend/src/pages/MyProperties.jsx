@@ -256,7 +256,8 @@ const MyProperties = () => {
       bedrooms: '', bathrooms: '', sqft: '', property_type: 'Apartment',
       description: '', amenities: [], images: [], available_date: '',
       pet_friendly: false, parking: false, listing_type: 'rent',
-      year_built: '', lot_size: '', garage: ''
+      year_built: '', lot_size: '', garage: '',
+      pricing_tiers: [], offers: []
     });
     setShowModal(true);
   };
