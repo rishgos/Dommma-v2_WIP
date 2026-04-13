@@ -226,7 +226,7 @@ const Login = () => {
             </div>
 
             <div>
-              <label className="block text-sm text-gray-600 mb-2">Password</label>
+              <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Password</label>
               <input
                 type="password"
                 value={formData.password}
@@ -234,8 +234,26 @@ const Login = () => {
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#1A2F3A] focus:ring-2 focus:ring-[#1A2F3A]/10 outline-none transition-all"
                 placeholder="••••••••"
                 required
+                minLength={8}
                 data-testid="password-input"
               />
+              {/* Live password strength indicator — only on signup */}
+              {!isLogin && formData.password && (
+                <div className="mt-2 space-y-1">
+                  {[
+                    { test: formData.password.length >= 8, label: 'At least 8 characters' },
+                    { test: /[A-Z]/.test(formData.password), label: 'One uppercase letter' },
+                    { test: /[a-z]/.test(formData.password), label: 'One lowercase letter' },
+                    { test: /[0-9]/.test(formData.password), label: 'One number' },
+                    { test: /[!@#$%^&*(),.?":{}|<>]/.test(formData.password), label: 'One special character (!@#$%...)' },
+                  ].map((rule, i) => (
+                    <div key={i} className="flex items-center gap-2 text-xs">
+                      <span className={rule.test ? 'text-green-500' : 'text-gray-400'}>{rule.test ? '\u2713' : '\u2717'}</span>
+                      <span className={rule.test ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-500'}>{rule.label}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <button

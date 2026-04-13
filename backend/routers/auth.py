@@ -33,6 +33,21 @@ class UserLogin(BaseModel):
 async def register_user(request: Request, user_data: UserCreate):
     # Normalize email to lowercase
     user_data.email = user_data.email.lower().strip()
+
+    # Password strength validation
+    import re
+    pw = user_data.password
+    if len(pw) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+    if not re.search(r'[A-Z]', pw):
+        raise HTTPException(status_code=400, detail="Password must contain at least one uppercase letter")
+    if not re.search(r'[a-z]', pw):
+        raise HTTPException(status_code=400, detail="Password must contain at least one lowercase letter")
+    if not re.search(r'[0-9]', pw):
+        raise HTTPException(status_code=400, detail="Password must contain at least one number")
+    if not re.search(r'[!@#$%^&*(),.?":{}|<>]', pw):
+        raise HTTPException(status_code=400, detail="Password must contain at least one special character")
+
     existing = await db.users.find_one({"email": user_data.email}, {"_id": 0})
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
