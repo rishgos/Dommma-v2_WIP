@@ -64,6 +64,7 @@ import VirtualStaging from "@/pages/VirtualStaging";
 import CampaignDashboard from "@/pages/CampaignDashboard";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import SecurityPage from "@/pages/SecurityPage";
+import BulkImport from "@/pages/BulkImport";
 
 // Layout
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -172,6 +173,7 @@ function App() {
           <Route path="/maintenance" element={<DashboardLayout><Maintenance /></DashboardLayout>} />
           <Route path="/jobs" element={<DashboardLayout><Jobs /></DashboardLayout>} />
           <Route path="/my-properties" element={<DashboardLayout><MyProperties /></DashboardLayout>} />
+          <Route path="/bulk-import" element={<DashboardLayout><BulkImport /></DashboardLayout>} />
           <Route path="/contractor-profile" element={<DashboardLayout><ContractorProfile /></DashboardLayout>} />
           <Route path="/report-issue" element={<DashboardLayout><SmartIssueReporter /></DashboardLayout>} />
           <Route path="/document-analyzer" element={<DashboardLayout><DocumentAnalyzer /></DashboardLayout>} />
