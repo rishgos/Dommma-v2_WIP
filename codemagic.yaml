@@ -13,6 +13,7 @@ workflows:
         script: |
           cd frontend
           npm install
+          npm install --save-dev @capacitor/cli@^8.3.0
       - name: Build web app
         script: |
           cd frontend
@@ -20,7 +21,7 @@ workflows:
       - name: Sync Capacitor
         script: |
           cd frontend
-          npx cap sync android
+          ./node_modules/.bin/cap sync android
       - name: Build Android APK
         script: |
           cd frontend/android
@@ -51,6 +52,7 @@ workflows:
         script: |
           cd frontend
           npm install
+          npm install --save-dev @capacitor/cli@^8.3.0
       - name: Build web app
         script: |
           cd frontend
@@ -58,7 +60,7 @@ workflows:
       - name: Sync Capacitor
         script: |
           cd frontend
-          npx cap sync android
+          ./node_modules/.bin/cap sync android
       - name: Build Android AAB (release)
         script: |
           cd frontend/android
@@ -86,6 +88,7 @@ workflows:
         script: |
           cd frontend
           npm install
+          npm install --save-dev @capacitor/cli@^8.3.0
       - name: Build web app
         script: |
           cd frontend
@@ -93,8 +96,8 @@ workflows:
       - name: Add iOS platform if missing
         script: |
           cd frontend
-          npx cap add ios || true
-          npx cap sync ios
+          ./node_modules/.bin/cap add ios || true
+          ./node_modules/.bin/cap sync ios
       - name: Install CocoaPods
         script: |
           cd frontend/ios/App
