@@ -6,6 +6,8 @@ workflows:
     environment:
       java: 17
       node: 18
+      vars:
+        CI: "false"
     scripts:
       - name: Install dependencies
         script: |
@@ -14,7 +16,7 @@ workflows:
       - name: Build web app
         script: |
           cd frontend
-          npm run build
+          CI=false npm run build
       - name: Sync Capacitor
         script: |
           cd frontend
@@ -40,6 +42,8 @@ workflows:
     environment:
       java: 17
       node: 18
+      vars:
+        CI: "false"
       groups:
         - google_play
     scripts:
@@ -50,7 +54,7 @@ workflows:
       - name: Build web app
         script: |
           cd frontend
-          npm run build
+          CI=false npm run build
       - name: Sync Capacitor
         script: |
           cd frontend
@@ -75,6 +79,8 @@ workflows:
       xcode: latest
       node: 18
       cocoapods: default
+      vars:
+        CI: "false"
     scripts:
       - name: Install dependencies
         script: |
@@ -83,7 +89,7 @@ workflows:
       - name: Build web app
         script: |
           cd frontend
-          npm run build
+          CI=false npm run build
       - name: Add iOS platform if missing
         script: |
           cd frontend
