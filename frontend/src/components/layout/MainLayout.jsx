@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, Twitter, Instagram, Linkedin, Mail, Phone, MapPin, ArrowRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -13,6 +13,33 @@ const MainLayout = ({ children, hideNovaButton = false }) => {
   const { user } = useAuth();
   const { t, i18n } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Only the home page has a dark hero video behind the nav — other pages
+  // should always show the frosted/solid state so nav is readable.
+  const hasHero = location.pathname === '/';
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 40);
+    onScroll(); // set initial state
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Nav is "transparent" only when we're on the home page AND near the top.
+  // Anywhere else (scrolled, or non-hero page), it's frosted glass.
+  const isTransparent = hasHero && !scrolled;
+
+  const navWrapClass = isTransparent
+    ? 'bg-transparent text-white'
+    : 'bg-white/70 dark:bg-[#0D0D0D]/70 backdrop-blur-xl border-b border-black/5 dark:border-white/10 text-[#1A2F3A] dark:text-white';
+
+  const linkActiveColor = isTransparent ? 'text-white' : 'text-[#1A2F3A] dark:text-white';
+  const linkInactiveColor = isTransparent ? 'text-gray-300' : 'text-gray-500 dark:text-gray-400';
+  const iconColor = isTransparent ? 'text-gray-200 hover:text-white' : 'text-gray-600 dark:text-gray-300 hover:text-[#1A2F3A] dark:hover:text-white';
+  const btnOutline = isTransparent
+    ? 'border border-white/70 text-white hover:bg-white/10'
+    : 'border border-[#1A2F3A]/30 dark:border-white/30 text-[#1A2F3A] dark:text-white hover:bg-[#1A2F3A]/5 dark:hover:bg-white/10';
 
   const navLinks = [
     { path: '/', label: t('nav.home') },
@@ -45,13 +72,13 @@ const MainLayout = ({ children, hideNovaButton = false }) => {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F5F5F0] dark:bg-[#0F1419] transition-colors">
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0D0D0D] text-white" data-testid="main-navigation">
+      {/* Navigation — glassmorphism. Transparent over hero, frosted on scroll / non-hero pages. */}
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-colors duration-300 ${navWrapClass}`} data-testid="main-navigation">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             {/* Logo */}
-            <Link 
-              to="/" 
+            <Link
+              to="/"
               className="text-2xl tracking-wider"
               style={{ fontFamily: 'Cormorant Garamond, serif' }}
               data-testid="nav-logo"
@@ -66,9 +93,9 @@ const MainLayout = ({ children, hideNovaButton = false }) => {
                   key={link.path}
                   to={link.path}
                   data-testid={`nav-link-${link.label.toLowerCase()}`}
-                  className={`text-sm tracking-wider transition-colors hover:text-gray-300 ${
-                    location.pathname === link.path ? 'text-white' : 'text-gray-400'
-                  }`}
+                  className={`text-sm tracking-wider transition-colors ${
+                    location.pathname === link.path ? linkActiveColor : linkInactiveColor
+                  } hover:${isTransparent ? 'text-white' : 'text-[#1A2F3A] dark:text-white'}`}
                 >
                   {link.label}
                 </Link>
@@ -77,20 +104,20 @@ const MainLayout = ({ children, hideNovaButton = false }) => {
 
             {/* Auth Button + Language Toggle + Theme */}
             <div className="hidden md:flex items-center gap-3">
-              <ThemeToggle className="text-gray-300 hover:text-white" />
-              <LanguageToggle className="text-gray-300 hover:text-white" />
+              <ThemeToggle className={iconColor} />
+              <LanguageToggle className={iconColor} />
               {user ? (
-                <Link 
+                <Link
                   to="/dashboard"
-                  className="btn-outline text-white border-white text-xs"
+                  className={`px-4 py-2 rounded-full text-xs tracking-wider transition-colors ${btnOutline}`}
                   data-testid="dashboard-btn"
                 >
                   {t('nav.dashboard')}
                 </Link>
               ) : (
-                <Link 
+                <Link
                   to="/login"
-                  className="btn-outline text-white border-white text-xs"
+                  className={`px-4 py-2 rounded-full text-xs tracking-wider transition-colors ${btnOutline}`}
                   data-testid="login-btn"
                 >
                   {t('nav.login')}
@@ -101,7 +128,7 @@ const MainLayout = ({ children, hideNovaButton = false }) => {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2"
+              className={`md:hidden p-2 ${isTransparent ? 'text-white' : 'text-[#1A2F3A] dark:text-white'}`}
               data-testid="mobile-menu-btn"
             >
               {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -111,22 +138,22 @@ const MainLayout = ({ children, hideNovaButton = false }) => {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-[#0D0D0D] border-t border-gray-800">
+          <div className={`md:hidden border-t ${isTransparent ? 'bg-[#0D0D0D]/90 backdrop-blur-xl border-white/10' : 'bg-white/90 dark:bg-[#0D0D0D]/90 backdrop-blur-xl border-black/5 dark:border-white/10'}`}>
             <div className="px-6 py-4 space-y-4">
               {navLinks.map((link) => (
                 <Link
                   key={link.path}
                   to={link.path}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="block text-gray-300 hover:text-white"
+                  className={`block ${isTransparent ? 'text-gray-300 hover:text-white' : 'text-gray-600 dark:text-gray-300 hover:text-[#1A2F3A] dark:hover:text-white'}`}
                 >
                   {link.label}
                 </Link>
               ))}
-              <Link 
+              <Link
                 to={user ? "/dashboard" : "/login"}
                 onClick={() => setMobileMenuOpen(false)}
-                className="block text-white font-medium"
+                className={`block font-medium ${isTransparent ? 'text-white' : 'text-[#1A2F3A] dark:text-white'}`}
               >
                 {user ? 'Dashboard' : 'Login'}
               </Link>

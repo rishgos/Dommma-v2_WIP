@@ -99,13 +99,6 @@ const HeroSection = () => {
             >
               {t('hero.browseProperties')}
             </Link>
-            <Link
-              to="/about"
-              className="px-8 py-4 border border-white/30 text-white rounded-full text-sm font-medium
-                         hover:bg-white/10 transition-all"
-            >
-              Learn More
-            </Link>
           </motion.div>
         </div>
       </motion.div>
