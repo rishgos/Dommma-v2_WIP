@@ -20,7 +20,7 @@ const HeroSection = () => {
   return (
     <section
       ref={ref}
-      className="relative h-[85vh] min-h-[600px] flex items-center overflow-hidden"
+      className="relative min-h-screen flex items-center overflow-hidden"
       data-testid="hero-section"
     >
       {/* Video Background with Parallax */}

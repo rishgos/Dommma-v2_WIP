@@ -32,7 +32,7 @@ const MainLayout = ({ children, hideNovaButton = false }) => {
 
   const navWrapClass = isTransparent
     ? 'bg-transparent text-white'
-    : 'bg-white/70 dark:bg-[#0D0D0D]/70 backdrop-blur-xl border-b border-black/5 dark:border-white/10 text-[#1A2F3A] dark:text-white';
+    : 'bg-white/60 dark:bg-[#1A2332]/60 backdrop-blur-2xl backdrop-saturate-150 border-b border-black/5 dark:border-white/10 shadow-sm shadow-black/5 text-[#1A2F3A] dark:text-white';
 
   const linkActiveColor = isTransparent ? 'text-white' : 'text-[#1A2F3A] dark:text-white';
   const linkInactiveColor = isTransparent ? 'text-gray-300' : 'text-gray-500 dark:text-gray-400';
@@ -162,8 +162,8 @@ const MainLayout = ({ children, hideNovaButton = false }) => {
         )}
       </nav>
 
-      {/* Main Content */}
-      <main className="flex-1 pt-16">
+      {/* Main Content — home page has a full-bleed hero that should extend under the nav */}
+      <main className={`flex-1 ${hasHero ? '' : 'pt-16'}`}>
         {children}
       </main>
 
