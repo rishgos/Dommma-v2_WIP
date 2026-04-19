@@ -52,6 +52,7 @@ async def generate_listing_description(req: ListingDescriptionRequest):
     }
 
     nearby_text = ""
+    neighborhood_rule = ""
     if req.nearby_places:
         lines = []
         for p in req.nearby_places[:5]:
@@ -62,7 +63,29 @@ async def generate_listing_description(req: ListingDescriptionRequest):
                 suffix = f" ({walk} min walk)" if walk else ""
                 lines.append(f"- {name} [{ptype}]{suffix}")
         if lines:
-            nearby_text = "Nearby amenities (mention naturally if relevant):\n" + "\n".join(lines)
+            nearby_text = (
+                "VERIFIED nearby amenities (this is the COMPLETE list — do not add any others):\n"
+                + "\n".join(lines)
+            )
+            neighborhood_rule = (
+                "STRICT NEIGHBORHOOD RULE: When referencing the neighborhood, you may mention ONLY the "
+                "verified places listed above. Do not name any other businesses, restaurants, parks, stores, "
+                "transit stops, or landmarks — even if you have general knowledge of the area. Describe the "
+                "neighborhood generically (e.g. 'the neighborhood', 'the area', 'local') unless using a "
+                "name from the verified list."
+            )
+        else:
+            neighborhood_rule = (
+                "NEIGHBORHOOD RULE: You have no verified nearby places data. Do not name any specific "
+                "businesses, restaurants, parks, transit stops, or landmarks. Describe the neighborhood "
+                "only in generic terms."
+            )
+    else:
+        neighborhood_rule = (
+            "NEIGHBORHOOD RULE: You have no verified nearby places data. Do not name any specific "
+            "businesses, restaurants, parks, transit stops, or landmarks. Describe the neighborhood "
+            "only in generic terms (e.g. 'the area', 'nearby shops', 'local dining')."
+        )
 
     extras_text = f"\nExtra context from landlord: {req.extra_context}" if req.extra_context else ""
     additional_text = f"\nAdditional notes: {req.additional_notes}" if req.additional_notes else ""
@@ -82,7 +105,9 @@ Parking: {'Yes' if req.parking else 'No'}{additional_text}{extras_text}
 
 {tone_instructions.get(req.tone, tone_instructions['professional'])}
 
-{'The attached photos show the actual property. Describe visible features naturally (finishes, layout, natural light, views, condition) — but only mention what you can clearly see. Do not invent details.' if req.image_urls else ''}
+{neighborhood_rule}
+
+{'PHOTO RULE: The attached photos show the actual property. Describe visible features naturally (finishes, layout, natural light, views, condition) — but only mention what you can clearly see in the photos. Do not invent details or assume features that are not visible.' if req.image_urls else ''}
 
 Write ONLY the description text (2-3 short paragraphs, ~120-180 words total). Do not include the title, price, or address — those are shown separately. Focus on lifestyle, features, and neighborhood appeal. Do not use headings or bullet points."""
 
