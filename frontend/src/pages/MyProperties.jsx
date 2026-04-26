@@ -4,12 +4,13 @@ import {
   Building2, ArrowLeft, Plus, MapPin, Bed, Bath, Edit, Trash2,
   Image as ImageIcon, X, DollarSign, Check, Eye, EyeOff, Loader2,
   Gift, Calendar, Star, Zap, CheckCircle, AlertTriangle, Share2,
-  ChevronLeft, ChevronRight, Camera, RotateCw
+  ChevronLeft, ChevronRight, Camera, RotateCw, Crop
 } from 'lucide-react';
 import { useAuth } from '../App';
 import axios from 'axios';
 import AIDescriptionGenerator from '../components/AIDescriptionGenerator';
 import ShareListingModal from '../components/ShareListingModal';
+import ImageCropModal from '../components/listings/ImageCropModal';
 import InlinePricingChip from '../components/listings/InlinePricingChip';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -208,6 +209,8 @@ const MyProperties = () => {
   // Drag-and-drop reorder state — tracks which photo is being dragged + which one is hovered
   const [dragIdx, setDragIdx] = useState(null);
   const [dragOverIdx, setDragOverIdx] = useState(null);
+  // Crop modal state — { idx, url } when open, null when closed
+  const [cropTarget, setCropTarget] = useState(null);
   const [geocoding, setGeocoding] = useState(false);
   const addressInputRef = useRef(null);
   
@@ -1004,15 +1007,25 @@ const MyProperties = () => {
                         </span>
                       )}
 
-                      {/* Delete button — top-right, appears on hover */}
-                      <button
-                        type="button"
-                        onClick={() => removeImage(i)}
-                        title="Remove photo"
-                        className="absolute top-1.5 right-1.5 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-red-600"
-                      >
-                        <X size={12} />
-                      </button>
+                      {/* Top-right hover controls — crop + delete */}
+                      <div className="absolute top-1.5 right-1.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                        <button
+                          type="button"
+                          onClick={() => setCropTarget({ idx: i, url: img })}
+                          title="Crop"
+                          className="w-6 h-6 bg-white/90 backdrop-blur-sm text-[#1A2F3A] rounded-full flex items-center justify-center hover:bg-white shadow-sm"
+                        >
+                          <Crop size={12} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeImage(i)}
+                          title="Remove photo"
+                          className="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 shadow-sm"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
 
                       {/* Bottom toolbar — reorder + primary + rotate */}
                       <div className="absolute bottom-0 left-0 right-0 px-1.5 py-1 bg-black/65 backdrop-blur-sm flex items-center justify-between gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -1127,6 +1140,17 @@ const MyProperties = () => {
         type={confirmModal.type || 'info'}
       />
       <ShareListingModal listing={shareListing} isOpen={!!shareListing} onClose={() => setShareListing(null)} />
+      {cropTarget && (
+        <ImageCropModal
+          imageUrl={cropTarget.url}
+          onClose={() => setCropTarget(null)}
+          onCropped={(newUrl) => {
+            const next = [...form.images];
+            next[cropTarget.idx] = newUrl;
+            setForm({ ...form, images: next });
+          }}
+        />
+      )}
     </div>
 
   );
