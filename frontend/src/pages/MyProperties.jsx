@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   Building2, ArrowLeft, Plus, MapPin, Bed, Bath, Edit, Trash2,
   Image as ImageIcon, X, DollarSign, Check, Eye, EyeOff, Loader2,
-  Gift, Calendar, Star, Zap, CheckCircle, AlertTriangle, Share2
+  Gift, Calendar, Star, Zap, CheckCircle, AlertTriangle, Share2,
+  ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { useAuth } from '../App';
 import axios from 'axios';
@@ -280,6 +281,25 @@ const MyProperties = () => {
 
   const removeImage = (idx) => {
     setForm({ ...form, images: form.images.filter((_, i) => i !== idx) });
+  };
+
+  // Move a photo left or right in the array.
+  // Photo at index 0 is the "primary" — it's what shows up everywhere first.
+  const movePhoto = (idx, direction) => {
+    const next = [...form.images];
+    const targetIdx = direction === 'left' ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= next.length) return;
+    [next[idx], next[targetIdx]] = [next[targetIdx], next[idx]];
+    setForm({ ...form, images: next });
+  };
+
+  // Promote a photo to position 0 (primary).
+  const makePrimary = (idx) => {
+    if (idx === 0) return;
+    const next = [...form.images];
+    const [picked] = next.splice(idx, 1);
+    next.unshift(picked);
+    setForm({ ...form, images: next });
   };
 
   const toggleAmenity = (amenity) => {
@@ -869,19 +889,72 @@ const MyProperties = () => {
               )}
 
               <div>
-                <label className="block text-sm text-gray-600 mb-2">Photos</label>
+                <label className="block text-sm text-gray-600 mb-1">Photos</label>
+                {form.images.length > 0 && (
+                  <p className="text-xs text-gray-400 mb-2">
+                    The first photo is your <strong>primary</strong> — it shows on listing cards and search results. Use the arrows to reorder, or click ★ to make any photo primary.
+                  </p>
+                )}
                 <div className="flex flex-wrap gap-3 mb-3">
                   {form.images.map((img, i) => (
-                    <div key={i} className="relative w-24 h-24 rounded-xl overflow-hidden group">
+                    <div key={i} className={`relative w-28 h-28 rounded-xl overflow-hidden group ${i === 0 ? 'ring-2 ring-[#C4A962]' : 'ring-1 ring-gray-200'}`}>
                       <img src={img} alt="" className="w-full h-full object-cover" />
-                      <button type="button" onClick={() => removeImage(i)} className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+
+                      {/* Primary badge — only on first photo */}
+                      {i === 0 && (
+                        <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 bg-[#C4A962] text-[#1A2F3A] rounded text-[9px] font-bold uppercase tracking-wider flex items-center gap-0.5 pointer-events-none">
+                          <Star size={9} className="fill-current" /> Primary
+                        </span>
+                      )}
+
+                      {/* Delete button — top right, hover */}
+                      <button
+                        type="button"
+                        onClick={() => removeImage(i)}
+                        title="Remove photo"
+                        className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                      >
                         <X size={12} />
                       </button>
+
+                      {/* Reorder + primary controls — bottom strip, hover */}
+                      <div className="absolute bottom-0 left-0 right-0 px-1.5 py-1 bg-black/60 backdrop-blur-sm flex items-center justify-between gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          type="button"
+                          onClick={() => movePhoto(i, 'left')}
+                          disabled={i === 0}
+                          title="Move left"
+                          className="w-6 h-6 rounded text-white flex items-center justify-center hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          <ChevronLeft size={14} />
+                        </button>
+                        {i !== 0 ? (
+                          <button
+                            type="button"
+                            onClick={() => makePrimary(i)}
+                            title="Make primary"
+                            className="w-6 h-6 rounded text-[#C4A962] flex items-center justify-center hover:bg-white/20"
+                          >
+                            <Star size={14} />
+                          </button>
+                        ) : (
+                          <span className="text-[9px] text-white/70 font-bold">PRIMARY</span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => movePhoto(i, 'right')}
+                          disabled={i === form.images.length - 1}
+                          title="Move right"
+                          className="w-6 h-6 rounded text-white flex items-center justify-center hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          <ChevronRight size={14} />
+                        </button>
+                      </div>
                     </div>
                   ))}
-                  <label className="w-24 h-24 rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-[#1A2F3A] transition-colors">
+                  <label className="w-28 h-28 rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-[#1A2F3A] transition-colors">
                     <ImageIcon size={20} className="text-gray-400 mb-1" />
-                    <span className="text-xs text-gray-400">{uploading ? 'Uploading...' : 'Add'}</span>
+                    <span className="text-xs text-gray-400">{uploading ? 'Uploading…' : 'Add'}</span>
                     <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" disabled={uploading} />
                   </label>
                 </div>

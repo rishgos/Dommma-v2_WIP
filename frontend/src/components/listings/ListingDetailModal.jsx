@@ -7,6 +7,7 @@ import StreetViewPreview from './StreetViewPreview';
 import CommuteDirections from './CommuteDirections';
 import NeighborhoodFlyover from './NeighborhoodFlyover';
 import NearbyPlaces from './NearbyPlaces';
+import ImageCarousel from './ImageCarousel';
 
 const tabs = [
   { id: 'street', label: 'Street View', icon: Eye },
@@ -47,12 +48,16 @@ const ListingDetailModal = ({
           <Share2 size={18} />
         </button>
 
-        {/* Hero Image */}
-        <img
-          src={listing.images?.[0] || 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800'}
-          alt={listing.title}
-          className="w-full h-64 object-cover"
-        />
+        {/* Hero Image Carousel */}
+        <div className="w-full h-64 relative">
+          <ImageCarousel
+            images={listing.images}
+            alt={listing.title}
+            variant="hero"
+            showThumbnails
+            enableKeyboard
+          />
+        </div>
 
         <div className="p-8">
           {/* Header Info */}

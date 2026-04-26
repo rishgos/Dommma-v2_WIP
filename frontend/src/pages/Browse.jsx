@@ -8,6 +8,7 @@ import ViewingScheduler from '../components/scheduling/ViewingScheduler';
 import MatterportViewer from '../components/MatterportViewer';
 import ShareListingModal from '../components/ShareListingModal';
 import ListingDetailModal from '../components/listings/ListingDetailModal';
+import ImageCarousel from '../components/listings/ImageCarousel';
 import { useAuth } from '../App';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -368,9 +369,13 @@ const Browse = () => {
                     data-testid={`listing-row-${listing.id}`}
                   >
                     <div className="w-36 h-28 sm:w-48 sm:h-32 flex-shrink-0 relative">
-                      <img src={listing.images?.[0] || 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400'} alt={listing.title} className="w-full h-full object-cover" />
+                      <ImageCarousel
+                        images={listing.images}
+                        alt={listing.title}
+                        variant="card"
+                      />
                       {listing.featured && (
-                        <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded text-[10px] font-bold text-white flex items-center gap-0.5">
+                        <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded text-[10px] font-bold text-white flex items-center gap-0.5 z-10 pointer-events-none">
                           <Star size={8} className="fill-white" /> Featured
                         </span>
                       )}
@@ -429,15 +434,19 @@ const Browse = () => {
                   >
                     <div className="flex flex-col">
                       <div className="w-full h-40 relative">
-                        <img src={listing.images?.[0] || 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400'} alt={listing.title} className="w-full h-full object-cover" />
+                        <ImageCarousel
+                          images={listing.images}
+                          alt={listing.title}
+                          variant="card"
+                        />
                         <button
-                          className={`absolute top-2 right-2 p-2 bg-white/80 backdrop-blur-sm rounded-full transition-colors ${favoriteIds.includes(listing.id) ? 'text-red-500' : 'text-gray-400'}`}
+                          className={`absolute top-2 right-2 p-2 bg-white/80 backdrop-blur-sm rounded-full transition-colors z-10 ${favoriteIds.includes(listing.id) ? 'text-red-500' : 'text-gray-400'}`}
                           onClick={(e) => toggleFavorite(listing.id, e)}
                           data-testid={`favorite-btn-${listing.id}`}
                         >
                           <Heart size={16} fill={favoriteIds.includes(listing.id) ? 'currentColor' : 'none'} />
                         </button>
-                        <div className="absolute top-2 left-2 flex gap-1">
+                        <div className="absolute top-2 left-2 flex gap-1 z-10 pointer-events-none">
                           {listing.featured && (
                             <span className="px-2 py-1 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full text-xs font-bold text-white flex items-center gap-1">
                               <Star size={10} className="fill-white" /> Featured
